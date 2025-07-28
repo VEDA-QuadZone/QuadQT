@@ -3,173 +3,193 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QRadioButton>
-#include <QButtonGroup>
 #include <QSlider>
 #include <QPushButton>
+#include <QLineEdit>
+#include <QButtonGroup>
+#include <QPixmap>
+#include <QDebug>
+#include <algorithm>
 
 ProcSettingBox::ProcSettingBox(QWidget *parent)
     : QWidget(parent)
 {
     this->setStyleSheet("border: 1px solid #ccc; background-color: transparent;");
     setupUI();
+    setupConnections();
+    updateModeUI(); // 초기 UI 상태 설정
 }
 
 void ProcSettingBox::setupUI()
 {
-    QButtonGroup *group = new QButtonGroup(this);
-
-    // ───── 공통 라디오 버튼 스타일 ─────
-    const QString radioStyle = R"(
-        QRadioButton {
-            background: transparent;
-            outline: none;
+    QString radioStyle = "margin: 4px 0 0 4px; background: transparent; border: none;";
+    sliderStyleGray = R"(
+        QSlider::groove:horizontal { background: #ccc; height: 8px; border-radius: 4px; }
+        QSlider::handle:horizontal {
+            background: #ccc; width: 18px; height: 18px;
+            margin: -6px 0; border-radius: 9px;
         }
-        QRadioButton::indicator {
-            width: 16px;
-            height: 16px;
-            background: transparent;
-            border: none;
+        QSlider::sub-page:horizontal { background: #ccc; border-radius: 4px; }
+        QSlider::add-page:horizontal { background: #eee; border-radius: 4px; }
+    )";
+    sliderStyleOrange = R"(
+        QSlider::groove:horizontal { background: #ddd; height: 8px; border-radius: 4px; }
+        QSlider::handle:horizontal {
+            background: orange; width: 18px; height: 18px;
+            margin: -6px 0; border-radius: 9px;
         }
+        QSlider::sub-page:horizontal { background: orange; border-radius: 4px; }
+        QSlider::add-page:horizontal { background: #eee; border-radius: 4px; }
     )";
 
-    // ───── 주간 모드 박스 ─────
-    QWidget *dayBox = new QWidget(this);
-    dayBox->setStyleSheet("border-right: 1px solid #ccc;");
-    QVBoxLayout *dayLayout = new QVBoxLayout(dayBox);
-    dayLayout->setContentsMargins(10, 10, 10, 10);
-    dayLayout->setSpacing(5);
-    dayLayout->setAlignment(Qt::AlignTop);
+    textStyleGray = "font-size: 14px; color: gray; padding-bottom: 4px; border: none; background: transparent;";
+    textStyleOrange = "font-size: 14px; color: orange; padding-bottom: 4px; border: none; background: transparent;";
 
-    QRadioButton *dayRadio = new QRadioButton(this);
-    dayRadio->setStyleSheet(radioStyle);
-    group->addButton(dayRadio);
+    modeGroup = new QButtonGroup(this);
 
-    QHBoxLayout *dayRadioRow = new QHBoxLayout;
-    dayRadioRow->addWidget(dayRadio);
-    dayRadioRow->addStretch();
-
-    QLabel *dayIcon = new QLabel("🌞", this);
-    dayIcon->setAlignment(Qt::AlignCenter);
-    dayIcon->setStyleSheet("font-size: 32px; background: transparent; border: none;");
-
-    QLabel *dayLabel = new QLabel("주간 모드", this);
-    dayLabel->setAlignment(Qt::AlignCenter);
-    dayLabel->setStyleSheet("color: orange; font-size: 14px; background: transparent; border: none;");
-
-    dayLayout->addLayout(dayRadioRow);
-    dayLayout->addWidget(dayIcon);
-    dayLayout->addWidget(dayLabel);
-
-    // ───── 야간 모드 박스 ─────
-    QWidget *nightBox = new QWidget(this);
-    nightBox->setStyleSheet("border-right: 1px solid #ccc;");
-    QVBoxLayout *nightLayout = new QVBoxLayout(nightBox);
-    nightLayout->setContentsMargins(10, 10, 10, 10);
-    nightLayout->setSpacing(5);
-    nightLayout->setAlignment(Qt::AlignTop);
-
-    QRadioButton *nightRadio = new QRadioButton(this);
-    nightRadio->setStyleSheet(radioStyle);
-    group->addButton(nightRadio);
-
-    QHBoxLayout *nightRadioRow = new QHBoxLayout;
-    nightRadioRow->addWidget(nightRadio);
-    nightRadioRow->addStretch();
-
-    QLabel *nightIcon = new QLabel("🌙", this);
-    nightIcon->setAlignment(Qt::AlignCenter);
-    nightIcon->setStyleSheet("font-size: 32px; background: transparent; border: none;");
-
-    QLabel *nightLabel = new QLabel("야간 모드", this);
-    nightLabel->setAlignment(Qt::AlignCenter);
-    nightLabel->setStyleSheet("color: gray; font-size: 14px; background: transparent; border: none;");
-
-    nightLayout->addLayout(nightRadioRow);
-    nightLayout->addWidget(nightIcon);
-    nightLayout->addWidget(nightLabel);
-
-    // ───── 선명도 박스 ─────
-    QWidget *sharpBox = new QWidget(this);
-    QVBoxLayout *sharpLayout = new QVBoxLayout(sharpBox);
-    sharpLayout->setContentsMargins(10, 10, 10, 10);
-    sharpLayout->setSpacing(5);
-    sharpLayout->setAlignment(Qt::AlignTop);
-
-    QRadioButton *sharpRadio = new QRadioButton(this);
-    sharpRadio->setStyleSheet(radioStyle);
-    group->addButton(sharpRadio);
-    sharpRadio->setChecked(true);  // ✅ 기본 선택
-
-    QPushButton *minusBtn = new QPushButton("-");
-    QPushButton *plusBtn = new QPushButton("+");
-    minusBtn->setFixedWidth(30);
-    plusBtn->setFixedWidth(30);
-    minusBtn->setStyleSheet("border: none; background: transparent;");
-    plusBtn->setStyleSheet("border: none; background: transparent;");
-
-    QSlider *sharpSlider = new QSlider(Qt::Horizontal);
-    sharpSlider->setFixedWidth(120);
-    sharpSlider->setRange(0, 100);
-    sharpSlider->setValue(0);
-    sharpSlider->setEnabled(true);  // 기본 활성화
-
-    QLabel *valueLabel = new QLabel("0", this);
-    valueLabel->setFixedWidth(30);
-    valueLabel->setAlignment(Qt::AlignCenter);
-    valueLabel->setStyleSheet("font-weight: bold; background: transparent; border: none;");
-
-    QLabel *sharpLabel = new QLabel("선명도 (%)", this);
-    sharpLabel->setAlignment(Qt::AlignCenter);
-    sharpLabel->setStyleSheet("color: black; font-size: 14px; background: transparent; border: none;");
-
-    QHBoxLayout *sharpTopRow = new QHBoxLayout;
-    sharpTopRow->addWidget(sharpRadio);
-    sharpTopRow->addStretch();
-
-    QHBoxLayout *sliderRow = new QHBoxLayout;
-    sliderRow->setAlignment(Qt::AlignCenter);
-    sliderRow->setSpacing(5);
-    sliderRow->addWidget(minusBtn);
-    sliderRow->addWidget(sharpSlider);
-    sliderRow->addWidget(plusBtn);
-    sliderRow->addWidget(valueLabel);
-
-    sharpLayout->addLayout(sharpTopRow);
-    sharpLayout->addLayout(sliderRow);
-    sharpLayout->addWidget(sharpLabel);
-
-    // ───── 전체 레이아웃 구성 ─────
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
-    mainLayout->addWidget(dayBox);
-    mainLayout->addWidget(nightBox);
-    mainLayout->addWidget(sharpBox);
-    mainLayout->setStretch(0, 2);
-    mainLayout->setStretch(1, 2);
-    mainLayout->setStretch(2, 6);
+    this->setLayout(mainLayout);
 
-    // ───── 동작 연결 ─────
-    connect(sharpRadio, &QRadioButton::toggled, this, [=](bool checked){
-        minusBtn->setEnabled(checked);
-        plusBtn->setEnabled(checked);
-        sharpSlider->setEnabled(checked);
-        valueLabel->setEnabled(checked);
-        sharpLabel->setStyleSheet(QString("color: %1; font-size: 14px; background: transparent; border: none;")
-                                      .arg(checked ? "black" : "gray"));
+    // Day Mode
+    QWidget *dayBox = new QWidget(this);
+    dayBox->setStyleSheet("border-right: 1px solid #ccc;");
+    QVBoxLayout *dayLayout = new QVBoxLayout(dayBox);
+    dayLayout->setContentsMargins(4, 4, 4, 4);
+    dayLayout->setSpacing(0);
+
+    dayRadio = new QRadioButton(dayBox);
+    dayRadio->setStyleSheet(radioStyle);
+    modeGroup->addButton(dayRadio);
+
+    dayIcon = new QLabel(dayBox);
+    dayIcon->setStyleSheet("border: none; background: transparent;");
+    dayIcon->setAlignment(Qt::AlignCenter);
+
+    dayLabel = new QLabel("주간 모드", dayBox);
+    dayLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+    dayLabel->setStyleSheet(textStyleGray);
+
+    dayLayout->addWidget(dayRadio, 0, Qt::AlignLeft | Qt::AlignTop);
+    dayLayout->addStretch();
+    dayLayout->addWidget(dayIcon);
+    dayLayout->addStretch();
+    dayLayout->addWidget(dayLabel);
+    mainLayout->addWidget(dayBox, 2);
+
+    // Night Mode
+    QWidget *nightBox = new QWidget(this);
+    nightBox->setStyleSheet("border-right: 1px solid #ccc;");
+    QVBoxLayout *nightLayout = new QVBoxLayout(nightBox);
+    nightLayout->setContentsMargins(4, 4, 4, 4);
+    nightLayout->setSpacing(0);
+
+    nightRadio = new QRadioButton(nightBox);
+    nightRadio->setStyleSheet(radioStyle);
+    modeGroup->addButton(nightRadio);
+
+    nightIcon = new QLabel(nightBox);
+    nightIcon->setStyleSheet("border: none; background: transparent;");
+    nightIcon->setAlignment(Qt::AlignCenter);
+
+    nightLabel = new QLabel("야간 모드", nightBox);
+    nightLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+    nightLabel->setStyleSheet(textStyleGray);
+
+    nightLayout->addWidget(nightRadio, 0, Qt::AlignLeft | Qt::AlignTop);
+    nightLayout->addStretch();
+    nightLayout->addWidget(nightIcon);
+    nightLayout->addStretch();
+    nightLayout->addWidget(nightLabel);
+    mainLayout->addWidget(nightBox, 2);
+
+    // Sharpness Mode
+    QWidget *sharpnessBox = new QWidget(this);
+    QVBoxLayout *sharpnessLayout = new QVBoxLayout(sharpnessBox);
+    sharpnessLayout->setContentsMargins(4, 4, 4, 4);
+    sharpnessLayout->setSpacing(0);
+
+    sharpnessRadio = new QRadioButton(sharpnessBox);
+    sharpnessRadio->setStyleSheet(radioStyle);
+    modeGroup->addButton(sharpnessRadio);
+
+    QWidget *controlWidget = new QWidget(sharpnessBox);
+    controlWidget->setStyleSheet("background: transparent; border: none;");
+    QHBoxLayout *controlLayout = new QHBoxLayout(controlWidget);
+    controlLayout->setContentsMargins(8, 12, 8, 0);
+    controlLayout->setSpacing(6);
+
+    minusButton = new QPushButton("-", controlWidget);
+    minusButton->setFixedSize(24, 24);
+    minusButton->setStyleSheet("border: none; background: transparent; font-size: 16px;");
+
+    sharpnessSlider = new QSlider(Qt::Horizontal, controlWidget);
+    sharpnessSlider->setMinimum(0);
+    sharpnessSlider->setMaximum(100);
+    sharpnessSlider->setValue(50);
+
+    plusButton = new QPushButton("+", controlWidget);
+    plusButton->setFixedSize(24, 24);
+    plusButton->setStyleSheet("border: none; background: transparent; font-size: 16px;");
+
+    sharpnessEdit = new QLineEdit("50", controlWidget);
+    sharpnessEdit->setFixedWidth(36);
+    sharpnessEdit->setAlignment(Qt::AlignCenter);
+    sharpnessEdit->setStyleSheet("border: 1px solid #ccc; padding: 2px; border-radius: 4px;");
+
+    controlLayout->addWidget(minusButton);
+    controlLayout->addWidget(sharpnessSlider, 1);
+    controlLayout->addWidget(plusButton);
+    controlLayout->addWidget(sharpnessEdit);
+
+    sharpnessLabel = new QLabel("선명도 (%)", sharpnessBox);
+    sharpnessLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+
+    sharpnessLayout->addWidget(sharpnessRadio, 0, Qt::AlignLeft | Qt::AlignTop);
+    sharpnessLayout->addStretch();
+    sharpnessLayout->addWidget(controlWidget);
+    sharpnessLayout->addStretch();
+    sharpnessLayout->addWidget(sharpnessLabel);
+    mainLayout->addWidget(sharpnessBox, 5);
+}
+
+void ProcSettingBox::setupConnections()
+{
+    connect(modeGroup, QOverload<QAbstractButton *>::of(&QButtonGroup::buttonClicked),
+            this, [=](QAbstractButton *) { updateModeUI(); });
+
+    connect(sharpnessEdit, &QLineEdit::returnPressed, this, [=]() {
+        sharpnessEdit->clearFocus();
+        bool ok;
+        int val = sharpnessEdit->text().toInt(&ok);
+        if (ok) {
+            val = std::clamp(val, 0, 100);
+            sharpnessSlider->setValue(val);
+        }
     });
 
-    connect(sharpSlider, &QSlider::valueChanged, valueLabel, [=](int value){
-        valueLabel->setText(QString::number(value));
+    connect(sharpnessSlider, &QSlider::valueChanged, this, [=](int val) {
+        sharpnessEdit->setText(QString::number(val));
     });
+}
 
-    connect(minusBtn, &QPushButton::clicked, this, [=](){
-        int val = sharpSlider->value();
-        if (val > 0) sharpSlider->setValue(val - 1);
-    });
+void ProcSettingBox::updateModeUI()
+{
+    bool isDay = dayRadio->isChecked();
+    bool isNight = nightRadio->isChecked();
+    bool isSharpness = sharpnessRadio->isChecked();
 
-    connect(plusBtn, &QPushButton::clicked, this, [=](){
-        int val = sharpSlider->value();
-        if (val < 100) sharpSlider->setValue(val + 1);
-    });
+    // 아이콘 이미지 설정
+    dayIcon->setPixmap(QPixmap(isDay ? ":/images/sun.png" : ":/images/sun_gray.png").scaled(120, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    nightIcon->setPixmap(QPixmap(isNight ? ":/images/moon.png" : ":/images/moon_gray.png").scaled(120, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+
+    // 텍스트 색상 변경
+    dayLabel->setStyleSheet(isDay ? textStyleOrange : textStyleGray);
+    nightLabel->setStyleSheet(isNight ? textStyleOrange : textStyleGray);
+    sharpnessLabel->setStyleSheet(isSharpness ? textStyleOrange : textStyleGray);
+
+    // 슬라이더 활성화/비활성화 및 색상
+    sharpnessSlider->setEnabled(isSharpness);
+    sharpnessSlider->setStyleSheet(isSharpness ? sliderStyleOrange : sliderStyleGray);
 }

@@ -38,7 +38,8 @@ FORMS += \
 
 # ====== RESOURCES (.qrc) ======
 RESOURCES += \
-    resources/source.qrc
+    resources/images.qrc \
+    resources/style.qrc
 
 # ====== Default install rules (optional) ======
 qnx: target.path = /tmp/$${TARGET}/bin

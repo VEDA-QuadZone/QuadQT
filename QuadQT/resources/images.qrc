@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>moon.png</file>
+        <file>moon_gray.png</file>
+        <file>sun.png</file>
+        <file>sun_gray.png</file>
+    </qresource>
+</RCC>
