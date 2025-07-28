@@ -15,6 +15,8 @@ SOURCES += \
     src/login/networkmanager.cpp \
     src/mainwindow/displaysettingbox.cpp \
     src/mainwindow/mainwindow.cpp \
+    src/mainwindow/notificationitem.cpp \
+    src/mainwindow/notificationpanel.cpp \
     src/mainwindow/procsettingbox.cpp \
     src/mainwindow/topbarwidget.cpp
 
@@ -24,6 +26,8 @@ HEADERS += \
     include/login/networkmanager.h \
     include/mainwindow/displaysettingbox.h \
     include/mainwindow/mainwindow.h \
+    include/mainwindow/notificationitem.h \
+    include/mainwindow/notificationpanel.h \
     include/mainwindow/procsettingbox.h \
     include/mainwindow/topbarwidget.h
 

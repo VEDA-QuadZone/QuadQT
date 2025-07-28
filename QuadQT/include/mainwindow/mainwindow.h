@@ -3,10 +3,12 @@
 
 #include <QMainWindow>
 #include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
+#include "mainwindow/notificationpanel.h"
 
 class QLabel;
 class QWidget;
 class DisplaySettingBox;  // displayBox의 실제 타입이 이거라면 미리 선언
+
 
 class MainWindow : public QMainWindow
 {
@@ -29,7 +31,7 @@ private:
     QLabel *notifTitleLabel;
 
     QWidget *videoArea;
-    QWidget *notificationPanel;
+    NotificationPanel *notificationPanel;
 
     // ───── 영상 설정 관련 구성 요소 ─────
     QLabel *videoSettingTitle;   // "영상 설정"

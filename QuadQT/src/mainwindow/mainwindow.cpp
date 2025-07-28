@@ -64,8 +64,8 @@ void MainWindow::setupUI()
     videoArea->setStyleSheet("background-color: #e2e7ec; border: 1px solid #ccc;");
     qDebug() << "🎥 비디오 영역 생성됨:" << (videoArea ? "성공" : "실패");
 
-    notificationPanel = new QWidget(parent);
-    notificationPanel->setStyleSheet("background-color: #f8f9fa; border-left: 1px solid #ccc;");
+    notificationPanel = new NotificationPanel(parent);
+    notificationPanel->setStyleSheet("background: transparent; border: none;");
     qDebug() << "📢 알림 패널 생성됨:" << (notificationPanel ? "성공" : "실패");
 
     videoSettingTitle = new QLabel("영상 설정", parent);
