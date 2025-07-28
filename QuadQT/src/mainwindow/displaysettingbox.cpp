@@ -1,4 +1,4 @@
-#include "displaysettingbox.h"
+#include "mainwindow/displaysettingbox.h"
 #include <QHBoxLayout>
 #include <QLabel>
 

@@ -1,6 +1,6 @@
-#include "mainwindow.h"
-#include "topbarwidget.h"
-#include "displaysettingbox.h"
+#include "mainwindow/mainwindow.h"
+#include "mainwindow/topbarwidget.h"
+#include "mainwindow/displaysettingbox.h"
 
 #include <QResizeEvent>
 #include <QLabel>

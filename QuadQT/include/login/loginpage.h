@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QJsonObject>
 #include <QMessageBox>
-#include "networkmanager.h"
+#include "login/networkmanager.h"
 
 namespace Ui {
 class LoginPage;

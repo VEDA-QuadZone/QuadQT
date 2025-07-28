@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "topbarwidget.h"  // TopBarWidget 사용
+#include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
 
 class QLabel;
 class QWidget;

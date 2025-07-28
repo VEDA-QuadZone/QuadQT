@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QDebug>
-#include "loginpage.h"
-#include "mainwindow.h"
+#include "login/loginpage.h"
+#include "mainwindow/mainwindow.h"
 
 int main(int argc, char *argv[])
 {

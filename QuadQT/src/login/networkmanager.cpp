@@ -1,4 +1,4 @@
-#include "networkmanager.h"
+#include "login/networkmanager.h"
 #include <QDebug>
 #include <QJsonParseError>
 

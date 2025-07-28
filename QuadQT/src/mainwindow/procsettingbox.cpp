@@ -1,4 +1,4 @@
-#include "procsettingbox.h"
+#include "mainwindow/procsettingbox.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
