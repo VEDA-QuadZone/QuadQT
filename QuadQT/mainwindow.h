@@ -1,7 +1,9 @@
+// mainwindow.h
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "topbarwidget.h"  // ✅ 직접 include 추가
 
 class QLabel;
 class QWidget;
@@ -18,29 +20,24 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 private:
-    void setupUI();         // 위젯 생성 (1회)
-    void updateLayout();    // 리사이즈 시 배치 업데이트 ← 이 줄 추가됨
+    void setupUI();
+    void updateLayout();
 
-    // ───── 상단 바 구성 요소 ─────
-    QLabel *logoLabel;
-    QLabel *cameraIcon;
-    QLabel *docIcon;
-    QLabel *settingIcon;
-    QLabel *loginStatus;
-    QWidget *topLine;
+    TopBarWidget *topBar;  // ✅ 정의에 문제 없음
 
-    // ───── 영상 및 알림 제목 ─────
-    QLabel *cameraTitle;       // "역삼 초등학교 앞 CCTV"
-    QLabel *notifTitleLabel;   // "Notifications"
+    QLabel *cameraTitle;
+    QLabel *notifTitleLabel;
 
-    // ───── 메인 콘텐츠 영역 ─────
-    QWidget *videoArea;        // CCTV 영상 표시 영역
-    QWidget *notificationPanel; // 알림 패널 영역
+    QWidget *videoArea;
+    QWidget *notificationPanel;
 
-    // ───── 하단 제어 패널 ─────
-    QWidget *bottomControlBar;
-    QWidget *bottomLeftPanel;
-    QWidget *bottomRightPanel;
+    // ───── 영상 설정 관련 구성 요소 ─────
+    QLabel *videoSettingTitle;  // "영상 설정"
+    QLabel *displayTitle;       // "화면 표시"
+    QLabel *procTitle;          // "영상 처리"
+    QWidget *displayBox;        // 화면 표시용 박스
+    QWidget *procBox;           // 영상 처리용 박스
+    QWidget *videoSettingLine; // 영상 설정 아래 수평선
 };
 
 #endif // MAINWINDOW_H
