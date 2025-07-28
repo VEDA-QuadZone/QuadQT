@@ -1,10 +1,17 @@
 #ifndef PROCSETTINGBOX_H
 #define PROCSETTINGBOX_H
 
-class procsettingbox
+#include <QWidget>
+
+class ProcSettingBox : public QWidget
 {
+    Q_OBJECT
+
 public:
-    procsettingbox();
+    explicit ProcSettingBox(QWidget *parent = nullptr);
+
+private:
+    void setupUI();
 };
 
 #endif // PROCSETTINGBOX_H

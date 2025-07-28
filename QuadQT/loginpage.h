@@ -1,7 +1,7 @@
 #ifndef LOGINPAGE_H
 #define LOGINPAGE_H
 
-#include <QWidget>
+#include <QDialog>
 #include <QJsonObject>
 #include <QMessageBox>
 #include "networkmanager.h"
@@ -10,7 +10,7 @@ namespace Ui {
 class LoginPage;
 }
 
-class LoginPage : public QWidget
+class LoginPage : public QDialog
 {
     Q_OBJECT
 
@@ -25,12 +25,12 @@ private slots:
     void showSignInPage();
     void showRegisterPage();
     void showResetPasswordPage();
-    
+
     // 버튼 클릭 핸들러
     void onSignInClicked();
     void onRegisterClicked();
     void onResetPasswordClicked();
-    
+
     // 네트워크 응답 핸들러
     void onNetworkConnected();
     void onNetworkDisconnected();
@@ -45,7 +45,7 @@ private:
     bool validateEmail(const QString &email);
     bool validatePassword(const QString &password);
     void clearInputFields();
-    
+
     Ui::LoginPage *ui;
     NetworkManager *m_networkManager;
 };
