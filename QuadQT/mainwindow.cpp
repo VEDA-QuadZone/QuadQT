@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "topbarwidget.h"
 #include "displaysettingbox.h"
+#include "procsettingbox.h"
 
 #include <QResizeEvent>
 #include <QLabel>
@@ -115,7 +116,7 @@ void MainWindow::updateLayout()
 
     // 영상 처리 박스
     if (!procBox)
-        procBox = new QWidget(this);
+        procBox = new ProcSettingBox(this);
     procBox->setGeometry(cctv_x + w_unit * (6 + 0.5), boxTop, w_unit * 10, h_unit * 4);
     procBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
 
