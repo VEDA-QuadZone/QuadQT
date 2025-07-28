@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -20,9 +20,17 @@ HEADERS += \
     mainwindow.h \
     procsettingbox.h \
     topbarwidget.h
+    loginpage.cpp \
+    networkmanager.cpp
+
+HEADERS += \
+    mainwindow.h \
+    loginpage.h \
+    networkmanager.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    loginpage.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -34,3 +42,4 @@ RESOURCES += \
     source.qrc
 
 DISTFILES +=
+!isEmpty(target.path): INSTALLS += target

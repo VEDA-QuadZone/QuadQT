@@ -1,11 +1,13 @@
 #include "mainwindow.h"
+#include "loginpage.h"
 
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    MainWindow w;
+    LoginPage w;
+    w.setFixedSize(800, 600);
     w.show();
     return a.exec();
 }
