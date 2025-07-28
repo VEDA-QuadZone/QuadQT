@@ -18,7 +18,7 @@ signals:
     void removeRequested(NotificationItem *item);
 
 private slots:
-    void onRemoveClicked();
+    //void onRemoveClicked();
 
 private:
     QLabel *messageLabel;
