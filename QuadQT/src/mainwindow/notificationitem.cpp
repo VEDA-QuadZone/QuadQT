@@ -104,6 +104,11 @@ NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *
         "QPushButton { border:none; background:transparent; font-size:14px; }"
         );
 
+    // 클릭 시 현재 아이템 삭제 요청 시그널 발송
+    connect(removeBtn, &QPushButton::clicked, this, [this]() {
+        emit removeRequested(this);
+    });
+
     // 컨테이너
     QWidget *btnContainer = new QWidget(this);
     btnContainer->setStyleSheet("background: transparent;");
