@@ -7,6 +7,9 @@
 #include <QLabel>
 #include <QWidget>
 #include <QFont>
+#include "ui_mainwindow.h"
+#include "loginpage.h"
+#include <QLabel>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -123,3 +126,11 @@ void MainWindow::updateLayout()
 }
 
 
+void MainWindow::onLoginSuccessful()
+{
+    // 로그인 성공 후 메인 애플리케이션 화면으로 전환
+    QLabel *welcomeLabel = new QLabel("로그인 성공! 메인 애플리케이션 화면입니다.", this);
+    welcomeLabel->setAlignment(Qt::AlignCenter);
+    welcomeLabel->setStyleSheet("font-size: 18px; color: #333333;");
+    setCentralWidget(welcomeLabel);
+}
