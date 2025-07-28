@@ -91,7 +91,7 @@ void MainWindow::setupUI()
     displayBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
     qDebug() << "📦 화면 설정 박스 생성됨:" << (displayBox ? "성공" : "실패");
 
-    procBox = new QWidget(parent);
+    procBox = new ProcSettingBox(parent);
     procBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
     qDebug() << "🔧 처리 박스 생성됨:" << (procBox ? "성공" : "실패");
     

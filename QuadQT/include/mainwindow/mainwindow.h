@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
 #include "mainwindow/notificationpanel.h"
+#include "mainwindow/procsettingbox.h"
 
 class QLabel;
 class QWidget;
@@ -38,7 +39,7 @@ private:
     QLabel *displayTitle;        // "화면 표시"
     QLabel *procTitle;           // "영상 처리"
     DisplaySettingBox *displayBox; // 화면 표시용 박스
-    QWidget *procBox;            // 영상 처리용 박스
+    ProcSettingBox *procBox;          // 영상 처리용 박스
     QWidget *videoSettingLine;   // 영상 설정 아래 수평선
 };
 
