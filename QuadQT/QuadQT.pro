@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     displaysettingbox.cpp \
+    loginpage.cpp \
     main.cpp \
     mainwindow.cpp \
     procsettingbox.cpp \
