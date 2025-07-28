@@ -38,17 +38,17 @@ void NetworkManager::loadConfig()
     m_serverPort = settings.value("Server/port", 8080).toInt();
     m_timeout = settings.value("Server/timeout", 5000).toInt();
     
-    qDebug() << "Config loaded - IP:" << m_serverIp << "Port:" << m_serverPort << "Timeout:" << m_timeout;
+    qDebug() << "설정 로드됨 - IP:" << m_serverIp << "포트:" << m_serverPort << "타임아웃:" << m_timeout;
 }
 
 void NetworkManager::connectToServer()
 {
     if (m_socket->state() != QAbstractSocket::UnconnectedState) {
-        qDebug() << "Already connected or connecting";
+        qDebug() << "이미 연결되었거나 연결 중";
         return;
     }
     
-    qDebug() << "Connecting to server:" << m_serverIp << ":" << m_serverPort;
+    qDebug() << "서버에 연결 중:" << m_serverIp << ":" << m_serverPort;
     m_socket->connectToHost(m_serverIp, m_serverPort);
     
     // 연결 타임아웃 설정
@@ -82,12 +82,17 @@ void NetworkManager::registerUser(const QString &email, const QString &password)
 void NetworkManager::loginUser(const QString &email, const QString &password)
 {
     if (!isConnected()) {
+        qDebug() << "❌ 로그인 요청을 보낼 수 없음: 서버에 연결되지 않음";
         emit networkError("서버에 연결되지 않았습니다.");
         return;
     }
     
     QString command = QString("LOGIN %1 %2").arg(email, password);
     m_pendingCommand = "LOGIN";
+    
+    qDebug() << "🔐 TCP를 통해 LOGIN 명령어 전송:" << command;
+    qDebug() << "⏳ 서버 응답 대기 중...";
+    
     sendCommand(command);
 }
 
@@ -106,14 +111,14 @@ void NetworkManager::resetPassword(const QString &email, const QString &newPassw
 void NetworkManager::onConnected()
 {
     m_timeoutTimer->stop();
-    qDebug() << "Connected to server";
+    qDebug() << "서버에 연결됨";
     emit connected();
 }
 
 void NetworkManager::onDisconnected()
 {
     m_timeoutTimer->stop();
-    qDebug() << "Disconnected from server";
+    qDebug() << "서버와의 연결 끊김";
     emit disconnected();
 }
 
@@ -121,6 +126,11 @@ void NetworkManager::onReadyRead()
 {
     QByteArray data = m_socket->readAll();
     m_responseBuffer.append(QString::fromUtf8(data));
+    
+    // 🔍 TCP 데이터 수신 디버그
+    qDebug() << "📡 TCP 데이터 수신:" << QString::fromUtf8(data);
+    qDebug() << "📦 현재 버퍼:" << m_responseBuffer;
+    qDebug() << "⏳ 대기 중인 명령어:" << m_pendingCommand;
     
     // JSON 응답이 완전한지 확인 (간단한 방법으로 } 로 끝나는지 확인)
     if (m_responseBuffer.contains('}')) {
@@ -131,6 +141,7 @@ void NetworkManager::onReadyRead()
             if (m_pendingCommand == "REGISTER") {
                 emit registerResponse(response);
             } else if (m_pendingCommand == "LOGIN") {
+                qDebug() << "🔐 LOGIN 응답 처리 중, loginResponse 시그널 발생";
                 emit loginResponse(response);
             } else if (m_pendingCommand == "RESET_PASSWORD") {
                 emit resetPasswordResponse(response);
@@ -181,7 +192,7 @@ void NetworkManager::onError(QAbstractSocket::SocketError error)
         break;
     }
     
-    qDebug() << "Socket error:" << errorString;
+    qDebug() << "소켓 오류:" << errorString;
     emit networkError(errorString);
 }
 
@@ -196,7 +207,7 @@ void NetworkManager::onTimeout()
 void NetworkManager::sendCommand(const QString &command)
 {
     if (m_socket->state() == QAbstractSocket::ConnectedState) {
-        qDebug() << "Sending command:" << command;
+        qDebug() << "명령어 전송:" << command;
         m_socket->write(command.toUtf8() + "\n");
         m_socket->flush();
     }
@@ -208,7 +219,7 @@ QJsonObject NetworkManager::parseResponse(const QString &response)
     QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8(), &error);
     
     if (error.error != QJsonParseError::NoError) {
-        qDebug() << "JSON parse error:" << error.errorString();
+        qDebug() << "JSON 파싱 오류:" << error.errorString();
         return QJsonObject();
     }
     

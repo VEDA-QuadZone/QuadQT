@@ -1,6 +1,7 @@
 #include "topbarwidget.h"
 #include <QLabel>
 #include <QFont>
+#include <QDebug>
 
 TopBarWidget::TopBarWidget(QWidget *parent)
     : QWidget(parent)
@@ -28,6 +29,8 @@ TopBarWidget::TopBarWidget(QWidget *parent)
 
 void TopBarWidget::updateLayout(int w, int h)
 {
+    qDebug() << "🔝 TopBarWidget 레이아웃 업데이트: " << w << "x" << h;
+    
     double w_unit = w / 24.0;
     double h_unit = h / 24.0;
 
@@ -42,4 +45,6 @@ void TopBarWidget::updateLayout(int w, int h)
     docIcon->setGeometry(w_unit * 11, h_unit * 1, w_unit * 2, h_unit * 2);
     settingIcon->setGeometry(w_unit * 13, h_unit * 1, w_unit * 2, h_unit * 2);
     loginStatus->setGeometry(w_unit * 21.0, h_unit * 1, w_unit * 2, h_unit * 2);
+    
+    qDebug() << "✅ TopBarWidget 레이아웃 업데이트 완료";
 }
