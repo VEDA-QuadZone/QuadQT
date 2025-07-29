@@ -108,7 +108,7 @@ QWidget* MainWindow::createCameraPage()
     notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
 
     videoArea = new QLabel(page);
-    QPixmap videoPixmap(":/images/resources/images/video.png");
+    QPixmap videoPixmap(":/images/video.png");
     if (!videoPixmap.isNull()) {
         videoArea->setPixmap(videoPixmap);
         videoArea->setScaledContents(true);

@@ -41,8 +41,6 @@ FORMS += \
 
 # ====== RESOURCES (.qrc) ======
 RESOURCES += \
-    resources/images.qrc \
-    resources/style.qrc
     resource.qrc
 
 # ====== Default install rules (optional) ======

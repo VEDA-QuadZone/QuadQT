@@ -1,12 +1,12 @@
 #include <QApplication>
 #include <QDebug>
+#include <QDir>
+#include <QPixmap>
 #include "login/loginpage.h"
 #include "mainwindow/mainwindow.h"
 #include <QFontDatabase>
 #include <QFont>
 #include <QIcon>
-#include "login/loginpage.h"
-#include "mainwindow/mainwindow.h"
 
 QString g_hanwhaGothicFontFamily;
 QString g_hanwhaFontFamily;
@@ -67,8 +67,31 @@ int main(int argc, char *argv[])
 
     qDebug() << "애플리케이션 시작...";
     
+    // 리소스 시스템 디버깅
+    qDebug() << "=== 리소스 시스템 디버깅 ===";
+    QDir resourceDir(":/");
+    qDebug() << "리소스 루트 디렉토리 존재:" << resourceDir.exists();
+    
+    QDir imagesDir(":/images");
+    qDebug() << "이미지 디렉토리 존재:" << imagesDir.exists();
+    if (imagesDir.exists()) {
+        QStringList imageFiles = imagesDir.entryList();
+        qDebug() << "이미지 디렉토리 내용:" << imageFiles;
+    }
+    
+    // 개별 이미지 파일 테스트
+    QStringList testImages = {":/images/logo.png", ":/images/camera.png", ":/images/video.png"};
+    for (const QString &imagePath : testImages) {
+        QPixmap testPixmap(imagePath);
+        qDebug() << "이미지 테스트" << imagePath << ":" << (!testPixmap.isNull() ? "성공" : "실패");
+        if (!testPixmap.isNull()) {
+            qDebug() << "  - 크기:" << testPixmap.size();
+        }
+    }
+    qDebug() << "========================";
+    
     // 애플리케이션 아이콘 설정
-    app.setWindowIcon(QIcon(":/images/resources/images/logo.png"));
+    app.setWindowIcon(QIcon(":/images/logo.png"));
     qDebug() << "애플리케이션 아이콘 설정 완료";
     
     // 폰트 로드
