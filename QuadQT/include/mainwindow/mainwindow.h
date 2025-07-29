@@ -6,7 +6,7 @@
 #include <QCloseEvent>
 #include <QtMultimedia/QMediaPlayer>
 #include <QtMultimediaWidgets/QVideoWidget>
-#include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
+#include "mainwindow/topbarwidget.h"
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/procsettingbox.h"
 
@@ -32,7 +32,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 public:
-    void setUserEmail(const QString &email);  // <- 🔓 public으로 변경
+    void setUserEmail(const QString &email);
 
 private:
     void setupUI();
@@ -50,15 +50,15 @@ private:
     TopBarWidget *topBar;
     QStackedWidget *stackedWidget;
 
-    // 카메라 페이지 UI 구성요소
+    // 카메라 페이지 구성 요소
     QLabel *cameraTitle;
     QLabel *notifTitleLabel;
 
-    // ───── RTSP 스트리밍 ─────
+    // RTSP 스트리밍
     QMediaPlayer *player;
     QVideoWidget *videoWidget;
 
-    // ───── Notification ─────
+    // 알림 패널 및 설정
     NotificationPanel *notificationPanel;
     QLabel *videoSettingTitle;
     QLabel *displayTitle;
@@ -67,12 +67,12 @@ private:
     ProcSettingBox *procBox;
     QWidget *videoSettingLine;
 
-    // 페이지들
+    // 페이지
     QWidget *cameraPage;
     QWidget *documentPage;
     QWidget *settingsPage;
 
-    // 로그아웃 플래그
+    // 로그아웃 상태
     bool m_isLogout;
 
 private slots:

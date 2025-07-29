@@ -35,11 +35,11 @@ MainWindow::MainWindow(QWidget *parent)
     notifTitleLabel(nullptr),
     videoWidget(nullptr),
     notificationPanel(nullptr),
-    player(nullptr)
+    player(nullptr),
+    m_isLogout(false)
 {
     qDebug() << "🏠 MainWindow 생성자 시작";
 
-    // 단방향 TLS 검증 해제
     QSslConfiguration sslConf = QSslConfiguration::defaultConfiguration();
     sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
     QSslConfiguration::setDefaultConfiguration(sslConf);
@@ -55,13 +55,10 @@ MainWindow::MainWindow(QWidget *parent)
     updateLayout();
     showPage(PageType::Camera);
 
-    qDebug() << "MainWindow 생성 완료";
-    updateLayout();
-
-    // QMediaPlayer 초기화
+    // QMediaPlayer 초기화 및 RTSP 재생
     player = new QMediaPlayer(this);
     player->setVideoOutput(videoWidget);
-    player->setSource(QUrl("rtsps://192.168.0.10:8555/test"));
+    player->setSource(QUrl("rtsps://192.168.0.10:8555/test"));  // 주소 필요 시 수정
     player->play();
 
     qDebug() << "✅ MainWindow 생성 완료";
@@ -95,7 +92,6 @@ void MainWindow::setupFonts()
     QFont defaultFont("HanwhaGothicR", 12);
     QFont titleFont("HanwhaGothicR", 15);
     titleFont.setBold(true);
-
     setFont(defaultFont);
 }
 
@@ -125,18 +121,8 @@ QWidget* MainWindow::createCameraPage()
     notifTitleLabel->setFont(titleFont);
     notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
 
-    videoArea = new QLabel(page);
-    QPixmap videoPixmap(":/images/resources/images/video.png");
-    if (!videoPixmap.isNull()) {
-        videoArea->setPixmap(videoPixmap);
-        videoArea->setScaledContents(true);
-        videoArea->setAlignment(Qt::AlignCenter);
-        videoArea->setStyleSheet("border: 1px solid #ccc; background-color: #000;");
-    } else {
-        videoArea->setText("비디오 영역\n(video.png 로드 실패)");
-        videoArea->setAlignment(Qt::AlignCenter);
-        videoArea->setStyleSheet("background-color: #e2e7ec; border: 1px solid #ccc; font-size: 16px; color: #666;");
-    }
+    videoWidget = new QVideoWidget(page);
+    videoWidget->setStyleSheet("background-color: black; border: 1px solid #ccc;");
 
     notificationPanel = new NotificationPanel(page);
     notificationPanel->setStyleSheet("background-color: #f8f9fa; border-left: 1px solid #ccc;");
@@ -208,56 +194,6 @@ QWidget* MainWindow::createSettingsPage()
     contentLabel->setGeometry(0, 200, 800, 30);
 
     return page;
-
-    cameraTitle = new QLabel("역삼 초등학교 앞 CCTV", parent);
-    cameraTitle->setStyleSheet("font-weight: bold; font-size: 15px;");
-    cameraTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
-
-    notifTitleLabel = new QLabel("실시간 알림", parent);
-    notifTitleLabel->setStyleSheet("font-weight: bold; font-size: 15px;");
-    notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
-
-    // QVideoWidget 사용
-    videoWidget = new QVideoWidget(parent);
-    videoWidget->setStyleSheet("background-color: black; border: 1px solid #ccc;");
-    videoWidget->show();
-
-    notificationPanel = new NotificationPanel(parent);
-    notificationPanel->setStyleSheet("background: transparent; border: none;");
-
-    videoSettingTitle = new QLabel("영상 설정", parent);
-    videoSettingTitle->setStyleSheet("font-weight: bold; font-size: 16px;");
-    videoSettingTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-
-    videoSettingLine = new QWidget(parent);
-    videoSettingLine->setStyleSheet("background-color: #999;");
-
-    displayTitle = new QLabel("화면 표시", parent);
-    displayTitle->setStyleSheet("font-size: 13px; font-weight: bold;");
-    displayTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
-
-    procTitle = new QLabel("영상 처리", parent);
-    procTitle->setStyleSheet("font-size: 13px; font-weight: bold;");
-    procTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
-
-    displayBox = new DisplaySettingBox(parent);
-    displayBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
-
-    procBox = new ProcSettingBox(parent);
-    procBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
-
-    // Z-Order 조정: 영상은 뒤로, UI는 앞으로
-    videoWidget->lower();
-    topBar->raise();
-    cameraTitle->raise();
-    notifTitleLabel->raise();
-    notificationPanel->raise();
-    videoSettingTitle->raise();
-    videoSettingLine->raise();
-    displayTitle->raise();
-    procTitle->raise();
-    displayBox->raise();
-    procBox->raise();
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -276,9 +212,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-void MainWindow::onCameraClicked()  { showPage(PageType::Camera); }
-void MainWindow::onDocumentClicked(){ showPage(PageType::Document); }
-void MainWindow::onSettingsClicked(){ showPage(PageType::Settings); }
+void MainWindow::onCameraClicked()   { showPage(PageType::Camera); }
+void MainWindow::onDocumentClicked() { showPage(PageType::Document); }
+void MainWindow::onSettingsClicked() { showPage(PageType::Settings); }
 
 void MainWindow::onLogoutRequested()
 {
@@ -317,13 +253,13 @@ void MainWindow::updateLayout()
 
     stackedWidget->setGeometry(0, h_unit * 3, w, h - h_unit * 3);
 
-    if (stackedWidget->currentWidget() == cameraPage && cameraTitle && videoArea)
+    if (stackedWidget->currentWidget() == cameraPage)
         updateCameraPageLayout();
 }
 
 void MainWindow::updateCameraPageLayout()
 {
-    if (!cameraTitle || !notifTitleLabel || !videoArea || !notificationPanel) return;
+    if (!cameraTitle || !notifTitleLabel || !videoWidget || !notificationPanel) return;
 
     int w = stackedWidget->width();
     int h = stackedWidget->height();
@@ -338,10 +274,10 @@ void MainWindow::updateCameraPageLayout()
     double cctv_x = padding;
     double notif_x = cctv_x + cctv_w + middle_pad;
 
-    // ✅ 위치 위로 올림
     cameraTitle->setGeometry(cctv_x, h_unit * 0, cctv_w, h_unit);
     notifTitleLabel->setGeometry(notif_x, h_unit * 0, notif_w, h_unit);
-    videoArea->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
+
+    videoWidget->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
     notificationPanel->setGeometry(notif_x, h_unit * 1, notif_w, h_unit * 13);
     notificationPanel->setMinimumHeight(h_unit * 13);
     notificationPanel->setMaximumHeight(h_unit * 13);
@@ -349,12 +285,6 @@ void MainWindow::updateCameraPageLayout()
     double settingTop = h_unit * 14;
     double labelTop   = h_unit * 15;
     double boxTop     = h_unit * 16;
-    cameraTitle->setGeometry(cctv_x, h_unit * 3, cctv_w, h_unit);
-    notifTitleLabel->setGeometry(notif_x, h_unit * 3, notif_w, h_unit);
-
-    // QVideoWidget 레이아웃 적용
-    videoWidget->setGeometry(cctv_x, h_unit * 4, cctv_w, h_unit * 13);
-    notificationPanel->setGeometry(notif_x, h_unit * 4, notif_w, h_unit * 19);
 
     if (videoSettingTitle)
         videoSettingTitle->setGeometry(cctv_x, settingTop, cctv_w, h_unit);
@@ -369,4 +299,3 @@ void MainWindow::updateCameraPageLayout()
     if (procBox)
         procBox->setGeometry(cctv_x + w_unit * (6 + 0.5), boxTop, w_unit * 10, h_unit * 4);
 }
-

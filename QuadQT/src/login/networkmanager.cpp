@@ -72,7 +72,7 @@ void NetworkManager::loadConfig()
         return;
     }
     
-    m_serverIp = settings.value("TCP/ip", "127.0.0.1").toString();
+    m_serverIp = settings.value("TCP/ip", "192.168.0.10").toString();
     m_serverPort = settings.value("TCP/port", 8080).toInt();
     m_timeout = settings.value("TCP/timeout", 5000).toInt();
     
