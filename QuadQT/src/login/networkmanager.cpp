@@ -84,9 +84,6 @@ void NetworkManager::loadConfig()
     
 
     
-<<<<<<< Updated upstream:QuadQT/networkmanager.cpp
-    qDebug() << "Config loaded - IP:" << m_serverIp << "Port:" << m_serverPort << "Timeout:" << m_timeout;
-=======
     qDebug() << "설정 로드됨 - IP:" << m_serverIp << "포트:" << m_serverPort << "타임아웃:" << m_timeout;
     qDebug() << "SSL 활성화:" << m_sslEnabled << "CA 인증서:" << m_caCertPath;
     
@@ -95,7 +92,6 @@ void NetworkManager::loadConfig()
     for (const QString &key : settings.allKeys()) {
         qDebug() << "  " << key << "=" << settings.value(key);
     }
->>>>>>> Stashed changes:QuadQT/src/login/networkmanager.cpp
 }
 
 void NetworkManager::connectToServer()
@@ -123,10 +119,6 @@ void NetworkManager::connectToServerSSL()
         return;
     }
     
-<<<<<<< Updated upstream:QuadQT/networkmanager.cpp
-    qDebug() << "Connecting to server:" << m_serverIp << ":" << m_serverPort;
-    m_socket->connectToHost(m_serverIp, m_serverPort);
-=======
     if (!setupSSLConfiguration()) {
         emit networkError("SSL 설정 실패");
         return;
@@ -135,7 +127,6 @@ void NetworkManager::connectToServerSSL()
     qDebug() << "서버에 SSL 연결 중:" << m_serverIp << ":" << m_serverPort;
     m_socket->setSslConfiguration(m_sslConfig);
     m_socket->connectToHostEncrypted(m_serverIp, m_serverPort);
->>>>>>> Stashed changes:QuadQT/src/login/networkmanager.cpp
     
     // 연결 타임아웃 설정
     m_timeoutTimer->start(m_timeout);
@@ -173,23 +164,17 @@ void NetworkManager::registerUser(const QString &email, const QString &password)
 void NetworkManager::loginUser(const QString &email, const QString &password)
 {
     if (!isConnected()) {
-<<<<<<< Updated upstream:QuadQT/networkmanager.cpp
-=======
         qDebug() << "로그인 요청을 보낼 수 없음: 서버에 연결되지 않음";
->>>>>>> Stashed changes:QuadQT/src/login/networkmanager.cpp
         emit networkError("서버에 연결되지 않았습니다.");
         return;
     }
     
     QString command = QString("LOGIN %1 %2").arg(email, password);
     m_pendingCommand = "LOGIN";
-<<<<<<< Updated upstream:QuadQT/networkmanager.cpp
-=======
     
     qDebug() << "TCP를 통해 LOGIN 명령어 전송:" << command;
     qDebug() << "서버 응답 대기 중...";
     
->>>>>>> Stashed changes:QuadQT/src/login/networkmanager.cpp
     sendCommand(command);
 }
 
@@ -224,14 +209,11 @@ void NetworkManager::onReadyRead()
     QByteArray data = m_socket->readAll();
     m_responseBuffer.append(QString::fromUtf8(data));
     
-<<<<<<< Updated upstream:QuadQT/networkmanager.cpp
-=======
     // TCP 데이터 수신 디버그
     qDebug() << "TCP 데이터 수신:" << QString::fromUtf8(data);
     qDebug() << "현재 버퍼:" << m_responseBuffer;
     qDebug() << "대기 중인 명령어:" << m_pendingCommand;
     
->>>>>>> Stashed changes:QuadQT/src/login/networkmanager.cpp
     // JSON 응답이 완전한지 확인 (간단한 방법으로 } 로 끝나는지 확인)
     if (m_responseBuffer.contains('}')) {
         QJsonObject response = parseResponse(m_responseBuffer);
@@ -241,10 +223,7 @@ void NetworkManager::onReadyRead()
             if (m_pendingCommand == "REGISTER") {
                 emit registerResponse(response);
             } else if (m_pendingCommand == "LOGIN") {
-<<<<<<< Updated upstream:QuadQT/networkmanager.cpp
-=======
                 qDebug() << "LOGIN 응답 처리 중, loginResponse 시그널 발생";
->>>>>>> Stashed changes:QuadQT/src/login/networkmanager.cpp
                 emit loginResponse(response);
             } else if (m_pendingCommand == "RESET_PASSWORD") {
                 emit resetPasswordResponse(response);
@@ -426,9 +405,6 @@ void NetworkManager::getLog()
     QString command = "GET_LOG";
     m_pendingCommand = "GET_LOG";
     sendCommand(command);
-<<<<<<< Updated upstream:QuadQT/networkmanager.cpp
-}
-=======
 }
 
 bool NetworkManager::setupSSLConfiguration()
@@ -624,4 +600,3 @@ QString NetworkManager::findConfigFile()
     
     return QString(); // 빈 문자열 반환
 }
->>>>>>> Stashed changes:QuadQT/src/login/networkmanager.cpp

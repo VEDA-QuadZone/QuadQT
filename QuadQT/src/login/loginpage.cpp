@@ -9,19 +9,16 @@
 #include <QLineEdit>
 
 LoginPage::LoginPage(QWidget *parent) :
-    QWidget(parent),
+    QDialog(parent),
     ui(new Ui::LoginPage),
     m_networkManager(new NetworkManager(this))
 {
     ui->setupUi(this);
-<<<<<<< Updated upstream:QuadQT/loginpage.cpp
-    
-=======
+
 
     // 폰트 설정
     setupFonts();
 
->>>>>>> Stashed changes:QuadQT/src/login/loginpage.cpp
     // 윈도우 크기 설정
     setFixedSize(800, 600);
     
@@ -176,10 +173,6 @@ void LoginPage::onSignInClicked()
 {
     QString email = ui->lineEdit_SignInEmail->text().trimmed();
     QString password = ui->lineEdit_SignInPassword->text();
-<<<<<<< Updated upstream:QuadQT/loginpage.cpp
-    
-    if (email.isEmpty() || password.isEmpty()) {
-=======
 
     qDebug() << "로그인 시도 시작";
     qDebug() << "이메일:" << email;
@@ -187,38 +180,27 @@ void LoginPage::onSignInClicked()
 
     if (email.isEmpty() || password.isEmpty()) {
         qDebug() << "로그인 실패: 이메일 또는 비밀번호가 비어있음";
->>>>>>> Stashed changes:QuadQT/src/login/loginpage.cpp
         showMessage("입력 오류", "이메일과 비밀번호를 모두 입력해주세요.", QMessageBox::Warning);
         return;
     }
     
     if (!validateEmail(email)) {
-<<<<<<< Updated upstream:QuadQT/loginpage.cpp
-=======
         qDebug() << "로그인 실패: 잘못된 이메일 형식";
->>>>>>> Stashed changes:QuadQT/src/login/loginpage.cpp
         showMessage("입력 오류", "올바른 이메일 형식을 입력해주세요.", QMessageBox::Warning);
         return;
     }
     
     if (!m_networkManager->isConnected()) {
-<<<<<<< Updated upstream:QuadQT/loginpage.cpp
-=======
         qDebug() << "로그인 실패: 서버에 연결되지 않음";
->>>>>>> Stashed changes:QuadQT/src/login/loginpage.cpp
         showMessage("연결 오류", "서버에 연결되지 않았습니다. 잠시 후 다시 시도해주세요.", QMessageBox::Critical);
         m_networkManager->connectToServer();
         return;
     }
-<<<<<<< Updated upstream:QuadQT/loginpage.cpp
-    
-=======
 
     // 로그인 시도할 이메일 저장
     m_loggedInEmail = email;
     
     qDebug() << "TCP를 통해 서버로 로그인 요청 전송 중...";
->>>>>>> Stashed changes:QuadQT/src/login/loginpage.cpp
     m_networkManager->loginUser(email, password);
 }
 
@@ -289,24 +271,17 @@ void LoginPage::onLoginResponse(const QJsonObject &response)
     QString message = response["message"].toString();
     
     if (status == "success" && code == 200) {
-<<<<<<< Updated upstream:QuadQT/loginpage.cpp
-=======
         // 로그인 성공 디버그 메시지
         qDebug() << "로그인 성공! TCP에서 'login success' 메시지 수신";
         qDebug() << "사용자 인증 성공";
         qDebug() << "메인 윈도우로 전환 중...";
         
->>>>>>> Stashed changes:QuadQT/src/login/loginpage.cpp
         showMessage("로그인 성공", "로그인에 성공했습니다!", QMessageBox::Information);
         emit loginSuccessful();
     } else {
-<<<<<<< Updated upstream:QuadQT/loginpage.cpp
-=======
         // 로그인 실패 디버그 메시지
         qDebug() << "로그인 실패! TCP 응답이 실패를 나타냄";
         qDebug() << "오류 코드:" << code << "오류 메시지:" << message;
-        
->>>>>>> Stashed changes:QuadQT/src/login/loginpage.cpp
         QString errorMsg;
         switch (code) {
         case 404:

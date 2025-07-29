@@ -1,7 +1,7 @@
 #ifndef LOGINPAGE_H
 #define LOGINPAGE_H
 
-#include <QWidget>
+#include <QDialog>
 #include <QJsonObject>
 #include <QMessageBox>
 #include "networkmanager.h"
@@ -10,7 +10,7 @@ namespace Ui {
 class LoginPage;
 }
 
-class LoginPage : public QWidget
+class LoginPage : public QDialog
 {
     Q_OBJECT
 
