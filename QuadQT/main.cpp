@@ -2,15 +2,12 @@
 #include "loginpage.h"
 
 #include <QApplication>
-<<<<<<< Updated upstream
-=======
 #include <QDebug>
 #include <QFontDatabase>
 #include <QFont>
 #include <QIcon>
 #include "login/loginpage.h"
 #include "mainwindow/mainwindow.h"
->>>>>>> Stashed changes
 
 QString g_hanwhaGothicFontFamily;
 QString g_hanwhaFontFamily;
@@ -67,13 +64,6 @@ QString getHanwhaFontFamily() { return g_hanwhaFontFamily; }
 
 int main(int argc, char *argv[])
 {
-<<<<<<< Updated upstream
-    QApplication a(argc, argv);
-    LoginPage w;
-    w.setFixedSize(800, 600);
-    w.show();
-    return a.exec();
-=======
     QApplication app(argc, argv);
 
     qDebug() << "애플리케이션 시작...";
@@ -126,5 +116,4 @@ int main(int argc, char *argv[])
     }
     
     return 0;
->>>>>>> Stashed changes
 }
