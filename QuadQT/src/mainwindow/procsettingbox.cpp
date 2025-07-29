@@ -14,6 +14,7 @@
 ProcSettingBox::ProcSettingBox(QWidget *parent)
     : QWidget(parent)
 {
+    // 원래 기본 테두리 스타일
     this->setStyleSheet("border: 1px solid #ccc; background-color: transparent;");
     setupUI();
     setupConnections();
@@ -35,15 +36,15 @@ void ProcSettingBox::setupUI()
     sliderStyleOrange = R"(
         QSlider::groove:horizontal { background: #ddd; height: 8px; border-radius: 4px; }
         QSlider::handle:horizontal {
-            background: orange; width: 18px; height: 18px;
+            background: #F37321; width: 18px; height: 18px;
             margin: -6px 0; border-radius: 9px;
         }
-        QSlider::sub-page:horizontal { background: orange; border-radius: 4px; }
+        QSlider::sub-page:horizontal { background: #F37321; border-radius: 4px; }
         QSlider::add-page:horizontal { background: #eee; border-radius: 4px; }
     )";
 
     textStyleGray = "font-size: 14px; color: gray; padding-bottom: 4px; border: none; background: transparent;";
-    textStyleOrange = "font-size: 14px; color: orange; padding-bottom: 4px; border: none; background: transparent;";
+    textStyleOrange = "font-size: 14px; color: #F37321; padding-bottom: 4px; border: none; background: transparent;";
 
     modeGroup = new QButtonGroup(this);
 
@@ -53,7 +54,7 @@ void ProcSettingBox::setupUI()
     this->setLayout(mainLayout);
 
     // Day Mode
-    QWidget *dayBox = new QWidget(this);
+    dayBox = new QWidget(this);
     dayBox->setStyleSheet("border-right: 1px solid #ccc;");
     QVBoxLayout *dayLayout = new QVBoxLayout(dayBox);
     dayLayout->setContentsMargins(4, 4, 4, 4);
@@ -79,7 +80,7 @@ void ProcSettingBox::setupUI()
     mainLayout->addWidget(dayBox, 2);
 
     // Night Mode
-    QWidget *nightBox = new QWidget(this);
+    nightBox = new QWidget(this);
     nightBox->setStyleSheet("border-right: 1px solid #ccc;");
     QVBoxLayout *nightLayout = new QVBoxLayout(nightBox);
     nightLayout->setContentsMargins(4, 4, 4, 4);
@@ -105,7 +106,7 @@ void ProcSettingBox::setupUI()
     mainLayout->addWidget(nightBox, 2);
 
     // Sharpness Mode
-    QWidget *sharpnessBox = new QWidget(this);
+    sharpnessBox = new QWidget(this);
     QVBoxLayout *sharpnessLayout = new QVBoxLayout(sharpnessBox);
     sharpnessLayout->setContentsMargins(4, 4, 4, 4);
     sharpnessLayout->setSpacing(0);
@@ -120,18 +121,18 @@ void ProcSettingBox::setupUI()
     controlLayout->setContentsMargins(8, 12, 8, 0);
     controlLayout->setSpacing(6);
 
-    minusButton = new QPushButton("-", controlWidget);
+    minusButton = new QPushButton(controlWidget);
     minusButton->setFixedSize(24, 24);
-    minusButton->setStyleSheet("border: none; background: transparent; font-size: 16px;");
+    minusButton->setStyleSheet("border: none; background: transparent;");
 
     sharpnessSlider = new QSlider(Qt::Horizontal, controlWidget);
     sharpnessSlider->setMinimum(0);
     sharpnessSlider->setMaximum(100);
     sharpnessSlider->setValue(50);
 
-    plusButton = new QPushButton("+", controlWidget);
+    plusButton = new QPushButton(controlWidget);
     plusButton->setFixedSize(24, 24);
-    plusButton->setStyleSheet("border: none; background: transparent; font-size: 16px;");
+    plusButton->setStyleSheet("border: none; background: transparent;");
 
     sharpnessEdit = new QLineEdit("50", controlWidget);
     sharpnessEdit->setFixedWidth(36);
@@ -145,6 +146,7 @@ void ProcSettingBox::setupUI()
 
     sharpnessLabel = new QLabel("선명도 (%)", sharpnessBox);
     sharpnessLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+    sharpnessLabel->setStyleSheet(textStyleGray);
 
     sharpnessLayout->addWidget(sharpnessRadio, 0, Qt::AlignLeft | Qt::AlignTop);
     sharpnessLayout->addStretch();
@@ -180,16 +182,24 @@ void ProcSettingBox::updateModeUI()
     bool isNight = nightRadio->isChecked();
     bool isSharpness = sharpnessRadio->isChecked();
 
+    // 버튼 아이콘 설정
+    QString minusIcon = isSharpness ? ":/images/images/minus_orange.png" : ":/images/images/minus_gray.png";
+    QString plusIcon = isSharpness ? ":/images/images/plus_orange.png" : ":/images/images/plus_gray.png";
+    minusButton->setIcon(QIcon(minusIcon));
+    minusButton->setIconSize(QSize(20, 20));
+    plusButton->setIcon(QIcon(plusIcon));
+    plusButton->setIconSize(QSize(20, 20));
+
     // 아이콘 이미지 설정
-    dayIcon->setPixmap(QPixmap(isDay ? ":/images/sun.png" : ":/images/sun_gray.png").scaled(120, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    nightIcon->setPixmap(QPixmap(isNight ? ":/images/moon.png" : ":/images/moon_gray.png").scaled(120, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    dayIcon->setPixmap(QPixmap(isDay ? ":/images/images/sun_orange.png" : ":/images/images/sun_gray.png").scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    nightIcon->setPixmap(QPixmap(isNight ? ":/images/images/moon_orange.png" : ":/images/images/moon_gray.png").scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     // 텍스트 색상 변경
     dayLabel->setStyleSheet(isDay ? textStyleOrange : textStyleGray);
     nightLabel->setStyleSheet(isNight ? textStyleOrange : textStyleGray);
     sharpnessLabel->setStyleSheet(isSharpness ? textStyleOrange : textStyleGray);
 
-    // 슬라이더 활성화/비활성화 및 색상
+    // 슬라이더 활성화 및 색상 변경
     sharpnessSlider->setEnabled(isSharpness);
     sharpnessSlider->setStyleSheet(isSharpness ? sliderStyleOrange : sliderStyleGray);
 }

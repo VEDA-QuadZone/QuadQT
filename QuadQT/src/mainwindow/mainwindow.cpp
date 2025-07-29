@@ -92,7 +92,12 @@ void MainWindow::setupUI()
     qDebug() << "📦 화면 설정 박스 생성됨:" << (displayBox ? "성공" : "실패");
 
     procBox = new ProcSettingBox(parent);
-    procBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
+    procBox->setStyleSheet(R"(
+    #procSettingBoxRoot {
+        border: 1px solid #ccc;
+        background-color: transparent;
+    }
+)");
     qDebug() << "🔧 처리 박스 생성됨:" << (procBox ? "성공" : "실패");
     
     // 모든 위젯을 명시적으로 보이도록 설정

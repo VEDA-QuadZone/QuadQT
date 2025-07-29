@@ -2,13 +2,13 @@
 #define PROCSETTINGBOX_H
 
 #include <QWidget>
-#include <QButtonGroup>
 
-class QRadioButton;
 class QLabel;
+class QRadioButton;
 class QSlider;
-class QLineEdit;
 class QPushButton;
+class QLineEdit;
+class QButtonGroup;
 
 class ProcSettingBox : public QWidget
 {
@@ -22,30 +22,27 @@ private:
     void setupConnections();
     void updateModeUI();
 
-    // 모드 라디오 버튼
+    QWidget *dayBox;
+    QWidget *nightBox;
+    QWidget *sharpnessBox;
+
     QRadioButton *dayRadio;
     QRadioButton *nightRadio;
     QRadioButton *sharpnessRadio;
 
-    // 텍스트 라벨
+    QLabel *dayIcon;
+    QLabel *nightIcon;
     QLabel *dayLabel;
     QLabel *nightLabel;
     QLabel *sharpnessLabel;
 
-    // 아이콘 라벨
-    QLabel *dayIcon;
-    QLabel *nightIcon;
-
-    // 슬라이더/입력 UI
+    QPushButton *minusButton;
+    QPushButton *plusButton;
     QSlider *sharpnessSlider;
     QLineEdit *sharpnessEdit;
-    QPushButton *plusButton;
-    QPushButton *minusButton;
 
-    // 모드 그룹
     QButtonGroup *modeGroup;
 
-    // 동적 스타일 문자열
     QString textStyleGray;
     QString textStyleOrange;
     QString sliderStyleGray;

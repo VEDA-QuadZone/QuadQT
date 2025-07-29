@@ -1,8 +1,17 @@
 <RCC>
     <qresource prefix="/images">
-        <file>moon.png</file>
-        <file>moon_gray.png</file>
-        <file>sun.png</file>
-        <file>sun_gray.png</file>
+        <file>images/caution.png</file>
+        <file>images/minus_gray.png</file>
+        <file>images/minus_orange.png</file>
+        <file>images/moon_orange.png</file>
+        <file>images/objectbox_gray.png</file>
+        <file>images/objectbox_orange.png</file>
+        <file>images/plus_gray.png</file>
+        <file>images/plus_orange.png</file>
+        <file>images/sun_orange.png</file>
+        <file>images/timestamp_gray.png</file>
+        <file>images/timestamp_orange.png</file>
+        <file>images/moon_gray.png</file>
+        <file>images/sun_gray.png</file>
     </qresource>
 </RCC>
