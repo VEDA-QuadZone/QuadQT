@@ -5,6 +5,7 @@
 #include <QImage>
 #include <QTimer>
 #include <opencv2/opencv.hpp>
+#include <chrono>
 
 class VideoPlayer : public QObject {
     Q_OBJECT
@@ -12,18 +13,22 @@ public:
     explicit VideoPlayer(QObject *parent = nullptr);
     ~VideoPlayer();
 
-    void startStream(const std::string &url);   // RTSP 시작
-    void stopStream();                         // 스트림 종료
+    void startStream(const std::string &url);
+    void stopStream();
 
 signals:
-    void frameReady(const QImage &frame);      // 새 프레임이 준비되면 시그널로 전달
+    void frameReady(const QImage &frame);
 
 private slots:
-    void updateFrame();                        // QTimer로 호출되는 프레임 갱신
+    void updateFrame();
 
 private:
-    cv::VideoCapture cap;                      // OpenCV 캡처 객체
-    QTimer *timer;                             // 주기적으로 프레임 갱신
+    cv::VideoCapture cap;
+    QTimer *timer;
+
+    // FPS 계산용 멤버 변수
+    int frameCount = 0;
+    std::chrono::steady_clock::time_point lastTime;
 };
 
 #endif // VIDEOPLAYER_H
