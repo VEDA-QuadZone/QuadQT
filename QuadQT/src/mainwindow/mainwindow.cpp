@@ -155,22 +155,17 @@ QWidget* MainWindow::createDocumentPage()
     QWidget *page = new QWidget();
     page->setStyleSheet("background-color: #f5f5f5;");
 
-    QFont titleFont("HanwhaGothicR", 24); titleFont.setBold(true);
-    QFont contentFont("HanwhaGothicR", 16);
+    // 1) HistoryView 인스턴스 생성 (멤버로 만들어 관리)
+    historyView = new HistoryView(page);  // parent 지정해도 되고 안 해도 됨
 
-    QLabel *titleLabel = new QLabel("문서 페이지", page);
-    titleLabel->setFont(titleFont);
-    titleLabel->setAlignment(Qt::AlignCenter);
-    titleLabel->setGeometry(0, 100, 800, 50);
+    // 2) 레이아웃에 추가
+    QVBoxLayout *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(historyView);
 
-    QLabel *contentLabel = new QLabel("문서 관련 기능이 여기에 표시됩니다.", page);
-    contentLabel->setFont(contentFont);
-    contentLabel->setAlignment(Qt::AlignCenter);
-    contentLabel->setGeometry(0, 200, 800, 30);
-
+    page->setLayout(layout);
     return page;
 }
-
 QWidget* MainWindow::createSettingsPage()
 {
     QWidget *page = new QWidget();
