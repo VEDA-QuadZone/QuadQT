@@ -95,7 +95,7 @@ bool DisplaySettingBox::eventFilter(QObject *watched, QEvent *event)
 
 void DisplaySettingBox::updateObjectBoxUI()
 {
-    QString iconPath = objectBoxOn ? ":/images/images/objectbox_orange.png" : ":/images/images/objectbox_gray.png";
+    QString iconPath = objectBoxOn ? ":/images/objectbox_orange.png" : ":/images/objectbox_gray.png";
     objectIcon->setPixmap(QPixmap(iconPath).scaled(130, 130, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     objectIcon->setStyleSheet("border: none; background: transparent;");
     objectLabel->setStyleSheet(QString("font-size: 14px; color: %1; border: none; background: transparent;")
@@ -104,7 +104,7 @@ void DisplaySettingBox::updateObjectBoxUI()
 
 void DisplaySettingBox::updateTimestampUI()
 {
-    QString iconPath = timestampOn ? ":/images/images/timestamp_orange.png" : ":/images/images/timestamp_gray.png";
+    QString iconPath = timestampOn ? ":/images/timestamp_orange.png" : ":/images/timestamp_gray.png";
     timestampIcon->setPixmap(QPixmap(iconPath));
     timestampLabel->setStyleSheet(QString("font-size: 14px; color: %1; border: none; background: transparent;")
                                       .arg(timestampOn ? "#F37321" : "#aaa"));

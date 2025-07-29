@@ -7,6 +7,8 @@
 #include <QPixmap>
 #include <QMenu>
 #include <QAction>
+#include <QFile>
+#include <QDir>
 
 TopBarWidget::TopBarWidget(QWidget *parent)
     : QWidget(parent), m_activeButton(TopBarButton::Camera), m_parentWidth(0), m_parentHeight(0)
@@ -67,17 +69,25 @@ void TopBarWidget::setupIcons()
     
     // 리소스 시스템이 제대로 작동하는지 확인
     qDebug() << "리소스 경로 테스트 (true = 실패, false = 성공):";
-    qDebug() << "  - 카메라:" << QPixmap(":/images/resources/images/camera.png").isNull();
-    qDebug() << "  - 문서:" << QPixmap(":/images/resources/images/Document.png").isNull();
-    qDebug() << "  - 설정:" << QPixmap(":/images/resources/images/Settings.png").isNull();
-    qDebug() << "  - 프로필:" << QPixmap(":/images/resources/images/Profile.png").isNull();
+    qDebug() << "  - 카메라:" << QPixmap(":/images/camera.png").isNull();
+    qDebug() << "  - 문서:" << QPixmap(":/images/Document.png").isNull();
+    qDebug() << "  - 설정:" << QPixmap(":/images/Settings.png").isNull();
+    qDebug() << "  - 프로필:" << QPixmap(":/images/Profile.png").isNull();
     
-    // 절대 경로도 테스트
+    // 다양한 절대 경로 테스트
     qDebug() << "절대 경로 테스트:";
-    qDebug() << "  - 카메라:" << QPixmap("resources/images/camera.png").isNull();
-    qDebug() << "  - 문서:" << QPixmap("resources/images/Document.png").isNull();
-    qDebug() << "  - 설정:" << QPixmap("resources/images/Settings.png").isNull();
-    qDebug() << "  - 프로필:" << QPixmap("resources/images/Profile.png").isNull();
+    QStringList testPaths = {
+        "resources/images/camera.png",
+        "./resources/images/camera.png", 
+        "../resources/images/camera.png",
+        "../../resources/images/camera.png"
+    };
+    
+    for (const QString &path : testPaths) {
+        bool exists = QFile::exists(path);
+        bool loads = !QPixmap(path).isNull();
+        qDebug() << "  경로:" << path << "존재:" << exists << "로드:" << loads;
+    }
     
     updateButtonStates();
 }
@@ -93,18 +103,18 @@ void TopBarWidget::updateButtonStates()
     // 카메라 버튼
     QPixmap cameraPixmap;
     if (m_activeButton == TopBarButton::Camera) {
-        cameraPixmap = QPixmap(":/images/resources/images/camera_orange.png");
+        cameraPixmap = QPixmap(":/images/camera_orange.png");
         qDebug() << "카메라 오렌지 이미지 로드:" << (!cameraPixmap.isNull() ? "성공" : "실패");
         if (cameraPixmap.isNull()) {
             // Fallback: 절대 경로 시도
-            cameraPixmap = QPixmap("resources/images/camera_orange.png");
+            cameraPixmap = QPixmap("../../resources/images/camera_orange.png");
             qDebug() << "카메라 오렌지 절대경로 시도:" << (!cameraPixmap.isNull() ? "성공" : "실패");
         }
     } else {
-        cameraPixmap = QPixmap(":/images/resources/images/camera.png");
+        cameraPixmap = QPixmap(":/images/camera.png");
         qDebug() << "카메라 일반 이미지 로드:" << (!cameraPixmap.isNull() ? "성공" : "실패");
         if (cameraPixmap.isNull()) {
-            cameraPixmap = QPixmap("resources/images/camera.png");
+            cameraPixmap = QPixmap("../../resources/images/camera.png");
             qDebug() << "카메라 일반 절대경로 시도:" << (!cameraPixmap.isNull() ? "성공" : "실패");
         }
     }
@@ -134,10 +144,10 @@ void TopBarWidget::updateButtonStates()
     // 문서 버튼
     QPixmap docPixmap;
     if (m_activeButton == TopBarButton::Document) {
-        docPixmap = QPixmap(":/images/resources/images/Document_orange.png");
+        docPixmap = QPixmap(":/images/Document_orange.png");
         if (docPixmap.isNull()) docPixmap = QPixmap("resources/images/Document_orange.png");
     } else {
-        docPixmap = QPixmap(":/images/resources/images/Document.png");
+        docPixmap = QPixmap(":/images/Document.png");
         if (docPixmap.isNull()) docPixmap = QPixmap("resources/images/Document.png");
     }
     
@@ -164,10 +174,10 @@ void TopBarWidget::updateButtonStates()
     // 설정 버튼
     QPixmap settingsPixmap;
     if (m_activeButton == TopBarButton::Settings) {
-        settingsPixmap = QPixmap(":/images/resources/images/settings_orange.png");
+        settingsPixmap = QPixmap(":/images/settings_orange.png");
         if (settingsPixmap.isNull()) settingsPixmap = QPixmap("resources/images/settings_orange.png");
     } else {
-        settingsPixmap = QPixmap(":/images/resources/images/Settings.png");
+        settingsPixmap = QPixmap(":/images/Settings.png");
         if (settingsPixmap.isNull()) settingsPixmap = QPixmap("resources/images/Settings.png");
     }
     
@@ -192,7 +202,7 @@ void TopBarWidget::updateButtonStates()
     }
     
     // 프로필 버튼
-    QPixmap profilePixmap = QPixmap(":/images/resources/images/Profile.png");
+    QPixmap profilePixmap = QPixmap(":/images/Profile.png");
     if (profilePixmap.isNull()) profilePixmap = QPixmap("resources/images/Profile.png");
     
     if (profilePixmap.isNull()) {
@@ -250,6 +260,10 @@ void TopBarWidget::updateLayout(int w, int h)
     loginStatus->setGeometry(w_unit * 21.3, h_unit * 1.4, w_unit * 1.4, h_unit * 1.4);
     
     qDebug() << "버튼 위치 - 시작X:" << startX << "아이콘 크기:" << iconSize;
+    
+    // 레이아웃 업데이트 후 버튼 상태 다시 업데이트 (이미지 크기 재계산)
+    updateButtonStates();
+    
     qDebug() << "TopBarWidget 레이아웃 업데이트 완료";
 }
 

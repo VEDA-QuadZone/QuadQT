@@ -42,10 +42,6 @@ FORMS += \
 
 # ====== RESOURCES (.qrc) ======
 RESOURCES += \
-    resources/certs.qrc \
-    resources/certs/certs.qrc \
-    resources/images.qrc \
-    resources/style.qrc
     resource.qrc
 
 # ====== Default install rules (optional) ======

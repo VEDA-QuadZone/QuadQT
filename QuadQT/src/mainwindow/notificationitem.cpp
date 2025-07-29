@@ -23,19 +23,19 @@ NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *
         bgColor = "rgba(241, 194, 27, 0.1)";  // 연한 노랑
         lineColor = "#F1C21B";
         message = "불법 주정차 차량 인식";
-        iconPath = ":/images/images/caution.png";
+        iconPath = ":/images/caution.png";
         break;
     case 1:
         bgColor = "rgba(218, 30, 40, 0.1)";   // 연한 빨강
         lineColor = "#DA1E28";
         message = "과속 차량 인식";
-        iconPath = ":/images/images/prohibition.png";
+        iconPath = ":/images/prohibition.png";
         break;
     case 2:
         bgColor = "rgba(2, 68, 207, 0.1)";    // 연한 파랑
         lineColor = "#0244CF";
         message = "어린이 인식";
-        iconPath = ":/images/images/info.png";
+        iconPath = ":/images/info.png";
         break;
     default:
         bgColor = "rgba(224, 224, 224, 0.8)";
