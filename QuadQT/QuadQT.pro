@@ -19,9 +19,7 @@ SOURCES += \
     src/mainwindow/notificationitem.cpp \
     src/mainwindow/notificationpanel.cpp \
     src/mainwindow/procsettingbox.cpp \
-    src/mainwindow/topbarwidget.cpp \
-    src/mainwindow/videoplayer.cpp \
-    src/mainwindow/videowidget.cpp
+    src/mainwindow/topbarwidget.cpp
 
 # ====== HEADERS (.h) ======
 HEADERS += \
@@ -32,9 +30,7 @@ HEADERS += \
     include/mainwindow/notificationitem.h \
     include/mainwindow/notificationpanel.h \
     include/mainwindow/procsettingbox.h \
-    include/mainwindow/topbarwidget.h \
-    include/mainwindow/videoplayer.h \
-    include/mainwindow/videowidget.h
+    include/mainwindow/topbarwidget.h
 
 # ====== FORMS (.ui) ======
 FORMS += \
@@ -49,12 +45,12 @@ RESOURCES += \
     resources/style.qrc \
 
 # ====== OpenCV (MinGW Prebuilt) ======
-LIBS += -LC:/opencv/prebuilt_mingw/x64/mingw/lib \
-    -lopencv_core455 \
-    -lopencv_imgproc455 \
-    -lopencv_highgui455 \
-    -lopencv_videoio455 \
-    -lopencv_imgcodecs455
+#LIBS += -LC:/opencv/prebuilt_mingw/x64/mingw/lib \
+    # -lopencv_core455 \
+    # -lopencv_imgproc455 \
+    # -lopencv_highgui455 \
+    # -lopencv_videoio455 \
+    # -lopencv_imgcodecs455
 
 # ====== Default install rules (optional) ======
 qnx: target.path = /tmp/$${TARGET}/bin
