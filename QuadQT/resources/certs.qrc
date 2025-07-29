@@ -1,9 +1,0 @@
-<RCC>
-    <qresource prefix="/certs">
-        <file>certs/client.cert.pem</file>
-    <qresource prefix="/">
-        <file>certs/ca.cert.pem</file>
-        <file>certs/client.cert.pem</file>
-        <file>certs/client.key.pem</file>
-    </qresource>
-</RCC>

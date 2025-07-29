@@ -43,4 +43,9 @@
         <file>resources/fonts/07HanwhaGothicEL.ttf</file>
         <file>resources/fonts/08HanwhaGothicT.ttf</file>
     </qresource>
+    <qresource prefix="/certs">
+        <file>resources/certs/ca.cert.pem</file>
+        <file>resources/certs/client.cert.pem</file>
+        <file>resources/certs/client.key.pem</file>
+    </qresource>
 </RCC>
