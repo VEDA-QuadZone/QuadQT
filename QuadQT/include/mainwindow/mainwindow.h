@@ -10,6 +10,8 @@
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/historyview.h"
+#include "mainwindow/mqttmanager.h"
+
 class QLabel;
 class DisplaySettingBox;
 
@@ -67,7 +69,10 @@ private:
     ProcSettingBox *procBox;
     QWidget *videoSettingLine;
 
-    // 페이지
+    // MQTT 매니저
+    MqttManager *mqttManager;
+
+    // 페이지들
     QWidget *cameraPage;
     QWidget *documentPage;
     QWidget *settingsPage;

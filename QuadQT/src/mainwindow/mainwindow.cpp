@@ -3,6 +3,8 @@
 #include "mainwindow/displaysettingbox.h"
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/notificationpanel.h"
+#include "mainwindow/mqttmanager.h"
+
 
 #include <QResizeEvent>
 #include <QLabel>
@@ -17,6 +19,7 @@
 #include <QSslCertificate>
 #include <QtMultimedia/QMediaPlayer>
 #include <QtMultimediaWidgets/QVideoWidget>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -34,6 +37,8 @@ MainWindow::MainWindow(QWidget *parent)
     cameraTitle(nullptr),
     notifTitleLabel(nullptr),
     videoWidget(nullptr),
+    mqttManager(nullptr),
+    videoArea(nullptr),
     notificationPanel(nullptr),
     player(nullptr),
     m_isLogout(false)
@@ -61,7 +66,27 @@ MainWindow::MainWindow(QWidget *parent)
     player->setSource(QUrl("rtsps://192.168.0.10:8555/test"));  // 주소 필요 시 수정
     player->play();
 
-    qDebug() << "✅ MainWindow 생성 완료";
+    // === MQTT 매니저 초기화 ===
+    mqttManager = new MqttManager(this);
+
+    // 연결 성공 시 테스트 메시지 발행
+    connect(mqttManager, &MqttManager::connected, this, [this]() {
+        qDebug() << "[MQTT] Connected signal received!";
+        QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
+        qDebug() << "[MQTT] Publishing test message:" << testPayload;
+        mqttManager->publish("alert", testPayload);
+    });
+
+    connect(mqttManager, &MqttManager::messageReceived,
+            notificationPanel, &NotificationPanel::handleMqttMessage);
+
+    // 이벤트 루프 시작 후 연결 시도 (TransportInvalid 방지)
+    QTimer::singleShot(0, this, [this]() {
+        mqttManager->connectToBroker();
+    });
+
+
+    qDebug() << "MainWindow 생성 완료";
 }
 
 MainWindow::~MainWindow() {}

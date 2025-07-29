@@ -1,4 +1,4 @@
-QT       += core gui network multimedia multimediawidgets
+QT       += core gui network multimedia multimediawidgets widgets mqtt
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++17
 
@@ -21,6 +21,7 @@ SOURCES += \
     src/mainwindow/getimageview.cpp \
     src/mainwindow/historyview.cpp \
     src/mainwindow/mainwindow.cpp \
+    src/mainwindow/mqttmanager.cpp \
     src/mainwindow/notificationitem.cpp \
     src/mainwindow/notificationpanel.cpp \
     src/mainwindow/procsettingbox.cpp \
@@ -36,6 +37,7 @@ HEADERS += \
     include/mainwindow/getimageview.h \
     include/mainwindow/historyview.h \
     include/mainwindow/mainwindow.h \
+    include/mainwindow/mqttmanager.h \
     include/mainwindow/notificationitem.h \
     include/mainwindow/notificationpanel.h \
     include/mainwindow/procsettingbox.h \
@@ -50,6 +52,9 @@ FORMS += \
 
 # ====== RESOURCES (.qrc) ======
 RESOURCES += \
+    resources/certs.qrc \
+    resources/images.qrc \
+    resources/style.qrc
     resource.qrc
 
 # ====== Default install rules (optional) ======
