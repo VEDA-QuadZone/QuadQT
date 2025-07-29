@@ -28,11 +28,8 @@
         <file alias="download.png">resources/images/download.png</file>
         <file alias="download_dark.png">resources/images/download_dark.png</file>
         <file alias="refresh.png">resources/images/refresh.png</file>
-        <file alias="time.png">resources/images/time.png</file>
         <file alias="user.png">resources/images/user.png</file>
         <file alias="user_dark.png">resources/images/user_dark.png</file>
-        <file alias="moon.png">resources/images/moon.png</file>
-        <file alias="sun.PNG">resources/images/sun.PNG</file>
         <file alias="dark.svg">resources/images/dark.svg</file>
         <file alias="light.svg">resources/images/light.svg</file>
     </qresource>
