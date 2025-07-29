@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     notifTitleLabel(nullptr),
     videoWidget(nullptr),
     mqttManager(nullptr),
-    videoArea(nullptr),
+    //videoArea(nullptr),
     notificationPanel(nullptr),
     player(nullptr),
     m_isLogout(false)
