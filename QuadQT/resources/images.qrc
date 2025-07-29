@@ -15,5 +15,13 @@
         <file>images/sun_gray.png</file>
         <file>images/info.png</file>
         <file>images/prohibition.png</file>
+        <file>images/camera.png</file>
+        <file>images/camera_orange.png</file>
+        <file>images/Document.png</file>
+        <file>images/Document_orange.png</file>
+        <file>images/logo.png</file>
+        <file>images/Profile.png</file>
+        <file>images/Settings.png</file>
+        <file>images/settings_orange.png</file>
     </qresource>
 </RCC>
