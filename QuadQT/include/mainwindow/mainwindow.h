@@ -2,16 +2,15 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
-#include "mainwindow/notificationpanel.h"
-#include "mainwindow/procsettingbox.h"
 #include <QStackedWidget>
 #include <QCloseEvent>
-#include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
+
+#include "mainwindow/topbarwidget.h"
+#include "mainwindow/notificationpanel.h"
+#include "mainwindow/procsettingbox.h"
 
 class QLabel;
-class QWidget;
-class DisplaySettingBox;  // displayBox의 실제 타입이 이거라면 미리 선언
+class DisplaySettingBox;
 
 enum class PageType {
     Camera,
@@ -29,38 +28,10 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
-
-private:
-    void setupUI();
-    void updateLayout();
-
-    TopBarWidget *topBar;
-
-    QLabel *cameraTitle;
-    QLabel *notifTitleLabel;
-
-    QWidget *videoArea;
-    NotificationPanel *notificationPanel;
-
-    // ───── 영상 설정 관련 구성 요소 ─────
-    QLabel *videoSettingTitle;   // "영상 설정"
-    QLabel *displayTitle;        // "화면 표시"
-    QLabel *procTitle;           // "영상 처리"
-    DisplaySettingBox *displayBox; // 화면 표시용 박스
-    ProcSettingBox *procBox;          // 영상 처리용 박스
-    QWidget *videoSettingLine;   // 영상 설정 아래 수평선
-    
-    void setUserEmail(const QString &email);
-
-protected:
-    void resizeEvent(QResizeEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
 
-private slots:
-    void onCameraClicked();
-    void onDocumentClicked();
-    void onSettingsClicked();
-    void onLogoutRequested();
+public:
+    void setUserEmail(const QString &email);  // <- 🔓 public으로 변경
 
 private:
     void setupUI();
@@ -69,34 +40,40 @@ private:
     void setupPages();
     void showPage(PageType pageType);
     void updateCameraPageLayout();
-    
-    // 페이지 생성 함수들
+
     QWidget* createCameraPage();
     QWidget* createDocumentPage();
     QWidget* createSettingsPage();
 
+    // 공통 UI 요소
     TopBarWidget *topBar;
     QStackedWidget *stackedWidget;
-    
-    // 카메라 페이지 구성 요소들
+
+    // 카메라 페이지 UI 구성요소
     QLabel *cameraTitle;
     QLabel *notifTitleLabel;
-    QLabel *videoArea;  // QWidget에서 QLabel로 변경
-    QWidget *notificationPanel;
+    QLabel *videoArea;  // QLabel로 고정
+    NotificationPanel *notificationPanel;
     QLabel *videoSettingTitle;
     QLabel *displayTitle;
     QLabel *procTitle;
     DisplaySettingBox *displayBox;
-    QWidget *procBox;
+    ProcSettingBox *procBox;
     QWidget *videoSettingLine;
-    
+
     // 페이지들
     QWidget *cameraPage;
     QWidget *documentPage;
     QWidget *settingsPage;
-    
+
     // 로그아웃 플래그
     bool m_isLogout;
+
+private slots:
+    void onCameraClicked();
+    void onDocumentClicked();
+    void onSettingsClicked();
+    void onLogoutRequested();
 };
 
 #endif // MAINWINDOW_H
