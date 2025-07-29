@@ -2,11 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QtMultimedia/QMediaPlayer>
+#include <QtMultimediaWidgets/QVideoWidget>
 #include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/procsettingbox.h"
-#include "mainwindow/videowidget.h"
-#include "mainwindow/videoplayer.h"
 
 class QLabel;
 class QWidget;
@@ -34,8 +34,8 @@ private:
     QLabel *notifTitleLabel;
 
     // ───── RTSP 스트리밍 ─────
-    VideoWidget *videoArea;
-    VideoPlayer *player;
+    QMediaPlayer *player;
+    QVideoWidget *videoWidget;
 
     // ───── Notification ─────
     NotificationPanel *notificationPanel;
