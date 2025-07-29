@@ -17,6 +17,9 @@ public:
 
     void addNotification(int eventType, const QString &date);
 
+public slots:
+    void handleMqttMessage(const QByteArray &message);
+
 private slots:
     void removeNotification(NotificationItem *item);
 
