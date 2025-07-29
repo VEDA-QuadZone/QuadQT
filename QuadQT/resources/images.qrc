@@ -13,5 +13,7 @@
         <file>images/timestamp_orange.png</file>
         <file>images/moon_gray.png</file>
         <file>images/sun_gray.png</file>
+        <file>images/info.png</file>
+        <file>images/prohibition.png</file>
     </qresource>
 </RCC>

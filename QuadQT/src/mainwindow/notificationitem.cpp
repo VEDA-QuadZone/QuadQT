@@ -4,43 +4,44 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QFrame>
+#include <QPixmap>
 
 NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *parent)
     : QWidget(parent), eventType(eventType)
 {
-    setFixedHeight(92);
+    setFixedHeight(72);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setAttribute(Qt::WA_StyledBackground, true);
 
     QString bgColor;
     QString lineColor;
     QString message;
-    QString iconSymbol;
+    QString iconPath;
 
     switch (eventType) {
     case 0:
-        bgColor = "rgba(241, 194, 27, 0.8)";
+        bgColor = "rgba(241, 194, 27, 0.1)";  // 연한 노랑
         lineColor = "#F1C21B";
         message = "불법 주정차 차량 인식";
-        iconSymbol = "⚠";
+        iconPath = ":/images/images/caution.png";
         break;
     case 1:
-        bgColor = "rgba(243, 115, 34, 0.8)";
-        lineColor = "#F37322";
+        bgColor = "rgba(218, 30, 40, 0.1)";   // 연한 빨강
+        lineColor = "#DA1E28";
         message = "과속 차량 인식";
-        iconSymbol = "🚫";
+        iconPath = ":/images/images/prohibition.png";
         break;
     case 2:
-        bgColor = "rgba(251, 181, 132, 0.8)";
-        lineColor = "#FBB584";
+        bgColor = "rgba(2, 68, 207, 0.1)";    // 연한 파랑
+        lineColor = "#0244CF";
         message = "어린이 인식";
-        iconSymbol = "ℹ";
+        iconPath = ":/images/images/info.png";
         break;
     default:
         bgColor = "rgba(224, 224, 224, 0.8)";
         lineColor = "#CCCCCC";
         message = "알 수 없는 이벤트";
-        iconSymbol = "?";
+        iconPath = "";
         break;
     }
 
@@ -49,41 +50,38 @@ NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *
                       "border-radius: 0;"
                       ).arg(bgColor));
 
-    // === 전체 수평 레이아웃 ===
     QHBoxLayout *outerLayout = new QHBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
     outerLayout->setSpacing(8);
 
-    // 1) 좌측 굵은 컬러 라인
     QFrame *leftLine = new QFrame(this);
-    leftLine->setFixedWidth(6);  // 굵은 라인
+    leftLine->setFixedWidth(6);
     leftLine->setStyleSheet(QString("background-color: %1;").arg(lineColor));
     outerLayout->addWidget(leftLine);
 
-    // 2) 아이콘
-    QLabel *iconLabel = new QLabel(iconSymbol, this);
-    iconLabel->setStyleSheet("font-size: 20px; color: #333; background: transparent;");
+    // 아이콘 이미지 로드
+    QLabel *iconLabel = new QLabel(this);
+    QPixmap iconPixmap(iconPath);
+    iconLabel->setPixmap(iconPixmap.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    iconLabel->setAlignment(Qt::AlignCenter);
+    iconLabel->setStyleSheet("background: transparent;");
 
-    // 아이콘 컨테이너
     QWidget *iconContainer = new QWidget(this);
     iconContainer->setStyleSheet("background: transparent;");
-    iconContainer->setFixedWidth(40);   // ✅ width 고정 (예: 40px)
+    iconContainer->setFixedWidth(50);  // 이미지 사이즈 고려
 
     QVBoxLayout *iconLayout = new QVBoxLayout(iconContainer);
-    iconLayout->setContentsMargins(0, 12, 0, 0);         // ✅ 상단 마진 제거
+    iconLayout->setContentsMargins(0, 12, 0, 0);
     iconLayout->addWidget(iconLabel, 0, Qt::AlignTop | Qt::AlignHCenter);
-
 
     outerLayout->addWidget(iconContainer);
 
-    // 3) 텍스트 영역 (VBox)
     QWidget *textContainer = new QWidget(this);
     QVBoxLayout *textLayout = new QVBoxLayout(textContainer);
-    textLayout->setContentsMargins(0, 12, 0, 0);
+    textLayout->setContentsMargins(0, 8, 0, 0);
     textLayout->setSpacing(4);
     textLayout->setAlignment(Qt::AlignTop);
     textContainer->setStyleSheet("background: transparent;");
-
 
     messageLabel = new QLabel(message, this);
     messageLabel->setStyleSheet("font-weight: bold; font-size: 14px; background: transparent;");
@@ -95,25 +93,22 @@ NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *
     textLayout->addWidget(dateLabel, 0, Qt::AlignTop);
 
     textContainer->setLayout(textLayout);
-    outerLayout->addWidget(textContainer, 1); // 가변 폭
+    outerLayout->addWidget(textContainer, 1);
 
-    // X 버튼
     QPushButton *removeBtn = new QPushButton("✕", this);
     removeBtn->setFixedSize(20, 20);
     removeBtn->setStyleSheet(
         "QPushButton { border:none; background:transparent; font-size:14px; }"
         );
 
-    // 클릭 시 현재 아이템 삭제 요청 시그널 발송
     connect(removeBtn, &QPushButton::clicked, this, [this]() {
         emit removeRequested(this);
     });
 
-    // 컨테이너
     QWidget *btnContainer = new QWidget(this);
     btnContainer->setStyleSheet("background: transparent;");
     QVBoxLayout *btnLayout = new QVBoxLayout(btnContainer);
-    btnLayout->setContentsMargins(0, 12, 8, 0);  // ✅ 오른쪽 8px, 위쪽 12px 마진
+    btnLayout->setContentsMargins(0, 8, 8, 0);
     btnLayout->addWidget(removeBtn, 0, Qt::AlignTop);
 
     outerLayout->addWidget(btnContainer);
