@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>resources/images/camera.png</file>
+        <file>resources/images/camera_orange.png</file>
+        <file>resources/images/Document.png</file>
+        <file>resources/images/Document_orange.png</file>
+        <file>resources/images/Settings.png</file>
+        <file>resources/images/settings_orange.png</file>
+        <file>resources/images/Profile.png</file>
+        <file>resources/images/box.png</file>
+        <file>resources/images/logo.png</file>
+        <file>resources/images/video.png</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file>resources/fonts/01HanwhaB.ttf</file>
+        <file>resources/fonts/02HanwhaR.ttf</file>
+        <file>resources/fonts/03HanwhaL.ttf</file>
+        <file>resources/fonts/04HanwhaGothicB.ttf</file>
+        <file>resources/fonts/05HanwhaGothicR.ttf</file>
+        <file>resources/fonts/06HanwhaGothicL.ttf</file>
+        <file>resources/fonts/07HanwhaGothicEL.ttf</file>
+        <file>resources/fonts/08HanwhaGothicT.ttf</file>
+    </qresource>
+</RCC>
