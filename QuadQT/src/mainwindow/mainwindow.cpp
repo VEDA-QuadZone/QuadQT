@@ -61,6 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
         mqttManager->publish("alert", testPayload);
     });
 
+    connect(mqttManager, &MqttManager::messageReceived,
+            notificationPanel, &NotificationPanel::handleMqttMessage);
+
     // 이벤트 루프 시작 후 연결 시도 (TransportInvalid 방지)
     QTimer::singleShot(0, this, [this]() {
         mqttManager->connectToBroker();

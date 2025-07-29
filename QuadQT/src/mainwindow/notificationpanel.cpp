@@ -2,6 +2,9 @@
 #include "mainwindow/notificationitem.h"
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDateTime>
 
 NotificationPanel::NotificationPanel(QWidget *parent)
     : QWidget(parent)
@@ -24,13 +27,29 @@ NotificationPanel::NotificationPanel(QWidget *parent)
     layout->addWidget(emptyLabel);
 
     // 더미 데이터
-    addNotification(0, "2025-07-28 16:00");
-    addNotification(2, "2025-07-28 16:00");
-    addNotification(1, "2025-07-28 15:55");
-    addNotification(0, "2025-07-28 15:50");
+    // addNotification(0, "2025-07-28 16:00");
+    // addNotification(2, "2025-07-28 16:00");
+    // addNotification(1, "2025-07-28 15:55");
+    // addNotification(0, "2025-07-28 15:50");
 }
 
 NotificationPanel::~NotificationPanel() {}
+
+void NotificationPanel::handleMqttMessage(const QByteArray &message)
+{
+    QJsonDocument doc = QJsonDocument::fromJson(message);
+    if (!doc.isObject()) return;
+
+    QJsonObject obj = doc.object();
+    int eventType = obj.value("event").toInt(-1);
+    QString timestamp = obj.value("timestamp").toString();
+
+    // 시간 포맷 변환 (ISO8601 → yyyy-MM-dd HH:mm)
+    QDateTime dt = QDateTime::fromString(timestamp, Qt::ISODate);
+    QString formattedDate = dt.isValid() ? dt.toString("yyyy-MM-dd HH:mm") : timestamp;
+
+    addNotification(eventType, formattedDate);
+}
 
 void NotificationPanel::addNotification(int eventType, const QString &date)
 {

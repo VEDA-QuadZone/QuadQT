@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QFrame>
 #include <QPixmap>
+#include <QDateTime>
 
 NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *parent)
     : QWidget(parent), eventType(eventType)
@@ -17,6 +18,13 @@ NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *
     QString lineColor;
     QString message;
     QString iconPath;
+
+    // === 날짜 포맷 변환 ===
+    QString formattedDate = date;
+    QDateTime dt = QDateTime::fromString(date, Qt::ISODate);
+    if (dt.isValid()) {
+        formattedDate = dt.toString("yyyy-MM-dd HH:mm");
+    }
 
     switch (eventType) {
     case 0:

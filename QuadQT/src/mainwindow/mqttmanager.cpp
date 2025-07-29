@@ -31,6 +31,12 @@ MqttManager::MqttManager(QObject *parent)
     connect(&client, &QMqttClient::errorChanged, this, [this]() {
         qDebug() << "[MQTT] Error:" << client.error();
     });
+
+    connect(&client, &QMqttClient::messageReceived, this,
+            [this](const QByteArray &msg, const QMqttTopicName &topic) {
+                Q_UNUSED(topic);
+                emit messageReceived(msg);
+            });
 }
 
 void MqttManager::loadCertificates()

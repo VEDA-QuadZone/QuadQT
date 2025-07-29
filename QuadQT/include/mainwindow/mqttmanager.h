@@ -16,6 +16,7 @@ public:
 signals:
     void newMessage(const QString &topic, const QByteArray &payload);
     void connected();
+    void messageReceived(const QByteArray &message);
 
 private:
     QMqttClient client;
