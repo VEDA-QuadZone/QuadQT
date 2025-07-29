@@ -2,13 +2,12 @@
 #define PROCSETTINGBOX_H
 
 #include <QWidget>
-
-class QLabel;
-class QRadioButton;
-class QSlider;
-class QPushButton;
-class QLineEdit;
-class QButtonGroup;
+#include <QRadioButton>
+#include <QLabel>
+#include <QSlider>
+#include <QPushButton>
+#include <QLineEdit>
+#include <QButtonGroup>
 
 class ProcSettingBox : public QWidget
 {
@@ -17,10 +16,16 @@ class ProcSettingBox : public QWidget
 public:
     explicit ProcSettingBox(QWidget *parent = nullptr);
 
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private:
     void setupUI();
     void setupConnections();
     void updateModeUI();
+
+    QWidget* createModeBox(const QString &text, QRadioButton *&radio, QLabel *&icon, QLabel *&label);
+    QWidget* createSharpnessBox();
 
     QWidget *dayBox;
     QWidget *nightBox;
@@ -32,21 +37,22 @@ private:
 
     QLabel *dayIcon;
     QLabel *nightIcon;
+
     QLabel *dayLabel;
     QLabel *nightLabel;
     QLabel *sharpnessLabel;
 
-    QPushButton *minusButton;
-    QPushButton *plusButton;
     QSlider *sharpnessSlider;
     QLineEdit *sharpnessEdit;
+    QPushButton *minusButton;
+    QPushButton *plusButton;
 
     QButtonGroup *modeGroup;
 
-    QString textStyleGray;
-    QString textStyleOrange;
     QString sliderStyleGray;
     QString sliderStyleOrange;
+    QString textStyleGray;
+    QString textStyleOrange;
 };
 
 #endif // PROCSETTINGBOX_H

@@ -10,15 +10,15 @@
 #include <QPixmap>
 #include <QDebug>
 #include <algorithm>
+#include <QEvent>
 
 ProcSettingBox::ProcSettingBox(QWidget *parent)
     : QWidget(parent)
 {
-    // 원래 기본 테두리 스타일
     this->setStyleSheet("border: 1px solid #ccc; background-color: transparent;");
     setupUI();
     setupConnections();
-    updateModeUI(); // 초기 UI 상태 설정
+    updateModeUI();
 }
 
 void ProcSettingBox::setupUI()
@@ -47,75 +47,71 @@ void ProcSettingBox::setupUI()
     textStyleOrange = "font-size: 14px; color: #F37321; padding-bottom: 4px; border: none; background: transparent;";
 
     modeGroup = new QButtonGroup(this);
+    modeGroup->setExclusive(false);  // allow manual exclusive behavior
 
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
     this->setLayout(mainLayout);
 
-    // Day Mode
-    dayBox = new QWidget(this);
-    dayBox->setStyleSheet("border-right: 1px solid #ccc;");
-    QVBoxLayout *dayLayout = new QVBoxLayout(dayBox);
-    dayLayout->setContentsMargins(4, 4, 4, 4);
-    dayLayout->setSpacing(0);
-
-    dayRadio = new QRadioButton(dayBox);
-    dayRadio->setStyleSheet(radioStyle);
-    modeGroup->addButton(dayRadio);
-
-    dayIcon = new QLabel(dayBox);
-    dayIcon->setStyleSheet("border: none; background: transparent;");
-    dayIcon->setAlignment(Qt::AlignCenter);
-
-    dayLabel = new QLabel("주간 모드", dayBox);
-    dayLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
-    dayLabel->setStyleSheet(textStyleGray);
-
-    dayLayout->addWidget(dayRadio, 0, Qt::AlignLeft | Qt::AlignTop);
-    dayLayout->addStretch();
-    dayLayout->addWidget(dayIcon);
-    dayLayout->addStretch();
-    dayLayout->addWidget(dayLabel);
+    // Day Box
+    dayBox = createModeBox("주간 모드", dayRadio, dayIcon, dayLabel);
     mainLayout->addWidget(dayBox, 2);
 
-    // Night Mode
-    nightBox = new QWidget(this);
-    nightBox->setStyleSheet("border-right: 1px solid #ccc;");
-    QVBoxLayout *nightLayout = new QVBoxLayout(nightBox);
-    nightLayout->setContentsMargins(4, 4, 4, 4);
-    nightLayout->setSpacing(0);
-
-    nightRadio = new QRadioButton(nightBox);
-    nightRadio->setStyleSheet(radioStyle);
-    modeGroup->addButton(nightRadio);
-
-    nightIcon = new QLabel(nightBox);
-    nightIcon->setStyleSheet("border: none; background: transparent;");
-    nightIcon->setAlignment(Qt::AlignCenter);
-
-    nightLabel = new QLabel("야간 모드", nightBox);
-    nightLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
-    nightLabel->setStyleSheet(textStyleGray);
-
-    nightLayout->addWidget(nightRadio, 0, Qt::AlignLeft | Qt::AlignTop);
-    nightLayout->addStretch();
-    nightLayout->addWidget(nightIcon);
-    nightLayout->addStretch();
-    nightLayout->addWidget(nightLabel);
+    // Night Box
+    nightBox = createModeBox("야간 모드", nightRadio, nightIcon, nightLabel);
     mainLayout->addWidget(nightBox, 2);
 
-    // Sharpness Mode
-    sharpnessBox = new QWidget(this);
-    QVBoxLayout *sharpnessLayout = new QVBoxLayout(sharpnessBox);
-    sharpnessLayout->setContentsMargins(4, 4, 4, 4);
-    sharpnessLayout->setSpacing(0);
+    // Sharpness Box
+    sharpnessBox = createSharpnessBox();
+    mainLayout->addWidget(sharpnessBox, 5);
 
-    sharpnessRadio = new QRadioButton(sharpnessBox);
-    sharpnessRadio->setStyleSheet(radioStyle);
+    dayBox->installEventFilter(this);
+    nightBox->installEventFilter(this);
+    sharpnessBox->installEventFilter(this);
+}
+
+QWidget* ProcSettingBox::createModeBox(const QString &text, QRadioButton *&radio, QLabel *&icon, QLabel *&label)
+{
+    QWidget *box = new QWidget(this);
+    box->setStyleSheet("border-right: 1px solid #ccc;");
+    QVBoxLayout *layout = new QVBoxLayout(box);
+    layout->setContentsMargins(4, 4, 4, 4);
+    layout->setSpacing(0);
+
+    radio = new QRadioButton(box);
+    radio->setStyleSheet("margin: 4px 0 0 4px; background: transparent; border: none;");
+    modeGroup->addButton(radio);
+
+    icon = new QLabel(box);
+    icon->setAlignment(Qt::AlignCenter);
+    icon->setStyleSheet("border: none; background: transparent;");
+
+    label = new QLabel(text, box);
+    label->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+    label->setStyleSheet(textStyleGray);
+
+    layout->addWidget(radio, 0, Qt::AlignLeft | Qt::AlignTop);
+    layout->addStretch();
+    layout->addWidget(icon);
+    layout->addStretch();
+    layout->addWidget(label);
+
+    return box;
+}
+
+QWidget* ProcSettingBox::createSharpnessBox()
+{
+    QWidget *box = new QWidget(this);
+    QVBoxLayout *layout = new QVBoxLayout(box);
+    layout->setContentsMargins(4, 4, 4, 4);
+    layout->setSpacing(0);
+
+    sharpnessRadio = new QRadioButton(box);
+    sharpnessRadio->setStyleSheet("margin: 4px 0 0 4px; background: transparent; border: none;");
     modeGroup->addButton(sharpnessRadio);
 
-    QWidget *controlWidget = new QWidget(sharpnessBox);
+    QWidget *controlWidget = new QWidget(box);
     controlWidget->setStyleSheet("background: transparent; border: none;");
     QHBoxLayout *controlLayout = new QHBoxLayout(controlWidget);
     controlLayout->setContentsMargins(8, 12, 8, 0);
@@ -144,23 +140,21 @@ void ProcSettingBox::setupUI()
     controlLayout->addWidget(plusButton);
     controlLayout->addWidget(sharpnessEdit);
 
-    sharpnessLabel = new QLabel("선명도 (%)", sharpnessBox);
+    sharpnessLabel = new QLabel("선명도 (%)", box);
     sharpnessLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
     sharpnessLabel->setStyleSheet(textStyleGray);
 
-    sharpnessLayout->addWidget(sharpnessRadio, 0, Qt::AlignLeft | Qt::AlignTop);
-    sharpnessLayout->addStretch();
-    sharpnessLayout->addWidget(controlWidget);
-    sharpnessLayout->addStretch();
-    sharpnessLayout->addWidget(sharpnessLabel);
-    mainLayout->addWidget(sharpnessBox, 5);
+    layout->addWidget(sharpnessRadio, 0, Qt::AlignLeft | Qt::AlignTop);
+    layout->addStretch();
+    layout->addWidget(controlWidget);
+    layout->addStretch();
+    layout->addWidget(sharpnessLabel);
+
+    return box;
 }
 
 void ProcSettingBox::setupConnections()
 {
-    connect(modeGroup, QOverload<QAbstractButton *>::of(&QButtonGroup::buttonClicked),
-            this, [=](QAbstractButton *) { updateModeUI(); });
-
     connect(sharpnessEdit, &QLineEdit::returnPressed, this, [=]() {
         sharpnessEdit->clearFocus();
         bool ok;
@@ -182,7 +176,6 @@ void ProcSettingBox::updateModeUI()
     bool isNight = nightRadio->isChecked();
     bool isSharpness = sharpnessRadio->isChecked();
 
-    // 버튼 아이콘 설정
     QString minusIcon = isSharpness ? ":/images/images/minus_orange.png" : ":/images/images/minus_gray.png";
     QString plusIcon = isSharpness ? ":/images/images/plus_orange.png" : ":/images/images/plus_gray.png";
     minusButton->setIcon(QIcon(minusIcon));
@@ -190,16 +183,58 @@ void ProcSettingBox::updateModeUI()
     plusButton->setIcon(QIcon(plusIcon));
     plusButton->setIconSize(QSize(20, 20));
 
-    // 아이콘 이미지 설정
     dayIcon->setPixmap(QPixmap(isDay ? ":/images/images/sun_orange.png" : ":/images/images/sun_gray.png").scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     nightIcon->setPixmap(QPixmap(isNight ? ":/images/images/moon_orange.png" : ":/images/images/moon_gray.png").scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
-    // 텍스트 색상 변경
     dayLabel->setStyleSheet(isDay ? textStyleOrange : textStyleGray);
     nightLabel->setStyleSheet(isNight ? textStyleOrange : textStyleGray);
     sharpnessLabel->setStyleSheet(isSharpness ? textStyleOrange : textStyleGray);
 
-    // 슬라이더 활성화 및 색상 변경
     sharpnessSlider->setEnabled(isSharpness);
     sharpnessSlider->setStyleSheet(isSharpness ? sliderStyleOrange : sliderStyleGray);
+}
+
+bool ProcSettingBox::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress) {
+        if (watched == dayBox) {
+            if (dayRadio->isChecked()) {
+                dayRadio->setChecked(false);
+            } else {
+                dayRadio->setChecked(true);
+                nightRadio->setChecked(false);
+                sharpnessRadio->setChecked(false);
+            }
+        } else if (watched == nightBox) {
+            if (nightRadio->isChecked()) {
+                nightRadio->setChecked(false);
+            } else {
+                nightRadio->setChecked(true);
+                dayRadio->setChecked(false);
+                sharpnessRadio->setChecked(false);
+            }
+        } else if (watched == sharpnessBox) {
+            if (sharpnessRadio->isChecked()) {
+                sharpnessRadio->setChecked(false);
+            } else {
+                sharpnessRadio->setChecked(true);
+                dayRadio->setChecked(false);
+                nightRadio->setChecked(false);
+            }
+        }
+        updateModeUI();
+        return true;
+    }
+
+    if (event->type() == QEvent::Enter) {
+        if (watched == dayBox || watched == nightBox || watched == sharpnessBox) {
+            static_cast<QWidget*>(watched)->setStyleSheet("background-color: #FCE8D9; border: 1px solid #ccc;");
+        }
+    } else if (event->type() == QEvent::Leave) {
+        if (watched == dayBox || watched == nightBox || watched == sharpnessBox) {
+            static_cast<QWidget*>(watched)->setStyleSheet("background-color: transparent; border: 1px solid #ccc;");
+        }
+    }
+
+    return QWidget::eventFilter(watched, event);
 }
