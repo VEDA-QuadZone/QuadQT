@@ -3,6 +3,8 @@
 #include "mainwindow/displaysettingbox.h"
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/notificationpanel.h"
+#include "mainwindow/mqttmanager.h"
+
 
 #include <QResizeEvent>
 #include <QLabel>
@@ -12,6 +14,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QApplication>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -28,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     videoSettingLine(nullptr),
     cameraTitle(nullptr),
     notifTitleLabel(nullptr),
+    mqttManager(nullptr),
     videoArea(nullptr),
     notificationPanel(nullptr),
     m_isLogout(false)
@@ -45,6 +49,23 @@ MainWindow::MainWindow(QWidget *parent)
     setupPages();
     updateLayout();
     showPage(PageType::Camera);
+
+    // === MQTT 매니저 초기화 ===
+    mqttManager = new MqttManager(this);
+
+    // 연결 성공 시 테스트 메시지 발행
+    connect(mqttManager, &MqttManager::connected, this, [this]() {
+        qDebug() << "[MQTT] Connected signal received!";
+        QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
+        qDebug() << "[MQTT] Publishing test message:" << testPayload;
+        mqttManager->publish("alert", testPayload);
+    });
+
+    // 이벤트 루프 시작 후 연결 시도 (TransportInvalid 방지)
+    QTimer::singleShot(0, this, [this]() {
+        mqttManager->connectToBroker();
+    });
+
 
     qDebug() << "MainWindow 생성 완료";
 }
