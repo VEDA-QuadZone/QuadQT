@@ -17,10 +17,14 @@ SOURCES += \
     src/login/loginpage.cpp \
     src/login/networkmanager.cpp \
     src/mainwindow/displaysettingbox.cpp \
+    src/mainwindow/getimageview.cpp \
+    src/mainwindow/historyview.cpp \
     src/mainwindow/mainwindow.cpp \
     src/mainwindow/notificationitem.cpp \
     src/mainwindow/notificationpanel.cpp \
     src/mainwindow/procsettingbox.cpp \
+    src/mainwindow/tcphistoryhandler.cpp \
+    src/mainwindow/tcpimagehandler.cpp \
     src/mainwindow/topbarwidget.cpp
 
 # ====== HEADERS (.h) ======
@@ -28,10 +32,14 @@ HEADERS += \
     include/login/loginpage.h \
     include/login/networkmanager.h \
     include/mainwindow/displaysettingbox.h \
+    include/mainwindow/getimageview.h \
+    include/mainwindow/historyview.h \
     include/mainwindow/mainwindow.h \
     include/mainwindow/notificationitem.h \
     include/mainwindow/notificationpanel.h \
     include/mainwindow/procsettingbox.h \
+    include/mainwindow/tcphistoryhandler.h \
+    include/mainwindow/tcpimagehandler.h \
     include/mainwindow/topbarwidget.h
 
 # ====== FORMS (.ui) ======
