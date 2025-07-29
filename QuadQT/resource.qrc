@@ -32,6 +32,10 @@
         <file alias="user_dark.png">resources/images/user_dark.png</file>
         <file alias="dark.svg">resources/images/dark.svg</file>
         <file alias="light.svg">resources/images/light.svg</file>
+        <file alias="below.png">resources/images/below.png</file>
+        <file alias="calendar.png">resources/images/calendar.png</file>
+        <file alias="sign.png">resources/images/sign.png</file>
+        <file alias="menu.png">resources/images/menu.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file>resources/fonts/01HanwhaB.ttf</file>

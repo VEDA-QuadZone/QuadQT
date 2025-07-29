@@ -17,8 +17,8 @@
 
 ### 3. 설정 파일 (config.ini)
 ```ini
-[Server]
-ip=127.0.0.1
+[tcp]
+ip=192.168.0.10
 port=8080
 timeout=5000
 

@@ -31,7 +31,7 @@ void ProcSettingBox::setupUI()
             margin: -6px 0; border-radius: 9px;
         }
         QSlider::sub-page:horizontal { background: #ccc; border-radius: 4px; }
-        QSlider::add-page:horizontal { background: #eee; border-radius: 4px; }
+        QSlider::add-page:horizontal { background: #FFFFFF; border-radius: 4px; }
     )";
     sliderStyleOrange = R"(
         QSlider::groove:horizontal { background: #ddd; height: 8px; border-radius: 4px; }
@@ -40,7 +40,7 @@ void ProcSettingBox::setupUI()
             margin: -6px 0; border-radius: 9px;
         }
         QSlider::sub-page:horizontal { background: #F37321; border-radius: 4px; }
-        QSlider::add-page:horizontal { background: #eee; border-radius: 4px; }
+        QSlider::add-page:horizontal { background: #FFFFFF; border-radius: 4px; }
     )";
 
     textStyleGray = "font-size: 14px; color: gray; padding-bottom: 4px; border: none; background: transparent;";
