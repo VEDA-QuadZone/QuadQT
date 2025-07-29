@@ -43,8 +43,10 @@ FORMS += \
 
 # ====== RESOURCES (.qrc) ======
 RESOURCES += \
+    resources/certs.qrc \
+    resources/certs/certs.qrc \
     resources/images.qrc \
-    resources/style.qrc
+    resources/style.qrc \
 
 # ====== OpenCV (MinGW Prebuilt) ======
 LIBS += -LC:/opencv/prebuilt_mingw/x64/mingw/lib \

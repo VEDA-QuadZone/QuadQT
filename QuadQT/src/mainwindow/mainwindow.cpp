@@ -9,6 +9,28 @@
 #include <QWidget>
 #include <QFont>
 #include <QDebug>
+#include <QFile>
+#include <QSslConfiguration>
+#include <QSslCertificate>
+
+static void loadCA()
+{
+    QFile caFile(":/certs/ca.cert.pem");  // 리소스 경로에서 읽기
+    if (!caFile.open(QIODevice::ReadOnly)) {
+        qWarning() << "[TLS] ca.cert.pem 로드 실패";
+        return;
+    }
+
+    QSslCertificate caCert(&caFile, QSsl::Pem);
+    QSslConfiguration sslConf = QSslConfiguration::defaultConfiguration();
+    QList<QSslCertificate> caCerts = sslConf.caCertificates();
+    caCerts.append(caCert);
+    sslConf.setCaCertificates(caCerts);
+    QSslConfiguration::setDefaultConfiguration(sslConf);
+
+    qDebug() << "[TLS] CA 인증서 로드 완료";
+}
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -25,6 +47,8 @@ MainWindow::MainWindow(QWidget *parent)
     notificationPanel(nullptr)
 {
     qDebug() << "🏠 MainWindow 생성자 시작";
+
+    loadCA(); // TLS 인증서 로드 추가
     
     QWidget *centralW = new QWidget(this);
     centralW->setStyleSheet("background-color: white;"); // 배경색을 흰색으로 설정
@@ -42,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     player = new VideoPlayer(this);
     connect(player, &VideoPlayer::frameReady, videoArea, &VideoWidget::displayFrame);
 
-    qDebug() << "RTSP 스트림 시작";
+    qDebug() << "[MainWindow] RTSP URL 전달 시작";
     // RTSP 스트림 시작
     player->startStream("rtsps://192.168.0.10:8555/test");
     

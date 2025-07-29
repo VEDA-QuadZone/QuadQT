@@ -16,6 +16,8 @@ protected:
 
 private:
     QLabel *videoLabel;    // 실제 영상이 출력될 QLabel
+    QLabel *statusLabel;    // 상태 안내문구 QLabel
+    bool firstFrameReceived = false;
 };
 
 #endif // VIDEOWIDGET_H
