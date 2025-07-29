@@ -3,10 +3,19 @@
 
 #include <QObject>
 #include <QTcpSocket>
+#include <QSslSocket>
+#include <QSslConfiguration>
+#include <QSslCertificate>
+#include <QSslKey>
+#include <QSslError>
+#include <QSslCipher>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QTimer>
 #include <QSettings>
+#include <QFile>
+#include <QDir>
+#include <QCoreApplication>
 
 class NetworkManager : public QObject
 {
@@ -17,8 +26,13 @@ public:
     ~NetworkManager();
 
     void connectToServer();
+    void connectToServerSSL();
     void disconnectFromServer();
     bool isConnected() const;
+    
+    // SSL 설정 메서드
+    bool setupSSLConfiguration();
+    void setSSLEnabled(bool enabled) { m_sslEnabled = enabled; }
 
     void registerUser(const QString &email, const QString &password);
     void loginUser(const QString &email, const QString &password);
@@ -66,19 +80,30 @@ private slots:
     void onReadyRead();
     void onError(QAbstractSocket::SocketError error);
     void onTimeout();
+    void onSslErrors(const QList<QSslError> &errors);
+    void onEncrypted();
 
 private:
     void loadConfig();
     void sendCommand(const QString &command);
     QJsonObject parseResponse(const QString &response);
+    QString findCertificateFile(const QString &filename);
+    QString findConfigFile();
 
-    QTcpSocket *m_socket;
+    QSslSocket *m_socket;
     QTimer *m_timeoutTimer;
     QString m_serverIp;
     int m_serverPort;
     int m_timeout;
     QString m_pendingCommand;
     QString m_responseBuffer;
+    
+    // SSL 관련 멤버 변수
+    bool m_sslEnabled;
+    QString m_caCertPath;
+    QString m_clientCertPath;
+    QString m_clientKeyPath;
+    QSslConfiguration m_sslConfig;
 };
 
 #endif // NETWORKMANAGER_H

@@ -1,0 +1,320 @@
+/* dark.qss */
+
+QWidget {
+    background-color: #282c34;
+    color: #abb2bf;
+}
+
+QLabel#logo {
+    color: #5a9bd4;
+}
+
+/* Menu buttons */
+QPushButton#menuButton {
+    border: none;
+    padding-bottom: 5px;
+    font-size: 18px;
+    color: #abb2bf;
+    background-color: transparent;
+}
+
+QPushButton#menuButton:checked {
+    border-bottom: 2px solid #5a9bd4;
+    color: #5a9bd4;
+}
+
+QPushButton#menuButton:hover {
+    color: #5a9bd4;
+}
+
+/* Window control buttons */
+QPushButton#themeButton, QPushButton#userButton {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+QPushButton#themeButton:hover, QPushButton#userButton:hover {
+    background-color: #3e4451;
+    border-radius: 4px;
+}
+
+QPushButton#minimizeButton, QPushButton#closeButton {
+    background-color: transparent;
+    border: none;
+    font-size: 16px;
+    color: #abb2bf;
+    outline: none;
+}
+
+QPushButton#minimizeButton:hover {
+    background-color: #3e4451;
+    border-radius: 4px;
+}
+
+QPushButton#closeButton:hover {
+    background-color: #ff605c;
+    color: #ffffff;
+    border-radius: 4px;
+}
+
+QPushButton {
+    background-color: #5a9bd4;
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    outline: none;
+}
+
+QPushButton:focus {
+    outline: none;
+    border: none;
+}
+
+QPushButton:hover {
+    background-color: #6ba5d9;
+}
+
+/* Auth Link Button */
+QPushButton#authLinkButton {
+    background-color: transparent;
+    border: none;
+    color: #5a9bd4;
+    font-size: 16px;
+    text-decoration: underline;
+    padding: 8px 0px;
+}
+
+QPushButton#authLinkButton:hover {
+    color: #6ba5d9;
+    text-decoration: none;
+}
+
+QPushButton#authLinkButton:pressed {
+    color: #4a8bc2;
+}
+
+QLineEdit, QTextEdit {
+    background-color: #3e4451;
+    color: #abb2bf;
+    border: 1px solid #5c6370;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+QComboBox {
+    background-color: #3e4451;
+    color: #abb2bf;
+    border: 1px solid #5c6370;
+    border-radius: 4px;
+    padding: 1px 18px 1px 3px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left-width: 1px;
+    border-left-color: #5c6370;
+    border-left-style: solid;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+QComboBox::down-arrow {
+    image: url(:/images/down_arrow_dark.png); /* You might need to create this icon */
+}
+
+QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+}
+
+QCheckBox::indicator:unchecked {
+    image: url(:/images/checkbox_unchecked_dark.png); /* You might need to create this icon */
+}
+
+QCheckBox::indicator:checked {
+    image: url(:/images/checkbox_checked_dark.png); /* You might need to create this icon */
+}
+
+QRadioButton::indicator {
+    width: 13px;
+    height: 13px;
+}
+
+QRadioButton::indicator:unchecked {
+    image: url(:/images/radio_unchecked_dark.png); /* You might need to create this icon */
+}
+
+QRadioButton::indicator:checked {
+    image: url(:/images/radio_checked_dark.png); /* You might need to create this icon */
+}
+
+QTabWidget::pane {
+    border-top: 1px solid #5c6370;
+}
+
+QTabBar::tab {
+    background: #3e4451;
+    color: #abb2bf;
+    padding: 8px;
+    border: 1px solid #5c6370;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:selected {
+    background: #282c34;
+    border-color: #5c6370;
+    border-bottom-color: #282c34; /* same as pane color */
+}
+
+QTableView, QTableWidget {
+    background-color: #282c34;
+    alternate-background-color: #282c34;
+    color: #ffffff;
+    gridline-color: #5c6370;
+    selection-background-color: #5a9bd4;
+    selection-color: #ffffff;
+    border: none;
+}
+
+QTableWidget::item {
+    border-bottom: 1px solid #5c6370;
+    padding: 8px;
+    background-color: #282c34 !important;
+    color: #ffffff !important;
+    font-size: 14px;
+}
+
+QTableWidget::item:alternate {
+    background-color: #282c34 !important;
+    color: #ffffff !important;
+}
+
+QHeaderView::section {
+    background-color: #282c34;
+    color: #000000;
+    padding: 10px;
+    border: 1px solid #5c6370;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+QScrollBar:vertical {
+    border: 1px solid #5c6370;
+    background: #3e4451;
+    width: 10px;
+    margin: 22px 0 22px 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #5a9bd4;
+    min-height: 20px;
+}
+
+QScrollBar::add-line:vertical {
+    border: 1px solid #5c6370;
+    background: #3e4451;
+    height: 20px;
+    subcontrol-origin: bottom;
+    subcontrol-position: bottom;
+}
+
+QScrollBar::sub-line:vertical {
+    border: 1px solid #5c6370;
+    background: #3e4451;
+    height: 20px;
+    subcontrol-origin: top;
+    subcontrol-position: top;
+}
+
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+    border: 1px solid #5c6370;
+    width: 3px;
+    height: 3px;
+    background: white;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+/* Custom Toggle Switch */
+QSlider::groove:horizontal {
+    border: 1px solid #5c6370;
+    height: 10px;
+    background: #3e4451;
+    margin: 2px 0;
+    border-radius: 5px;
+}
+
+QSlider::handle:horizontal {
+    background: #5a9bd4;
+    border: 1px solid #5c6370;
+    width: 20px;
+    height: 20px;
+    margin: -5px 0;
+    border-radius: 10px;
+}
+
+/* Notification Widget - Dark Mode Text Override */
+NotificationWidget QLabel {
+    color: #000000 !important;
+}
+
+/* Refresh Button - Dark Mode Override */
+QPushButton[text="⟳"] {
+    background-color: transparent !important;
+    border: none !important;
+    color: #abb2bf !important;
+    font-size: 24px !important;
+    outline: none !important;
+}
+
+QPushButton[text="⟳"]:hover {
+    color: #5a9bd4 !important;
+    background-color: rgba(90, 155, 212, 0.1) !important;
+    border-radius: 4px !important;
+}
+/* Page Button Styling */
+QPushButton#pageButton {
+    border: none;
+    background-color: transparent;
+    font-size: 18px;
+    outline: none;
+    color: #abb2bf;
+}
+
+QPushButton#pageButton:hover {
+    font-weight: bold;
+    color: #5a9bd4;
+}
+
+/* Current Page Button */
+QPushButton#pageButton:checked {
+    font-weight: bold;
+    color: #5a9bd4;
+    font-size: 20px;
+}
+
+/* Live Page Transparent Background */
+LivePage {
+    background-color: transparent;
+}
+
+/* Notification Area Transparent Background */
+LivePage QListWidget {
+    background-color: transparent !important;
+}
+
+LivePage QStackedWidget {
+    background-color: transparent;
+}
+
+LivePage QLabel[text="알림이 없습니다."] {
+    background-color: transparent !important;
+}
