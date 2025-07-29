@@ -3,22 +3,32 @@
 #include <QDebug>
 #include <QSslKey>
 #include <QMqttTopicFilter>
+#include <QSettings>
+#include <QUrl>
 
 MqttManager::MqttManager(QObject *parent)
     : QObject(parent)
 {
     loadCertificates();
 
-    client.setHostname("localhost");   // 브로커 IP
-    client.setPort(8883);
-
+    // config.ini에서 MQTT 설정 읽기
+    QSettings settings("config.ini", QSettings::IniFormat);
+    QString brokerUrl = settings.value("mqtt/broker_url").toString();
+    subscribeTopic = settings.value("mqtt/subscribe_topic").toString();
+    publishTopic = settings.value("mqtt/publish_topic").toString();
+    
+    // URL 파싱해서 호스트와 포트 추출
+    QUrl url(brokerUrl);
+    client.setHostname(url.host());
+    client.setPort(url.port(1883)); // 기본 포트 1883
+    
     connect(&client, &QMqttClient::connected, this, [this]() {
         qDebug() << "[MQTT] Connected!";
         emit connected();
-        QMqttTopicFilter filter("alert");
+        QMqttTopicFilter filter(subscribeTopic);
         auto sub = client.subscribe(filter, 1);
         if (sub)
-            qDebug() << "[MQTT] Subscribed to alert";
+            qDebug() << "[MQTT] Subscribed to" << subscribeTopic;
         else
             qDebug() << "[MQTT] Subscribe failed";
     });
@@ -66,6 +76,11 @@ void MqttManager::loadCertificates()
 void MqttManager::publish(const QString &topic, const QByteArray &payload)
 {
     client.publish(topic, payload, 1, false);  // QoS 1, retain false
+}
+
+void MqttManager::publish(const QByteArray &payload)
+{
+    client.publish(publishTopic, payload, 1, false);  // 기본 토픽 사용
 }
 
 void MqttManager::connectToBroker()

@@ -24,6 +24,7 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
     void openStartDatePicker();
@@ -55,6 +56,7 @@ private:
     QAction*         actionChildren;
     QAction*         actionSpeed;
     QPushButton*     downloadButton;
+    QWidget*         calendarContainer;
     QCalendarWidget* calendarWidget;
     bool             calendarForStart;
     QString          currentFilter;

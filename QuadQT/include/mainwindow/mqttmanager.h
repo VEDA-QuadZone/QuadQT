@@ -12,6 +12,7 @@ public:
     explicit MqttManager(QObject *parent = nullptr);
     void connectToBroker();
     void publish(const QString &topic, const QByteArray &payload);
+    void publish(const QByteArray &payload); // 기본 토픽 사용
 
 signals:
     void newMessage(const QString &topic, const QByteArray &payload);
@@ -21,6 +22,8 @@ signals:
 private:
     QMqttClient client;
     QSslConfiguration sslConfig;
+    QString subscribeTopic;
+    QString publishTopic;
     void loadCertificates();
 };
 

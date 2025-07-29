@@ -9,10 +9,19 @@
 #include <QAction>
 #include <QFile>
 #include <QDir>
+#include <QPalette>
 
 TopBarWidget::TopBarWidget(QWidget *parent)
     : QWidget(parent), m_activeButton(TopBarButton::Camera), m_parentWidth(0), m_parentHeight(0)
 {
+    // TopBar 배경색을 흰색으로 설정
+    this->setStyleSheet("background-color: #FFFFFF;");
+    this->setAutoFillBackground(true);
+    
+    // QPalette을 사용한 추가 설정
+    QPalette palette = this->palette();
+    palette.setColor(QPalette::Window, QColor(255, 255, 255));
+    this->setPalette(palette);
     // QuadZone 로고 - HanwhaB 폰트 적용
     logoLabel = new QLabel("QuadZone", this);
     
@@ -125,7 +134,7 @@ void TopBarWidget::updateButtonStates()
         cameraIcon->setText("CAM");
         cameraIcon->setStyleSheet(m_activeButton == TopBarButton::Camera ? 
             "background-color: #F37321; color: white; font-weight: bold; border-radius: 8px;" : 
-            "background-color: #eee; color: black; font-weight: bold; border-radius: 8px;");
+            "background-color: #FFFFFF; color: black; font-weight: bold; border-radius: 8px; border: 1px solid #ccc;");
         cameraIcon->setAlignment(Qt::AlignCenter);
     } else {
         // 버튼 크기에 비례한 아이콘 크기 계산 (버튼 크기의 100%)
@@ -156,7 +165,7 @@ void TopBarWidget::updateButtonStates()
         docIcon->setText("DOC");
         docIcon->setStyleSheet(m_activeButton == TopBarButton::Document ? 
             "background-color: #F37321; color: white; font-weight: bold; border-radius: 8px;" : 
-            "background-color: #eee; color: black; font-weight: bold; border-radius: 8px;");
+            "background-color: #FFFFFF; color: black; font-weight: bold; border-radius: 8px; border: 1px solid #ccc;");
         docIcon->setAlignment(Qt::AlignCenter);
     } else {
         // 버튼 크기에 비례한 아이콘 크기 계산 (버튼 크기의 100%)
@@ -186,7 +195,7 @@ void TopBarWidget::updateButtonStates()
         settingIcon->setText("SET");
         settingIcon->setStyleSheet(m_activeButton == TopBarButton::Settings ? 
             "background-color: #F37321; color: white; font-weight: bold; border-radius: 8px;" : 
-            "background-color: #eee; color: black; font-weight: bold; border-radius: 8px;");
+            "background-color: #FFFFFF; color: black; font-weight: bold; border-radius: 8px; border: 1px solid #ccc;");
         settingIcon->setAlignment(Qt::AlignCenter);
     } else {
         // 버튼 크기에 비례한 아이콘 크기 계산 (버튼 크기의 100%)
@@ -208,7 +217,7 @@ void TopBarWidget::updateButtonStates()
     if (profilePixmap.isNull()) {
         loginStatus->clear();
         loginStatus->setText("USER");
-        loginStatus->setStyleSheet("background-color: #eee; color: black; font-weight: bold; border-radius: 8px;");
+        loginStatus->setStyleSheet("background-color: #FFFFFF; color: black; font-weight: bold; border-radius: 8px; border: 1px solid #ccc;");
         loginStatus->setAlignment(Qt::AlignCenter);
     } else {
         // 버튼 크기에 비례한 아이콘 크기 계산 (버튼 크기의 100%)

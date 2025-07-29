@@ -7,6 +7,7 @@
 #include <QHeaderView>
 #include <QMenu>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QLabel>
 #include <QItemSelectionModel>
 #include <QFileDialog>
@@ -15,6 +16,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QMessageBox>
+#include <QSettings>
 
 static constexpr int PAGE_SIZE = 16;
 
@@ -26,7 +28,6 @@ HistoryView::HistoryView(QWidget *parent)
     this->setStyleSheet("background-color: #FFFFFF;");  // 원하는 배경색으로 변경
     // 1) 제목
     titleLabel = new QLabel("히스토리", this);
-    titleLabel->setStyleSheet("font-size:16px;font-weight:bold;");
     titleLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
 
     // 2) 테이블 설정
@@ -39,9 +40,7 @@ HistoryView::HistoryView(QWidget *parent)
         "", "날짜", "유형", "이미지",
         "번호판", "속도", "정차 시작 이미지", "1분 경과 이미지"
     });
-    tableWidget->horizontalHeader()->setStyleSheet(
-        "QHeaderView::section { background:#FBB584; padding:4px; border:1px solid #E0A070; }"
-        );
+    // 테이블 헤더 스타일은 resizeEvent에서 동적으로 설정
     tableWidget->verticalHeader()->setVisible(false);
     tableWidget->horizontalHeader()->setStretchLastSection(true);
     tableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
@@ -86,17 +85,17 @@ HistoryView::HistoryView(QWidget *parent)
     // 4) 날짜 버튼
     startDateButton = new QPushButton(this);
     startDateButton->setText("시작일 선택하기");
-    startDateButton->setIcon(QIcon(":/images/images/calendar.png"));
+    startDateButton->setIcon(QIcon(":/images/calendar.png"));
     startDateButton->setIconSize(QSize(16,16));
     startDateButton->setStyleSheet(
         "QPushButton{padding:4px;background:transparent;border:none;text-align:right;}"
         );
     arrowLabel = new QLabel(this);
-    arrowLabel->setPixmap(QPixmap(":/images/images/sign.png").scaled(16,16,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+    arrowLabel->setPixmap(QPixmap(":/images/sign.png").scaled(16,16,Qt::KeepAspectRatio,Qt::SmoothTransformation));
     arrowLabel->setAlignment(Qt::AlignCenter);
     endDateButton = new QPushButton(this);
     endDateButton->setText("종료일 선택하기");
-    endDateButton->setIcon(QIcon(":/images/images/calendar.png"));
+    endDateButton->setIcon(QIcon(":/images/calendar.png"));
     endDateButton->setIconSize(QSize(16,16));
     endDateButton->setStyleSheet(
         "QPushButton{padding:4px;background:transparent;border:none;text-align:left;}"
@@ -107,14 +106,11 @@ HistoryView::HistoryView(QWidget *parent)
     // 5) 필터 버튼
     filterButton = new QToolButton(this);
     filterButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    filterButton->setLayoutDirection(Qt::RightToLeft);
+    filterButton->setLayoutDirection(Qt::LeftToRight);
     filterButton->setText("유형");
-    filterButton->setIcon(QIcon(":/images/images/below.png"));
+    filterButton->setIcon(QIcon(":/images/below.png"));
     filterButton->setPopupMode(QToolButton::InstantPopup);
-    filterButton->setStyleSheet(R"(
-        QToolButton{background:#FBB584;border:none;padding:4px;text-align:center;}
-        QToolButton::menu-indicator{image:none;}
-    )");
+    // filterButton 스타일은 resizeEvent에서 동적으로 설정
     QMenu* fm = new QMenu(this);
     fm->setStyleSheet(R"(
         QMenu{background:#FBB584;border:none;}
@@ -135,16 +131,86 @@ HistoryView::HistoryView(QWidget *parent)
 
     // 6) 다운로드 버튼
     downloadButton = new QPushButton(this);
-    downloadButton->setIcon(QIcon(":/images/images/download.png"));
+    downloadButton->setIcon(QIcon(":/images/download.png"));
     downloadButton->setFlat(true);
     connect(downloadButton,&QPushButton::clicked,this,&HistoryView::exportCsv);
 
-    // 7) 캘린더
-    calendarWidget = new QCalendarWidget(this);
-    calendarWidget->setWindowFlags(Qt::Popup);
-    calendarWidget->hide();
+    // 7) 캘린더 컨테이너
+    calendarContainer = new QWidget(this);
+    calendarContainer->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);
+    calendarContainer->hide();
+    calendarContainer->setStyleSheet(R"(
+        QWidget {
+            background-color: white;
+            border: 2px solid #FF6B35;
+            border-radius: 8px;
+        }
+    )");
+    
+    // 캘린더 위젯을 레이아웃으로 배치
+    QVBoxLayout* calendarLayout = new QVBoxLayout(calendarContainer);
+    calendarLayout->setContentsMargins(3, 3, 3, 3);
+    calendarLayout->setSpacing(0);
+    
+    calendarWidget = new QCalendarWidget();
+    calendarLayout->addWidget(calendarWidget);
+    
+    // 달력 스타일 설정
+    calendarWidget->setStyleSheet(R"(
+        QCalendarWidget {
+            background-color: transparent;
+            border: none;
+            outline: none;
+        }
+        QCalendarWidget * {
+            border: none;
+            outline: none;
+        }
+        QCalendarWidget QToolButton {
+            background-color: #FBB584;
+            color: black;
+            border: none;
+            border-radius: 4px;
+            padding: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        QCalendarWidget QToolButton:hover {
+            background-color: #E0A070;
+        }
+        QCalendarWidget QMenu {
+            background-color: white;
+            border: 1px solid #FBB584;
+        }
+        QCalendarWidget QSpinBox {
+            background-color: white;
+            border: 1px solid #FBB584;
+            color: black;
+            font-weight: bold;
+        }
+        QCalendarWidget QAbstractItemView {
+            background-color: white;
+            selection-background-color: #FBB584;
+            color: black;
+        }
+        QCalendarWidget QAbstractItemView:enabled {
+            color: black;
+        }
+        QCalendarWidget QWidget#qt_calendar_navigationbar {
+            background-color: #FBB584;
+        }
+    )");
+    
     connect(calendarWidget, &QCalendarWidget::activated,
             this, &HistoryView::dateSelected);
+    
+    // 달력 크기 및 속성 설정
+    calendarWidget->setFixedSize(300, 200);
+    calendarContainer->setFixedSize(310, 210); // 테두리 + 마진 포함 크기
+    calendarContainer->setAttribute(Qt::WA_StyledBackground, true);
+    
+    // 달력 밖 클릭 시 숨기기 위한 이벤트 필터 설치
+    this->installEventFilter(this);
 
     // TCP 핸들러
     tcpHandler_      = new TcpHistoryHandler(this);
@@ -155,7 +221,13 @@ HistoryView::HistoryView(QWidget *parent)
             this, &HistoryView::onImageDataReady);
     connect(tcpImageHandler_, &TcpImageHandler::errorOccurred,
             this, [this](auto e){ QMessageBox::warning(this, "Image Error", e); });
-    tcpHandler_->connectToServer("192.168.0.10", 8080);
+    
+    // config.ini에서 TCP 설정 읽기
+    QSettings settings("config.ini", QSettings::IniFormat);
+    QString tcpHost = settings.value("tcp/ip").toString();
+    int tcpPort = settings.value("tcp/port").toInt();
+    
+    tcpHandler_->connectToServer(tcpHost, tcpPort);
     // 페이징
     setupPaginationUI();
 
@@ -195,7 +267,12 @@ void HistoryView::onImageCellClicked(int row, int col) {
     currentImageView_ = new GetImageView(path, timestamp, this);
     currentImageView_->show();
 
-    tcpImageHandler_->connectToServerThenRequestImage("192.168.0.10", 8080, path);
+    // config.ini에서 TCP 설정 읽기
+    QSettings settings("config.ini", QSettings::IniFormat);
+    QString tcpHost = settings.value("tcp/ip").toString();
+    int tcpPort = settings.value("tcp/port").toInt();
+    
+    tcpImageHandler_->connectToServerThenRequestImage(tcpHost, tcpPort, path);
 }
 
 
@@ -412,6 +489,7 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     int yOffset = hu * 3;  // 올릴 높이
 
     titleLabel->setGeometry(wu*1, hu*3 - yOffset, wu*1, uH);
+    titleLabel->setStyleSheet(QString("font-family: 'HanwhaGothicB', 'Malgun Gothic', Arial; font-size:%1px;font-weight:bold;").arg(int(hu*0.4)));
 
     // 테이블 높이: header + 실제 row 개수
     int rows = tableWidget->rowCount();
@@ -424,6 +502,9 @@ void HistoryView::resizeEvent(QResizeEvent *event)
         tableWidget->setColumnWidth(c, cw[c] * uW);
     tableWidget->verticalHeader()->setDefaultSectionSize(uH);
     tableWidget->horizontalHeader()->setFixedHeight(uH);
+    tableWidget->horizontalHeader()->setStyleSheet(QString(
+        "QHeaderView::section { background:#FBB584; padding:4px; border:none; font-size:%1px; }"
+        ).arg(int(hu*0.5)));
 
     // header checkbox 위치
     QHeaderView* hh = tableWidget->horizontalHeader();
@@ -440,8 +521,30 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     startDateButton ->setGeometry(wu*13+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
     arrowLabel      ->setGeometry(wu*16, hu*3 - yOffset, wu*0.5, uH);
     endDateButton   ->setGeometry(wu*16+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
-    filterButton    ->setGeometry(wu*19, hu*3 - yOffset, wu*3, uH);
-    downloadButton  ->setGeometry(wu*22, hu*3 - yOffset, wu*1, uH);
+    filterButton    ->setGeometry(wu*19, hu*3 - yOffset, wu*2.5, uH);
+    filterButton->setStyleSheet(QString(R"(
+        QToolButton{
+            background:#FBB584 url(:/images/menu.png) no-repeat left center;
+            background-size:%4px %4px;
+            border:none;
+            padding-left:%5px;
+            padding-top:%2px;
+            padding-bottom:%2px;
+            padding-right:%2px;
+            text-align:center;
+            font-size:%1px;
+            qproperty-toolButtonStyle: ToolButtonTextOnly;
+        }
+        QToolButton::menu-indicator{
+            image:url(:/images/below.png);
+            subcontrol-position:right center;
+            subcontrol-origin:padding;
+            width:%3px;
+            height:%3px;
+        }
+    )").arg(int(hu*0.5)).arg(int(hu*0.2)).arg(int(hu*0.8)).arg(int(hu*0.6)).arg(int(hu*1.0)));
+    downloadButton  ->setGeometry(wu*21.5, hu*3 - yOffset, wu*1.5, uH);
+    downloadButton->setIconSize(QSize(int(hu*0.7), int(hu*0.7)));
 
     // 페이징: 가로 8칸, 중앙, row22
     int navX = int(wu*8);
@@ -458,24 +561,75 @@ void HistoryView::resizeEvent(QResizeEvent *event)
 void HistoryView::openStartDatePicker()
 {
     calendarForStart = true;
-    calendarWidget->show();
+    
+    // 버튼 바로 아래에 달력 컨테이너 위치 설정
+    int x = startDateButton->x();
+    int y = startDateButton->y() + startDateButton->height() + 5;
+    
+    // 화면 경계 체크
+    if (x + calendarContainer->width() > this->width()) {
+        x = this->width() - calendarContainer->width() - 10;
+    }
+    if (y + calendarContainer->height() > this->height()) {
+        y = startDateButton->y() - calendarContainer->height() - 5;
+    }
+    
+    calendarContainer->move(x, y);
+    calendarContainer->show();
+    calendarContainer->raise();
+    calendarContainer->activateWindow();
 }
 
 void HistoryView::openEndDatePicker()
 {
     calendarForStart = false;
-    calendarWidget->show();
+    
+    // 버튼 바로 아래에 달력 컨테이너 위치 설정
+    int x = endDateButton->x();
+    int y = endDateButton->y() + endDateButton->height() + 5;
+    
+    // 화면 경계 체크
+    if (x + calendarContainer->width() > this->width()) {
+        x = this->width() - calendarContainer->width() - 10;
+    }
+    if (y + calendarContainer->height() > this->height()) {
+        y = endDateButton->y() - calendarContainer->height() - 5;
+    }
+    
+    calendarContainer->move(x, y);
+    calendarContainer->show();
+    calendarContainer->raise();
+    calendarContainer->activateWindow();
 }
 
 void HistoryView::dateSelected()
 {
     QString txt = calendarWidget->selectedDate().toString("yyyy-MM-dd");
     (calendarForStart ? startDateButton : endDateButton)->setText(txt);
-    calendarWidget->hide();
+    calendarContainer->hide();
     if (!startDateButton->text().isEmpty() && !endDateButton->text().isEmpty()) {
         startDate = startDateButton->text();
         endDate   = endDateButton->text();
         currentPage = 0;
         requestPage();
     }
+}
+bool HistoryView::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        
+        // 달력이 보이는 상태에서 달력 밖을 클릭했을 때
+        if (calendarContainer->isVisible()) {
+            QRect calendarRect = calendarContainer->geometry();
+            QPoint clickPos = mouseEvent->pos();
+            
+            // 클릭 위치가 달력 영역 밖이면 달력 숨기기
+            if (!calendarRect.contains(clickPos)) {
+                calendarContainer->hide();
+            }
+        }
+    }
+    
+    return QWidget::eventFilter(obj, event);
 }

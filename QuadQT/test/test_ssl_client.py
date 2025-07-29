@@ -38,7 +38,7 @@ def test_ssl_connection():
     try:
         # 서버에 연결
         print("서버에 SSL 연결 중...")
-        ssl_sock.connect(('127.0.0.1', 8080))
+        ssl_sock.connect(('192.168.0.10', 8080))
         print("SSL 연결 성공!")
         
         # 연결 정보 출력

@@ -14,7 +14,7 @@ public:
     explicit TcpHistoryHandler(QObject *parent = nullptr);
 
     /// 서버(SSL) 연결
-    void connectToServer(const QString &host = "192.168.0.10", quint16 port = 8080);
+    void connectToServer(const QString &host, quint16 port);
 
     /// API 호출
     void getHistory(const QString &email, int limit, int offset);
