@@ -17,6 +17,8 @@ class LoginPage : public QDialog
 public:
     explicit LoginPage(QWidget *parent = nullptr);
     ~LoginPage();
+    
+    QString getLoggedInEmail() const { return m_loggedInEmail; }
 
 signals:
     void loginSuccessful();
@@ -41,6 +43,7 @@ private slots:
 
 private:
     void setupConnections();
+    void setupFonts();
     void showMessage(const QString &title, const QString &message, QMessageBox::Icon icon = QMessageBox::Information);
     bool validateEmail(const QString &email);
     bool validatePassword(const QString &password);
@@ -48,6 +51,7 @@ private:
 
     Ui::LoginPage *ui;
     NetworkManager *m_networkManager;
+    QString m_loggedInEmail;
 };
 
 #endif // LOGINPAGE_H

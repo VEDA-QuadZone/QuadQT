@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>QuadZone Login</string>
+   <string>QuadZone</string>
   </property>
   <property name="styleSheet">
    <string notr="true">* {
@@ -40,7 +40,7 @@
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>35</height>
       </size>
      </property>
     </spacer>
@@ -67,7 +67,7 @@ background-color: #FFFFFF;</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="3">
+   <item row="3" column="0" colspan="3">
     <spacer name="titleSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -75,7 +75,7 @@ background-color: #FFFFFF;</string>
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>0</height>
+       <height>15</height>
       </size>
      </property>
     </spacer>
@@ -209,7 +209,7 @@ QLineEdit:focus {
 }</string>
          </property>
          <property name="placeholderText">
-          <string>Value</string>
+          <string></string>
          </property>
         </widget>
        </item>
@@ -267,7 +267,7 @@ QLineEdit:focus {
           <enum>QLineEdit::Password</enum>
          </property>
          <property name="placeholderText">
-          <string>Value</string>
+          <string></string>
          </property>
         </widget>
        </item>
@@ -365,6 +365,19 @@ QPushButton:hover {
             <string>Forgot password?</string>
            </property>
           </widget>
+         </item>
+         <item>
+          <spacer name="linkSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>10</width>
+             <height>10</height>
+            </size>
+           </property>
+          </spacer>
          </item>
          <item>
           <widget class="QPushButton" name="pushButton_GoToRegister">
@@ -500,7 +513,7 @@ QLineEdit:focus {
 }</string>
          </property>
          <property name="placeholderText">
-          <string>Value</string>
+          <string></string>
          </property>
         </widget>
        </item>
@@ -558,7 +571,7 @@ QLineEdit:focus {
           <enum>QLineEdit::Password</enum>
          </property>
          <property name="placeholderText">
-          <string>Value</string>
+          <string></string>
          </property>
         </widget>
        </item>
@@ -749,7 +762,7 @@ QLineEdit:focus {
 }</string>
          </property>
          <property name="placeholderText">
-          <string>Value</string>
+          <string></string>
          </property>
         </widget>
        </item>
@@ -807,7 +820,7 @@ QLineEdit:focus {
           <enum>QLineEdit::Password</enum>
          </property>
          <property name="placeholderText">
-          <string>Value</string>
+          <string></string>
          </property>
         </widget>
        </item>
@@ -941,7 +954,7 @@ QPushButton:pressed {
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>100</height>
+       <height>120</height>
       </size>
      </property>
     </spacer>
