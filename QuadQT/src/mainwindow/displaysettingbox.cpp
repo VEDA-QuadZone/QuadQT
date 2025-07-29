@@ -105,7 +105,7 @@ void DisplaySettingBox::updateObjectBoxUI()
 void DisplaySettingBox::updateTimestampUI()
 {
     QString iconPath = timestampOn ? ":/images/images/timestamp_orange.png" : ":/images/images/timestamp_gray.png";
-    timestampIcon->setPixmap(QPixmap(iconPath).scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    timestampIcon->setPixmap(QPixmap(iconPath));
     timestampLabel->setStyleSheet(QString("font-size: 14px; color: %1; border: none; background: transparent;")
                                       .arg(timestampOn ? "#F37321" : "#aaa"));
 }

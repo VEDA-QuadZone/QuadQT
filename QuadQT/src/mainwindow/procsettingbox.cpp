@@ -183,8 +183,8 @@ void ProcSettingBox::updateModeUI()
     plusButton->setIcon(QIcon(plusIcon));
     plusButton->setIconSize(QSize(20, 20));
 
-    dayIcon->setPixmap(QPixmap(isDay ? ":/images/images/sun_orange.png" : ":/images/images/sun_gray.png").scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    nightIcon->setPixmap(QPixmap(isNight ? ":/images/images/moon_orange.png" : ":/images/images/moon_gray.png").scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    dayIcon->setPixmap(QPixmap(isDay ? ":/images/images/sun_orange.png" : ":/images/images/sun_gray.png"));
+    nightIcon->setPixmap(QPixmap(isNight ? ":/images/images/moon_orange.png" : ":/images/images/moon_gray.png"));
 
     dayLabel->setStyleSheet(isDay ? textStyleOrange : textStyleGray);
     nightLabel->setStyleSheet(isNight ? textStyleOrange : textStyleGray);
