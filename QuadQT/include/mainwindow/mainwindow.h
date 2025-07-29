@@ -5,6 +5,8 @@
 #include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/procsettingbox.h"
+#include "mainwindow/videowidget.h"
+#include "mainwindow/videoplayer.h"
 
 class QLabel;
 class QWidget;
@@ -31,7 +33,11 @@ private:
     QLabel *cameraTitle;
     QLabel *notifTitleLabel;
 
-    QWidget *videoArea;
+    // ───── RTSP 스트리밍 ─────
+    VideoWidget *videoArea;
+    VideoPlayer *player;
+
+    // ───── Notification ─────
     NotificationPanel *notificationPanel;
 
     // ───── 영상 설정 관련 구성 요소 ─────

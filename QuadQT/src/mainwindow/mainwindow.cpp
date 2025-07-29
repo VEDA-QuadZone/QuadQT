@@ -1,6 +1,8 @@
 #include "mainwindow/mainwindow.h"
 #include "mainwindow/topbarwidget.h"
 #include "mainwindow/displaysettingbox.h"
+#include "mainwindow/videoplayer.h"
+#include "mainwindow/videowidget.h"
 
 #include <QResizeEvent>
 #include <QLabel>
@@ -35,6 +37,14 @@ MainWindow::MainWindow(QWidget *parent)
     
     qDebug() << "📐 레이아웃 업데이트 시작";
     updateLayout();
+
+    qDebug() << "VideoPlayer 초기화 시작";
+    player = new VideoPlayer(this);
+    connect(player, &VideoPlayer::frameReady, videoArea, &VideoWidget::displayFrame);
+
+    qDebug() << "RTSP 스트림 시작";
+    // RTSP 스트림 시작
+    player->startStream("rtsps://192.168.0.10:8555/test");
     
     qDebug() << "✅ MainWindow 생성 완료";
 }
@@ -60,8 +70,9 @@ void MainWindow::setupUI()
     notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
     qDebug() << "🔔 알림 제목 생성됨:" << (notifTitleLabel ? "성공" : "실패");
 
-    videoArea = new QWidget(parent);
+    videoArea = new VideoWidget(parent);
     videoArea->setStyleSheet("background-color: #e2e7ec; border: 1px solid #ccc;");
+
     qDebug() << "🎥 비디오 영역 생성됨:" << (videoArea ? "성공" : "실패");
 
     notificationPanel = new NotificationPanel(parent);
@@ -158,8 +169,9 @@ void MainWindow::updateLayout()
     qDebug() << "📝 제목 레이블들 레이아웃 설정됨";
 
     videoArea->setGeometry(cctv_x, h_unit * 4, cctv_w, h_unit * 13);
+    qDebug() << "비디오 영역 레이아웃 설정됨";
     notificationPanel->setGeometry(notif_x, h_unit * 4, notif_w, h_unit * 19);
-    qDebug() << "🎥 비디오 영역 및 알림 패널 레이아웃 설정됨";
+    qDebug() << "알림 패널 레이아웃 설정됨";
 
     double settingTop = h_unit * 17;
     double labelTop   = h_unit * 18;
