@@ -1,15 +1,40 @@
 <RCC>
     <qresource prefix="/images">
-        <file>resources/images/camera.png</file>
-        <file>resources/images/camera_orange.png</file>
-        <file>resources/images/Document.png</file>
-        <file>resources/images/Document_orange.png</file>
-        <file>resources/images/Settings.png</file>
-        <file>resources/images/settings_orange.png</file>
-        <file>resources/images/Profile.png</file>
-        <file>resources/images/box.png</file>
-        <file>resources/images/logo.png</file>
-        <file>resources/images/video.png</file>
+        <file alias="camera.png">resources/images/camera.png</file>
+        <file alias="camera_orange.png">resources/images/camera_orange.png</file>
+        <file alias="Document.png">resources/images/Document.png</file>
+        <file alias="Document_orange.png">resources/images/Document_orange.png</file>
+        <file alias="Settings.png">resources/images/Settings.png</file>
+        <file alias="settings_orange.png">resources/images/settings_orange.png</file>
+        <file alias="Profile.png">resources/images/Profile.png</file>
+        <file alias="box.png">resources/images/box.png</file>
+        <file alias="logo.png">resources/images/logo.png</file>
+        <file alias="video.png">resources/images/video.png</file>
+        <file alias="caution.png">resources/images/caution.png</file>
+        <file alias="minus_gray.png">resources/images/minus_gray.png</file>
+        <file alias="minus_orange.png">resources/images/minus_orange.png</file>
+        <file alias="moon_orange.png">resources/images/moon_orange.png</file>
+        <file alias="moon_gray.png">resources/images/moon_gray.png</file>
+        <file alias="objectbox_gray.png">resources/images/objectbox_gray.png</file>
+        <file alias="objectbox_orange.png">resources/images/objectbox_orange.png</file>
+        <file alias="plus_gray.png">resources/images/plus_gray.png</file>
+        <file alias="plus_orange.png">resources/images/plus_orange.png</file>
+        <file alias="sun_orange.png">resources/images/sun_orange.png</file>
+        <file alias="sun_gray.png">resources/images/sun_gray.png</file>
+        <file alias="timestamp_gray.png">resources/images/timestamp_gray.png</file>
+        <file alias="timestamp_orange.png">resources/images/timestamp_orange.png</file>
+        <file alias="info.png">resources/images/info.png</file>
+        <file alias="prohibition.png">resources/images/prohibition.png</file>
+        <file alias="download.png">resources/images/download.png</file>
+        <file alias="download_dark.png">resources/images/download_dark.png</file>
+        <file alias="refresh.png">resources/images/refresh.png</file>
+        <file alias="time.png">resources/images/time.png</file>
+        <file alias="user.png">resources/images/user.png</file>
+        <file alias="user_dark.png">resources/images/user_dark.png</file>
+        <file alias="moon.png">resources/images/moon.png</file>
+        <file alias="sun.PNG">resources/images/sun.PNG</file>
+        <file alias="dark.svg">resources/images/dark.svg</file>
+        <file alias="light.svg">resources/images/light.svg</file>
     </qresource>
     <qresource prefix="/fonts">
         <file>resources/fonts/01HanwhaB.ttf</file>
