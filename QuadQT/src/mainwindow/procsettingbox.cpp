@@ -190,15 +190,15 @@ void ProcSettingBox::updateModeUI()
     bool isNight = nightRadio->isChecked();
     bool isSharpness = sharpnessRadio->isChecked();
 
-    QString minusIcon = isSharpness ? ":/images/images/minus_orange.png" : ":/images/images/minus_gray.png";
-    QString plusIcon = isSharpness ? ":/images/images/plus_orange.png" : ":/images/images/plus_gray.png";
+    QString minusIcon = isSharpness ? ":/images/minus_orange.png" : ":/images/minus_gray.png";
+    QString plusIcon = isSharpness ? ":/images/plus_orange.png" : ":/images/plus_gray.png";
     minusButton->setIcon(QIcon(minusIcon));
     minusButton->setIconSize(QSize(20, 20));
     plusButton->setIcon(QIcon(plusIcon));
     plusButton->setIconSize(QSize(20, 20));
 
-    dayIcon->setPixmap(QPixmap(isDay ? ":/images/images/sun_orange.png" : ":/images/images/sun_gray.png"));
-    nightIcon->setPixmap(QPixmap(isNight ? ":/images/images/moon_orange.png" : ":/images/images/moon_gray.png"));
+    dayIcon->setPixmap(QPixmap(isDay ? ":/images/sun_orange.png" : ":/images/sun_gray.png"));
+    nightIcon->setPixmap(QPixmap(isNight ? ":/images/moon_orange.png" : ":/images/moon_gray.png"));
 
     dayLabel->setStyleSheet(isDay ? textStyleOrange : textStyleGray);
     nightLabel->setStyleSheet(isNight ? textStyleOrange : textStyleGray);
