@@ -9,7 +9,7 @@
 #include "mainwindow/topbarwidget.h"
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/procsettingbox.h"
-
+#include "mainwindow/historyview.h"
 class QLabel;
 class DisplaySettingBox;
 
@@ -74,7 +74,8 @@ private:
 
     // 로그아웃 상태
     bool m_isLogout;
-
+private:
+    HistoryView *historyView;
 private slots:
     void onCameraClicked();
     void onDocumentClicked();
