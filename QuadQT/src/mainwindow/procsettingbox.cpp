@@ -168,6 +168,20 @@ void ProcSettingBox::setupConnections()
     connect(sharpnessSlider, &QSlider::valueChanged, this, [=](int val) {
         sharpnessEdit->setText(QString::number(val));
     });
+
+    connect(minusButton, &QPushButton::clicked, this, [=]() {
+        if (sharpnessRadio->isChecked()) {
+            int val = sharpnessSlider->value();
+            sharpnessSlider->setValue(std::max(0, val - 1));
+        }
+    });
+
+    connect(plusButton, &QPushButton::clicked, this, [=]() {
+        if (sharpnessRadio->isChecked()) {
+            int val = sharpnessSlider->value();
+            sharpnessSlider->setValue(std::min(100, val + 1));
+        }
+    });
 }
 
 void ProcSettingBox::updateModeUI()
