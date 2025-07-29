@@ -47,6 +47,7 @@ NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *
 
     setStyleSheet(QString(
                       "background-color: %1;"
+                      "border: none;"
                       "border-radius: 0;"
                       ).arg(bgColor));
 

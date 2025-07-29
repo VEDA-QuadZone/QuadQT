@@ -268,7 +268,9 @@ void MainWindow::updateCameraPageLayout()
     cameraTitle->setGeometry(cctv_x, h_unit * 0, cctv_w, h_unit);
     notifTitleLabel->setGeometry(notif_x, h_unit * 0, notif_w, h_unit);
     videoArea->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
-    notificationPanel->setGeometry(notif_x, h_unit * 1, notif_w, h_unit * 16);
+    notificationPanel->setGeometry(notif_x, h_unit * 1, notif_w, h_unit * 13);
+    notificationPanel->setMinimumHeight(h_unit * 13);
+    notificationPanel->setMaximumHeight(h_unit * 13);
 
     double settingTop = h_unit * 14;
     double labelTop   = h_unit * 15;
