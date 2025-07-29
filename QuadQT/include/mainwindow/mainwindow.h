@@ -4,8 +4,9 @@
 #include <QMainWindow>
 #include <QStackedWidget>
 #include <QCloseEvent>
-
-#include "mainwindow/topbarwidget.h"
+#include <QtMultimedia/QMediaPlayer>
+#include <QtMultimediaWidgets/QVideoWidget>
+#include "mainwindow/topbarwidget.h"  // TopBarWidget 사용
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/procsettingbox.h"
 
@@ -52,7 +53,12 @@ private:
     // 카메라 페이지 UI 구성요소
     QLabel *cameraTitle;
     QLabel *notifTitleLabel;
-    QLabel *videoArea;  // QLabel로 고정
+
+    // ───── RTSP 스트리밍 ─────
+    QMediaPlayer *player;
+    QVideoWidget *videoWidget;
+
+    // ───── Notification ─────
     NotificationPanel *notificationPanel;
     QLabel *videoSettingTitle;
     QLabel *displayTitle;

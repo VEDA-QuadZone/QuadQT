@@ -1,4 +1,4 @@
-QT       += core gui network
+QT       += core gui network multimedia multimediawidgets
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++17
 
@@ -9,11 +9,12 @@ CONFIG += c++17
 INCLUDEPATH += \
     $$PWD/include \
     $$PWD/include/login \
-    $$PWD/include/mainwindow
+    $$PWD/include/mainwindow \
+    C:/opencv/prebuilt_mingw/include
 
 # ====== SOURCES (.cpp) ======
 SOURCES += \
-    main.cpp \  # 또는 main_test.cpp 사용 시 교체
+    main.cpp \
     src/login/loginpage.cpp \
     src/login/networkmanager.cpp \
     src/mainwindow/displaysettingbox.cpp \
@@ -41,6 +42,8 @@ FORMS += \
 
 # ====== RESOURCES (.qrc) ======
 RESOURCES += \
+    resources/certs.qrc \
+    resources/certs/certs.qrc \
     resources/images.qrc \
     resources/style.qrc
     resource.qrc

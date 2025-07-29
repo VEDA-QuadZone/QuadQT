@@ -12,6 +12,11 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QApplication>
+#include <QFile>
+#include <QSslConfiguration>
+#include <QSslCertificate>
+#include <QtMultimedia/QMediaPlayer>
+#include <QtMultimediaWidgets/QVideoWidget>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -28,14 +33,18 @@ MainWindow::MainWindow(QWidget *parent)
     videoSettingLine(nullptr),
     cameraTitle(nullptr),
     notifTitleLabel(nullptr),
-    videoArea(nullptr),
+    videoWidget(nullptr),
     notificationPanel(nullptr),
-    m_isLogout(false)
+    player(nullptr)
 {
-    qDebug() << "MainWindow 생성자 시작";
+    qDebug() << "🏠 MainWindow 생성자 시작";
+
+    // 단방향 TLS 검증 해제
+    QSslConfiguration sslConf = QSslConfiguration::defaultConfiguration();
+    sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
+    QSslConfiguration::setDefaultConfiguration(sslConf);
 
     QWidget *centralW = new QWidget(this);
-    centralW->setStyleSheet("background-color: white;");
     setCentralWidget(centralW);
     setMinimumSize(1600, 900);
     showMaximized();
@@ -47,6 +56,15 @@ MainWindow::MainWindow(QWidget *parent)
     showPage(PageType::Camera);
 
     qDebug() << "MainWindow 생성 완료";
+    updateLayout();
+
+    // QMediaPlayer 초기화
+    player = new QMediaPlayer(this);
+    player->setVideoOutput(videoWidget);
+    player->setSource(QUrl("rtsps://192.168.0.10:8555/test"));
+    player->play();
+
+    qDebug() << "✅ MainWindow 생성 완료";
 }
 
 MainWindow::~MainWindow() {}
@@ -190,6 +208,56 @@ QWidget* MainWindow::createSettingsPage()
     contentLabel->setGeometry(0, 200, 800, 30);
 
     return page;
+
+    cameraTitle = new QLabel("역삼 초등학교 앞 CCTV", parent);
+    cameraTitle->setStyleSheet("font-weight: bold; font-size: 15px;");
+    cameraTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+
+    notifTitleLabel = new QLabel("실시간 알림", parent);
+    notifTitleLabel->setStyleSheet("font-weight: bold; font-size: 15px;");
+    notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+
+    // QVideoWidget 사용
+    videoWidget = new QVideoWidget(parent);
+    videoWidget->setStyleSheet("background-color: black; border: 1px solid #ccc;");
+    videoWidget->show();
+
+    notificationPanel = new NotificationPanel(parent);
+    notificationPanel->setStyleSheet("background: transparent; border: none;");
+
+    videoSettingTitle = new QLabel("영상 설정", parent);
+    videoSettingTitle->setStyleSheet("font-weight: bold; font-size: 16px;");
+    videoSettingTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+
+    videoSettingLine = new QWidget(parent);
+    videoSettingLine->setStyleSheet("background-color: #999;");
+
+    displayTitle = new QLabel("화면 표시", parent);
+    displayTitle->setStyleSheet("font-size: 13px; font-weight: bold;");
+    displayTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+
+    procTitle = new QLabel("영상 처리", parent);
+    procTitle->setStyleSheet("font-size: 13px; font-weight: bold;");
+    procTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+
+    displayBox = new DisplaySettingBox(parent);
+    displayBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
+
+    procBox = new ProcSettingBox(parent);
+    procBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
+
+    // Z-Order 조정: 영상은 뒤로, UI는 앞으로
+    videoWidget->lower();
+    topBar->raise();
+    cameraTitle->raise();
+    notifTitleLabel->raise();
+    notificationPanel->raise();
+    videoSettingTitle->raise();
+    videoSettingLine->raise();
+    displayTitle->raise();
+    procTitle->raise();
+    displayBox->raise();
+    procBox->raise();
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -232,10 +300,16 @@ void MainWindow::showPage(PageType pageType)
 
 void MainWindow::updateLayout()
 {
-    if (!topBar || !stackedWidget) return;
+    qDebug() << "📐 레이아웃 업데이트 시작";
+    if (!topBar || !cameraTitle || !notifTitleLabel || !videoWidget || !notificationPanel) {
+        qDebug() << "❌ 필수 UI 요소가 null이어서 레이아웃 업데이트 중단";
+        return;
+    }
 
     int w = width();
     int h = height();
+
+    double w_unit = w / 24.0;
     double h_unit = h / 24.0;
 
     topBar->setGeometry(0, 0, w, h_unit * 3);
@@ -275,6 +349,12 @@ void MainWindow::updateCameraPageLayout()
     double settingTop = h_unit * 14;
     double labelTop   = h_unit * 15;
     double boxTop     = h_unit * 16;
+    cameraTitle->setGeometry(cctv_x, h_unit * 3, cctv_w, h_unit);
+    notifTitleLabel->setGeometry(notif_x, h_unit * 3, notif_w, h_unit);
+
+    // QVideoWidget 레이아웃 적용
+    videoWidget->setGeometry(cctv_x, h_unit * 4, cctv_w, h_unit * 13);
+    notificationPanel->setGeometry(notif_x, h_unit * 4, notif_w, h_unit * 19);
 
     if (videoSettingTitle)
         videoSettingTitle->setGeometry(cctv_x, settingTop, cctv_w, h_unit);
