@@ -145,11 +145,14 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     setFixedWidth(IMAGE_WIDTH + 32); // 좌우 마진 여유 포함
     setLayout(vLayout);
 
-    // 닫기
+    // 버튼 연결
     connect(closeButton_, &QPushButton::clicked, this, &QDialog::accept);
+    connect(downloadButton_, &QPushButton::clicked, this, &GetImageView::downloadImage);
+    connect(printButton_, &QPushButton::clicked, this, &GetImageView::printToPdf);
 }
 
 void GetImageView::setImageData(const QByteArray& data) {
+    imageData_ = data; // 이미지 데이터 저장
     if (data.isEmpty()) {
         imageLabel_->setText("이미지 없음");
         return;
@@ -163,4 +166,58 @@ void GetImageView::setImageData(const QByteArray& data) {
     QPixmap scaledPix = pix.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     imageLabel_->setPixmap(scaledPix);
     imageLabel_->setAlignment(Qt::AlignCenter);
+}
+
+void GetImageView::downloadImage() {
+    if (imageData_.isEmpty()) {
+        QMessageBox::warning(this, "경고", "다운로드할 이미지가 없습니다.");
+        return;
+    }
+    
+    QString fileName = QFileDialog::getSaveFileName(this, 
+        "이미지 저장", 
+        QString("image_%1.jpg").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
+        "JPEG Files (*.jpg);;PNG Files (*.png);;All Files (*)");
+    
+    if (!fileName.isEmpty()) {
+        QFile file(fileName);
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(imageData_);
+            file.close();
+            QMessageBox::information(this, "완료", "이미지가 저장되었습니다.");
+        } else {
+            QMessageBox::warning(this, "오류", "파일을 저장할 수 없습니다.");
+        }
+    }
+}
+
+void GetImageView::printToPdf() {
+    QString fileName = QFileDialog::getSaveFileName(this, 
+        "PDF로 저장", 
+        QString("report_%1.pdf").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
+        "PDF Files (*.pdf)");
+    
+    if (!fileName.isEmpty()) {
+        QPdfWriter pdfWriter(fileName);
+        pdfWriter.setPageSize(QPageSize::A4);
+        pdfWriter.setPageMargins(QMarginsF(20, 20, 20, 20));
+        
+        QPainter painter(&pdfWriter);
+        
+        // 현재 창을 PDF로 렌더링
+        QPixmap windowPixmap = this->grab();
+        
+        // PDF 페이지 크기에 맞게 조정
+        QRect pageRect = pdfWriter.pageLayout().paintRectPixels(pdfWriter.resolution());
+        QPixmap scaledPixmap = windowPixmap.scaled(pageRect.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        
+        // 중앙에 배치
+        int x = (pageRect.width() - scaledPixmap.width()) / 2;
+        int y = (pageRect.height() - scaledPixmap.height()) / 2;
+        
+        painter.drawPixmap(x, y, scaledPixmap);
+        painter.end();
+        
+        QMessageBox::information(this, "완료", "PDF가 저장되었습니다.");
+    }
 }
