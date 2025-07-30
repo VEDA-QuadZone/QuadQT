@@ -43,6 +43,7 @@ private slots:
     // (기존 슬롯 아래에)
     void onImageCellClicked(int row, int column);
     void onImageDataReady(const QString& imagePath, const QByteArray& data);
+    void updateTypeColumnBackground();
 private:
     QLabel*          titleLabel;
     QTableWidget*    tableWidget;
@@ -68,7 +69,7 @@ private:
     TcpHistoryHandler *tcpHandler_;
 
     // 상태
-    QString   currentEmail = "yuna@cctv.com";
+    QString   currentEmail = "aa@naver.com";
     QString   startDate   = "";
     QString   endDate     = "";
     int       currentPage = 0;
@@ -86,6 +87,8 @@ private:
 private:
     QString parseTimestampFromPath(const QString& path);
     QString findConfigFile();
+    void loadDummyData(); // 더미 데이터 로드 함수
+    QJsonObject createDummyHistoryResponse(); // 더미 히스토리 응답 생성
 };
 
 #endif // HISTORYVIEW_H

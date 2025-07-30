@@ -36,6 +36,8 @@
         <file alias="calendar.png">resources/images/calendar.png</file>
         <file alias="sign.png">resources/images/sign.png</file>
         <file alias="menu.png">resources/images/menu.png</file>
+        <file alias="left.png">resources/images/left.png</file>
+        <file alias="right.png">resources/images/right.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file>resources/fonts/01HanwhaB.ttf</file>

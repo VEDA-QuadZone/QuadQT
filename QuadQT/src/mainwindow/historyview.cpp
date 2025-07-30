@@ -19,6 +19,7 @@
 #include <QSettings>
 #include <QCoreApplication>
 #include <QDir>
+#include <QTimer>
 
 static constexpr int PAGE_SIZE = 16;
 
@@ -47,7 +48,8 @@ HistoryView::HistoryView(QWidget *parent)
     tableWidget->horizontalHeader()->setStretchLastSection(true);
     tableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     tableWidget->setStyleSheet(
-        "QTableWidget::item { border-bottom:1px solid #D3D3D3; }"
+        "QTableWidget { border: none; }"
+        "QTableWidget::item { border-bottom:1px solid #D3D3D3; border-left: none; border-right: none; border-top: none; }"
         "QTableWidget::item:selected { background-color:#B3B3B3; }"
         );
     tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -56,6 +58,10 @@ HistoryView::HistoryView(QWidget *parent)
 
     connect(tableWidget, &QTableWidget::cellClicked,
             this, &HistoryView::onImageCellClicked);
+    
+    // 행 선택 변경 시 유형 열 배경색 업데이트
+    connect(tableWidget->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &HistoryView::updateTypeColumnBackground);
 
     // 3) 헤더 체크박스
     headerCheck = new QCheckBox(tableWidget->horizontalHeader());
@@ -88,20 +94,14 @@ HistoryView::HistoryView(QWidget *parent)
     startDateButton = new QPushButton(this);
     startDateButton->setText("시작일 선택하기");
     startDateButton->setIcon(QIcon(":/images/calendar.png"));
-    startDateButton->setIconSize(QSize(16,16));
-    startDateButton->setStyleSheet(
-        "QPushButton{padding:4px;background:transparent;border:none;text-align:right;}"
-        );
+    // 스타일과 아이콘 크기는 resizeEvent에서 동적으로 설정
     arrowLabel = new QLabel(this);
-    arrowLabel->setPixmap(QPixmap(":/images/sign.png").scaled(16,16,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+    // 화살표 이미지 크기는 resizeEvent에서 동적으로 설정
     arrowLabel->setAlignment(Qt::AlignCenter);
     endDateButton = new QPushButton(this);
     endDateButton->setText("종료일 선택하기");
     endDateButton->setIcon(QIcon(":/images/calendar.png"));
-    endDateButton->setIconSize(QSize(16,16));
-    endDateButton->setStyleSheet(
-        "QPushButton{padding:4px;background:transparent;border:none;text-align:left;}"
-        );
+    // 스타일과 아이콘 크기는 resizeEvent에서 동적으로 설정
     connect(startDateButton,&QPushButton::clicked,this,&HistoryView::openStartDatePicker);
     connect(endDateButton,  &QPushButton::clicked,this,&HistoryView::openEndDatePicker);
 
@@ -115,9 +115,9 @@ HistoryView::HistoryView(QWidget *parent)
     // filterButton 스타일은 resizeEvent에서 동적으로 설정
     QMenu* fm = new QMenu(this);
     fm->setStyleSheet(R"(
-        QMenu{background:#FBB584;border:none;}
-        QMenu::item{background:#FBB584;padding:4px 20px;}
-        QMenu::item:selected{background:#E0A070;}
+        QMenu{background:#F5D5B8;border:none;}
+        QMenu::item{background:#F5D5B8;padding:4px 20px;}
+        QMenu::item:selected{background:#E8C4A0;}
     )");
     auto addF=[&](auto txt){
         QAction* a=fm->addAction(txt);
@@ -141,17 +141,11 @@ HistoryView::HistoryView(QWidget *parent)
     calendarContainer = new QWidget(this);
     calendarContainer->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);
     calendarContainer->hide();
-    calendarContainer->setStyleSheet(R"(
-        QWidget {
-            background-color: white;
-            border: 2px solid #FF6B35;
-            border-radius: 8px;
-        }
-    )");
+    // 캘린더 컨테이너 스타일은 resizeEvent에서 동적으로 설정
     
     // 캘린더 위젯을 레이아웃으로 배치
     QVBoxLayout* calendarLayout = new QVBoxLayout(calendarContainer);
-    calendarLayout->setContentsMargins(3, 3, 3, 3);
+    // 캘린더 마진은 resizeEvent에서 동적으로 설정
     calendarLayout->setSpacing(0);
     
     calendarWidget = new QCalendarWidget();
@@ -169,46 +163,69 @@ HistoryView::HistoryView(QWidget *parent)
             outline: none;
         }
         QCalendarWidget QToolButton {
-            background-color: #FBB584;
+            background-color: transparent;
             color: black;
             border: none;
             border-radius: 4px;
             padding: 4px;
             font-weight: bold;
-            font-size: 12px;
+            min-width: 20px;
+            min-height: 20px;
         }
         QCalendarWidget QToolButton:hover {
-            background-color: #E0A070;
+            background-color: #E8C4A0;
+        }
+        QCalendarWidget QToolButton::menu-indicator {
+            image: none;
+            width: 0px;
+            height: 0px;
+        }
+        QCalendarWidget QToolButton#qt_calendar_prevmonth {
+            qproperty-icon: url(:/images/left.png);
+            background-color: transparent;
+        }
+        QCalendarWidget QToolButton#qt_calendar_nextmonth {
+            qproperty-icon: url(:/images/right.png);
+            background-color: transparent;
+        }
+        QCalendarWidget QToolButton#qt_calendar_prevmonth:hover,
+        QCalendarWidget QToolButton#qt_calendar_nextmonth:hover {
+            background-color: #E8C4A0;
+            border-radius: 4px;
         }
         QCalendarWidget QMenu {
             background-color: white;
-            border: 1px solid #FBB584;
+            border: 1px solid #F5D5B8;
         }
         QCalendarWidget QSpinBox {
             background-color: white;
-            border: 1px solid #FBB584;
+            border: 1px solid #F5D5B8;
             color: black;
             font-weight: bold;
         }
+        QCalendarWidget QSpinBox::down-button,
+        QCalendarWidget QSpinBox::up-button {
+            width: 0px;
+            height: 0px;
+            border: none;
+        }
         QCalendarWidget QAbstractItemView {
             background-color: white;
-            selection-background-color: #FBB584;
+            selection-background-color: #F5D5B8;
             color: black;
         }
         QCalendarWidget QAbstractItemView:enabled {
             color: black;
         }
         QCalendarWidget QWidget#qt_calendar_navigationbar {
-            background-color: #FBB584;
+            background-color: #F5D5B8;
         }
     )");
     
     connect(calendarWidget, &QCalendarWidget::activated,
             this, &HistoryView::dateSelected);
     
-    // 달력 크기 및 속성 설정
-    calendarWidget->setFixedSize(300, 200);
-    calendarContainer->setFixedSize(310, 210); // 테두리 + 마진 포함 크기
+    // 달력 크기는 resizeEvent에서 동적으로 설정
     calendarContainer->setAttribute(Qt::WA_StyledBackground, true);
     
     // 달력 밖 클릭 시 숨기기 위한 이벤트 필터 설치
@@ -222,12 +239,21 @@ HistoryView::HistoryView(QWidget *parent)
     connect(tcpImageHandler_, &TcpImageHandler::imageDataReady,
             this, &HistoryView::onImageDataReady);
     connect(tcpImageHandler_, &TcpImageHandler::errorOccurred,
-            this, [this](auto e){ QMessageBox::warning(this, "Image Error", e); });
+            this, [this](auto e){ 
+                qDebug() << "HistoryView: TCP 이미지 핸들러 에러:" << e;
+                QMessageBox::warning(this, "Image Error", e); 
+            });
     
     // 연결 완료 시 최초 요청하도록 시그널 연결
     connect(tcpHandler_, &TcpHistoryHandler::connected, this, [this]() {
         qDebug() << "HistoryView: TCP 연결 완료, 최초 데이터 요청";
         requestPage();
+    });
+    
+    // 연결 실패 시 더미 데이터 로드
+    connect(tcpHandler_, &TcpHistoryHandler::connectionFailed, this, [this]() {
+        qDebug() << "HistoryView: TCP 연결 실패, 더미 데이터 로드";
+        loadDummyData();
     });
     
     // config.ini에서 TCP 설정 읽기
@@ -239,8 +265,17 @@ HistoryView::HistoryView(QWidget *parent)
         
         qDebug() << "HistoryView TCP 설정 - Host:" << tcpHost << "Port:" << tcpPort;
         tcpHandler_->connectToServer(tcpHost, tcpPort);
+        
+        // 연결 타임아웃 타이머 (5초 후 더미 데이터 로드)
+        QTimer::singleShot(5000, this, [this]() {
+            if (tableWidget->rowCount() == 0) { // 아직 데이터가 없으면
+                qDebug() << "HistoryView: 연결 타임아웃, 더미 데이터 로드";
+                loadDummyData();
+            }
+        });
     } else {
-        qDebug() << "HistoryView: config.ini 파일을 찾을 수 없습니다.";
+        qDebug() << "HistoryView: config.ini 파일을 찾을 수 없습니다. 더미 데이터 로드";
+        loadDummyData();
     }
     // 페이징
     setupPaginationUI();
@@ -265,32 +300,68 @@ QString HistoryView::parseTimestampFromPath(const QString& path) {
         .arg(time.mid(4, 2));
 }
 void HistoryView::onImageCellClicked(int row, int col) {
-    if (col != 3 && col != 6 && col != 7) return;
+    qDebug() << "HistoryView::onImageCellClicked - row:" << row << "col:" << col;
+    
+    if (col != 3 && col != 6 && col != 7) {
+        qDebug() << "HistoryView: 이미지 열이 아님, 클릭 무시";
+        return;
+    }
+    
     auto* it = tableWidget->item(row, col);
-    if (!it) return;
+    if (!it) {
+        qDebug() << "HistoryView: 테이블 아이템이 null";
+        return;
+    }
+    
     QString path = it->text();
-    if (path.isEmpty()) return;
+    if (path.isEmpty()) {
+        qDebug() << "HistoryView: 이미지 경로가 비어있음";
+        return;
+    }
+    
+    qDebug() << "HistoryView: 이미지 경로:" << path;
 
     // 📌 타임스탬프 추출
     QString timestamp = parseTimestampFromPath(path);
+    qDebug() << "HistoryView: 추출된 타임스탬프:" << timestamp;
 
     // 뷰어 생성
+    qDebug() << "HistoryView: GetImageView 생성 중...";
     currentImageView_ = new GetImageView(path, timestamp, this);
     currentImageView_->show();
+    qDebug() << "HistoryView: GetImageView 표시됨";
 
     // config.ini에서 TCP 설정 읽기
-    QSettings settings("config.ini", QSettings::IniFormat);
+    QString configPath = findConfigFile();
+    if (configPath.isEmpty()) {
+        qDebug() << "HistoryView: config.ini 파일을 찾을 수 없음";
+        return;
+    }
+    
+    QSettings settings(configPath, QSettings::IniFormat);
     QString tcpHost = settings.value("tcp/ip").toString();
     int tcpPort = settings.value("tcp/port").toInt();
     
-    tcpImageHandler_->connectToServerThenRequestImage(tcpHost, tcpPort, path);
+    qDebug() << "HistoryView: TCP 이미지 서버 연결 시도 - Host:" << tcpHost << "Port:" << tcpPort;
+    qDebug() << "HistoryView: 요청할 이미지 경로:" << path;
+    
+    if (tcpImageHandler_) {
+        tcpImageHandler_->connectToServerThenRequestImage(tcpHost, tcpPort, path);
+    } else {
+        qDebug() << "HistoryView: tcpImageHandler_가 null";
+    }
 }
 
 
 void HistoryView::onImageDataReady(const QString& path, const QByteArray& data) {
-    Q_UNUSED(path);
+    qDebug() << "HistoryView::onImageDataReady - 경로:" << path << "데이터 크기:" << data.size() << "bytes";
+    
     if (currentImageView_) {
+        qDebug() << "HistoryView: currentImageView_에 이미지 데이터 설정 중...";
         currentImageView_->setImageData(data);
+        qDebug() << "HistoryView: 이미지 데이터 설정 완료";
+    } else {
+        qDebug() << "HistoryView: currentImageView_가 null, 이미지를 표시할 수 없음";
     }
 }
 
@@ -329,6 +400,13 @@ void HistoryView::exportCsv()
 
 void HistoryView::requestPage()
 {
+    // TCP 연결 상태 확인
+    if (!tcpHandler_ || !tcpHandler_->isConnected()) {
+        qDebug() << "HistoryView: TCP 연결되지 않음, 더미 데이터 사용";
+        loadDummyData();
+        return;
+    }
+    
     int offset = currentPage * PAGE_SIZE;
     static const QMap<QString,int> filterMap = {
         {"주정차감지",0},{"과속감지",1},{"어린이감지",2}
@@ -417,7 +495,7 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
         QString ts = (et>=0&&et<typeNames.size()?typeNames[et]:QString::number(et));
         QWidget* tc = new QWidget(this);
         QLabel* lb = new QLabel(ts,tc);
-        lb->setStyleSheet("background-color:#B3B3B3;border-radius:8px;padding:2px 6px;");
+        lb->setStyleSheet("background-color:#E0E0E0;border-radius:8px;padding:2px 6px;");
         lb->setAlignment(Qt::AlignCenter);
         auto* tl = new QHBoxLayout(tc);
         tl->addWidget(lb);
@@ -467,6 +545,27 @@ void HistoryView::onHistoryError(const QString &err)
     QMessageBox::warning(this, tr("통신 오류"), err);
 }
 
+void HistoryView::updateTypeColumnBackground()
+{
+    // 모든 행의 유형 열 배경색을 기본값으로 설정
+    for (int row = 0; row < tableWidget->rowCount(); ++row) {
+        QWidget* typeCell = tableWidget->cellWidget(row, 2);
+        if (typeCell) {
+            typeCell->setStyleSheet("background-color: transparent;");
+        }
+    }
+    
+    // 선택된 행들의 유형 열 배경색을 회색으로 설정
+    QModelIndexList selectedIndexes = tableWidget->selectionModel()->selectedRows();
+    for (const QModelIndex& index : selectedIndexes) {
+        int row = index.row();
+        QWidget* typeCell = tableWidget->cellWidget(row, 2);
+        if (typeCell) {
+            typeCell->setStyleSheet("background-color: #B3B3B3;");
+        }
+    }
+}
+
 void HistoryView::prevPage()
 {
     if (currentPage > 0) { --currentPage; requestPage(); }
@@ -501,7 +600,7 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     int yOffset = hu * 3;  // 올릴 높이
 
     titleLabel->setGeometry(wu*1, hu*3 - yOffset, wu*1, uH);
-    titleLabel->setStyleSheet(QString("font-family: 'HanwhaGothicB', 'Malgun Gothic', Arial; font-size:%1px;font-weight:bold;").arg(int(hu*0.4)));
+    titleLabel->setStyleSheet(QString("font-family: 'HanwhaGothicB', 'Malgun Gothic', Arial; font-size:%1px;").arg(int(hu*0.4)));
 
     // 테이블 높이: header + 실제 row 개수
     int rows = tableWidget->rowCount();
@@ -523,20 +622,50 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     int x0 = hh->sectionPosition(0);
     int w0 = hh->sectionSize(0);
     int hh_h = hh->height();
-    int cbSize = hh_h - 4;
+    int cbSize = hh_h - int(hu*0.2);
     headerCheck->setGeometry(
         x0 + (w0 - cbSize)/2,
-        (hh_h - cbSize)/2 + tableWidget->y(), // headerCheck는 tableWidget 안에 있으므로 y도 같이 위로 이동됨
+        (hh_h - cbSize)/2 + tableWidget->y(),
         cbSize, cbSize
         );
 
-    startDateButton ->setGeometry(wu*13+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
-    arrowLabel      ->setGeometry(wu*16, hu*3 - yOffset, wu*0.5, uH);
-    endDateButton   ->setGeometry(wu*16+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
+    startDateButton->setGeometry(wu*13+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
+    startDateButton->setIconSize(QSize(int(hu*0.6), int(hu*0.6)));
+    startDateButton->setStyleSheet(QString(
+        "QPushButton {"
+        "    padding: 4px;"
+        "    background: transparent;"
+        "    border: none;"
+        "    text-align: right;"
+        "    font-size: %1px;"
+        "    min-width: %2px;"
+        "    max-width: %2px;"
+        "    width: %2px;"
+        "}"
+    ).arg(int(hu*0.5)).arg(int(wu*2.5)));
+    
+    arrowLabel->setGeometry(wu*16, hu*3 - yOffset, wu*0.5, uH);
+    arrowLabel->setPixmap(QPixmap(":/images/sign.png").scaled(int(hu*0.6), int(hu*0.6), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    
+    endDateButton->setGeometry(wu*16+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
+    endDateButton->setIconSize(QSize(int(hu*0.6), int(hu*0.6)));
+    endDateButton->setStyleSheet(QString(
+        "QPushButton {"
+        "    padding: 4px;"
+        "    background: transparent;"
+        "    border: none;"
+        "    text-align: left;"
+        "    font-size: %1px;"
+        "    min-width: %2px;"
+        "    max-width: %2px;"
+        "    width: %2px;"
+        "}"
+    ).arg(int(hu*0.5)).arg(int(wu*2.5)));
+    
     filterButton    ->setGeometry(wu*19, hu*3 - yOffset, wu*2.5, uH);
     filterButton->setStyleSheet(QString(R"(
         QToolButton{
-            background:#FBB584 url(:/images/menu.png) no-repeat left center;
+            background:#F5D5B8 url(:/images/menu.png) no-repeat left center;
             background-size:%4px %4px;
             border:none;
             padding-left:%5px;
@@ -558,6 +687,15 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     downloadButton  ->setGeometry(wu*21.5, hu*3 - yOffset, wu*1.5, uH);
     downloadButton->setIconSize(QSize(int(hu*0.7), int(hu*0.7)));
 
+    // 캘린더 컨테이너 스타일 설정
+    calendarContainer->setStyleSheet(QString(R"(
+        QWidget {
+            background-color: white;
+            border: %1px solid #FF6B35;
+            border-radius: %2px;
+        }
+    )").arg(int(hu*0.1)).arg(int(hu*0.3)));
+
     // 페이징: 가로 8칸, 중앙, row22
     int navX = int(wu*8);
     int navY = int(hu*22 - yOffset);
@@ -574,16 +712,29 @@ void HistoryView::openStartDatePicker()
 {
     calendarForStart = true;
     
+    // 화면 크기에 따른 달력 크기 설정
+    double hu = height() / 21.0;
+    int calendarW = int(hu * 12);
+    int calendarH = int(hu * 8);
+    calendarWidget->setFixedSize(calendarW, calendarH);
+    calendarContainer->setFixedSize(calendarW + int(hu*0.3), calendarH + int(hu*0.3));
+    
+    // 캘린더 마진 설정
+    QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(calendarContainer->layout());
+    if (layout) {
+        layout->setContentsMargins(int(hu*0.15), int(hu*0.15), int(hu*0.15), int(hu*0.15));
+    }
+    
     // 버튼 바로 아래에 달력 컨테이너 위치 설정
     int x = startDateButton->x();
-    int y = startDateButton->y() + startDateButton->height() + 5;
+    int y = startDateButton->y() + startDateButton->height() + int(hu*0.2);
     
     // 화면 경계 체크
     if (x + calendarContainer->width() > this->width()) {
-        x = this->width() - calendarContainer->width() - 10;
+        x = this->width() - calendarContainer->width() - int(hu*0.4);
     }
     if (y + calendarContainer->height() > this->height()) {
-        y = startDateButton->y() - calendarContainer->height() - 5;
+        y = startDateButton->y() - calendarContainer->height() - int(hu*0.2);
     }
     
     calendarContainer->move(x, y);
@@ -596,16 +747,29 @@ void HistoryView::openEndDatePicker()
 {
     calendarForStart = false;
     
+    // 화면 크기에 따른 달력 크기 설정
+    double hu = height() / 21.0;
+    int calendarW = int(hu * 12);
+    int calendarH = int(hu * 8);
+    calendarWidget->setFixedSize(calendarW, calendarH);
+    calendarContainer->setFixedSize(calendarW + int(hu*0.3), calendarH + int(hu*0.3));
+    
+    // 캘린더 마진 설정
+    QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(calendarContainer->layout());
+    if (layout) {
+        layout->setContentsMargins(int(hu*0.15), int(hu*0.15), int(hu*0.15), int(hu*0.15));
+    }
+    
     // 버튼 바로 아래에 달력 컨테이너 위치 설정
     int x = endDateButton->x();
-    int y = endDateButton->y() + endDateButton->height() + 5;
+    int y = endDateButton->y() + endDateButton->height() + int(hu*0.2);
     
     // 화면 경계 체크
     if (x + calendarContainer->width() > this->width()) {
-        x = this->width() - calendarContainer->width() - 10;
+        x = this->width() - calendarContainer->width() - int(hu*0.4);
     }
     if (y + calendarContainer->height() > this->height()) {
-        y = endDateButton->y() - calendarContainer->height() - 5;
+        y = endDateButton->y() - calendarContainer->height() - int(hu*0.2);
     }
     
     calendarContainer->move(x, y);
@@ -617,9 +781,52 @@ void HistoryView::openEndDatePicker()
 void HistoryView::dateSelected()
 {
     QString txt = calendarWidget->selectedDate().toString("yyyy-MM-dd");
-    (calendarForStart ? startDateButton : endDateButton)->setText(txt);
+    QPushButton* targetButton = calendarForStart ? startDateButton : endDateButton;
+    
+    // 버튼 텍스트 변경
+    targetButton->setText(txt);
+    
+    // 버튼 크기와 위치를 강제로 유지 (resizeEvent에서 설정한 값 그대로)
+    double wu = width() / 24.0;
+    double hu = height() / 21.0;
+    int uH = int(hu);
+    int yOffset = hu * 3;
+    
+    if (calendarForStart) {
+        startDateButton->setGeometry(wu*13+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
+    } else {
+        endDateButton->setGeometry(wu*16+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
+    }
+    
+    // 버튼 스타일 재적용하여 크기 고정
+    QString buttonStyle = QString(
+        "QPushButton {"
+        "    padding: 4px;"
+        "    background: transparent;"
+        "    border: none;"
+        "    text-align: %1;"
+        "    font-size: %2px;"
+        "    min-width: %3px;"
+        "    max-width: %3px;"
+        "    width: %3px;"
+        "}"
+    ).arg(calendarForStart ? "right" : "left")
+     .arg(int(hu*0.5))
+     .arg(int(wu*2.5));
+    
+    targetButton->setStyleSheet(buttonStyle);
+    
+    // 아이콘 크기도 다시 설정
+    targetButton->setIconSize(QSize(int(hu*0.6), int(hu*0.6)));
+    
+    // 강제로 업데이트
+    targetButton->updateGeometry();
+    targetButton->update();
+    
     calendarContainer->hide();
-    if (!startDateButton->text().isEmpty() && !endDateButton->text().isEmpty()) {
+    
+    if (!startDateButton->text().isEmpty() && !endDateButton->text().isEmpty() &&
+        startDateButton->text() != "시작일 선택하기" && endDateButton->text() != "종료일 선택하기") {
         startDate = startDateButton->text();
         endDate   = endDateButton->text();
         currentPage = 0;
@@ -673,3 +880,103 @@ QString HistoryView::findConfigFile()
     
     return QString(); // 빈 문자열 반환
 }
+
+void HistoryView::loadDummyData()
+{
+    qDebug() << "히스토리 서버 연결 실패 - 더미 데이터 로드";
+    QJsonObject dummyResponse = createDummyHistoryResponse();
+    onHistoryData(dummyResponse);
+}
+
+QJsonObject HistoryView::createDummyHistoryResponse()
+{
+    QJsonArray dataArray;
+    
+    // 30개의 더미 데이터 생성
+    QStringList plateNumbers = {
+        "12가3456", "34나5678", "56다7890", "78라1234", "90마5678",
+        "11바9012", "22사3456", "33아7890", "44자1234", "55차5678",
+        "66카9012", "77타3456", "88파7890", "99하1234", "00호5678",
+        "96저0587", "123가456", "789나012", "345다678", "901라234"
+    };
+    
+    QStringList eventTypeNames = {"주정차감지", "과속감지", "어린이감지"};
+    
+    for (int i = 0; i < 30; ++i) {
+        QJsonObject item;
+        
+        // ID (역순으로 최신이 위에 오도록)
+        item["id"] = 1000 + (29 - i);
+        
+        // 이벤트 타입 (0: 주정차, 1: 과속, 2: 어린이)
+        int eventType = i % 3;
+        item["event_type"] = eventType;
+        
+        // 날짜 (최근 7일 내 랜덤)
+        QDateTime baseTime = QDateTime::currentDateTime().addDays(-(i / 4));
+        QDateTime randomTime = baseTime.addSecs(-(i * 300 + (i % 7) * 60)); // 5분씩 간격
+        item["date"] = randomTime.toString("yyyy-MM-dd hh:mm:ss");
+        
+        // 이미지 경로
+        QString imagePrefix;
+        switch (eventType) {
+        case 0: imagePrefix = "shm_snapshot"; break;
+        case 1: imagePrefix = "speed"; break;
+        case 2: imagePrefix = "person"; break;
+        }
+        
+        QString timestamp = randomTime.toString("yyyyMMdd_hhmmss");
+        item["image_path"] = QString("images/%1_%2_%3.jpg")
+                                .arg(imagePrefix)
+                                .arg(1000 + i)
+                                .arg(timestamp);
+        
+        // 번호판 (주정차와 과속감지만)
+        if (eventType == 0 || eventType == 1) {
+            item["plate_number"] = plateNumbers[i % plateNumbers.size()];
+        } else {
+            item["plate_number"] = "-";
+        }
+        
+        // 속도 (과속감지만)
+        if (eventType == 1) {
+            item["speed"] = 35.0 + (i % 20); // 35~54 km/h
+        } else {
+            item["speed"] = QJsonValue(); // null
+        }
+        
+        // 시작/종료 스냅샷 (주정차감지만)
+        if (eventType == 0) {
+            item["start_snapshot"] = QString("images/shm_startshot_%1_%2.jpg")
+                                        .arg(1000 + i)
+                                        .arg(timestamp);
+            item["end_snapshot"] = QString("images/shm_endshot_%1_%2.jpg")
+                                      .arg(1000 + i)
+                                      .arg(timestamp);
+        } else {
+            item["start_snapshot"] = "";
+            item["end_snapshot"] = "";
+        }
+        
+        dataArray.append(item);
+    }
+    
+    // 페이징을 위해 현재 페이지에 해당하는 데이터만 반환
+    QJsonArray pageData;
+    int startIndex = currentPage * PAGE_SIZE;
+    int endIndex = qMin(startIndex + PAGE_SIZE, dataArray.size());
+    
+    for (int i = startIndex; i < endIndex; ++i) {
+        pageData.append(dataArray[i]);
+    }
+    
+    QJsonObject response;
+    response["status"] = "success";
+    response["code"] = 200;
+    response["message"] = "Dummy history data loaded";
+    response["data"] = pageData;
+    
+    return response;
+}
+
+

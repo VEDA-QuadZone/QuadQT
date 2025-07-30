@@ -5,6 +5,7 @@
 
 class QVBoxLayout;
 class QLabel;
+class QScrollArea;
 class NotificationItem;  // 알림 항목 클래스 전방 선언
 
 class NotificationPanel : public QWidget
@@ -24,6 +25,7 @@ private slots:
     void removeNotification(NotificationItem *item);
 
 private:
+    QScrollArea *scrollArea;
     QWidget *container;
     QVBoxLayout *mainLayout;
     QLabel *emptyLabel;

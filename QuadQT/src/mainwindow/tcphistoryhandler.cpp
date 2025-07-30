@@ -193,6 +193,15 @@ void TcpHistoryHandler::onSocketError(QAbstractSocket::SocketError error)
     Q_UNUSED(error);
     QString errorMsg = QString("Socket error: %1").arg(socket_->errorString());
     qDebug() << errorMsg;
+    
+    // 연결 관련 오류인 경우 connectionFailed 시그널 발생
+    if (error == QAbstractSocket::ConnectionRefusedError ||
+        error == QAbstractSocket::HostNotFoundError ||
+        error == QAbstractSocket::NetworkError ||
+        error == QAbstractSocket::SocketTimeoutError) {
+        emit connectionFailed();
+    }
+    
     emit errorOccurred(errorMsg);
 }
 
@@ -228,4 +237,9 @@ QString TcpHistoryHandler::findCertificateFile(const QString &filename)
     }
     
     return QString(); // 빈 문자열 반환
+}
+
+bool TcpHistoryHandler::isConnected() const
+{
+    return socket_ && socket_->state() == QAbstractSocket::ConnectedState;
 }

@@ -73,6 +73,10 @@ QString getHanwhaFontFamily() { return g_hanwhaFontFamily; }
 
 int main(int argc, char *argv[])
 {
+    // DPI 스케일링 설정 (Qt 5.6+)
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+    
     QApplication app(argc, argv);
 
     qDebug() << "애플리케이션 시작...";

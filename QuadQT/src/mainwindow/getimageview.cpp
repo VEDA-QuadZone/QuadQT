@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QFileInfo>
 #include <QPixmap>
+#include <QDebug>
 
 GetImageView::GetImageView(const QString& path, const QString& timestamp, QWidget* parent)
     : QDialog(parent)
@@ -39,11 +40,36 @@ GetImageView::GetImageView(const QString& path, const QString& timestamp, QWidge
 }
 
 void GetImageView::setImageData(const QByteArray& data) {
+    qDebug() << "[GetImageView] setImageData 호출됨, 데이터 크기:" << data.size() << "bytes";
+    
+    if (data.isEmpty()) {
+        qDebug() << "[GetImageView] 이미지 데이터가 비어있음";
+        return;
+    }
+    
     QPixmap pix;
-    bool ok = pix.loadFromData(data, "JPEG"); // PNG/JPEG 둘 다 가능하면 둘 다 시도해도 됨
+    bool ok = pix.loadFromData(data, "JPEG");
+    qDebug() << "[GetImageView] JPEG 로드 시도 결과:" << ok;
+    
     if (!ok) {
         ok = pix.loadFromData(data, "PNG");
+        qDebug() << "[GetImageView] PNG 로드 시도 결과:" << ok;
     }
-    if (!ok) return;
-    imageLabel_->setPixmap(pix.scaled(400, 300, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    
+    if (!ok) {
+        qDebug() << "[GetImageView] 이미지 로드 실패 - 지원되지 않는 형식이거나 손상된 데이터";
+        // 데이터의 첫 몇 바이트를 확인해보자
+        if (data.size() > 10) {
+            QByteArray header = data.left(10);
+            qDebug() << "[GetImageView] 데이터 헤더 (hex):" << header.toHex();
+        }
+        return;
+    }
+    
+    qDebug() << "[GetImageView] 이미지 로드 성공, 원본 크기:" << pix.size();
+    QPixmap scaledPix = pix.scaled(400, 300, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    qDebug() << "[GetImageView] 스케일된 크기:" << scaledPix.size();
+    
+    imageLabel_->setPixmap(scaledPix);
+    qDebug() << "[GetImageView] 이미지 표시 완료";
 }

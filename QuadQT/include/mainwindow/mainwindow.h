@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QStackedWidget>
 #include <QCloseEvent>
+#include <QShowEvent>
 #include <QtMultimedia/QMediaPlayer>
 #include <QtMultimediaWidgets/QVideoWidget>
 #include "mainwindow/topbarwidget.h"
@@ -32,6 +33,7 @@ public:
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 public:
     void setUserEmail(const QString &email);
@@ -43,6 +45,7 @@ private:
     void setupPages();
     void showPage(PageType pageType);
     void updateCameraPageLayout();
+    void forceLayoutUpdate();
 
     QWidget* createCameraPage();
     QWidget* createDocumentPage();

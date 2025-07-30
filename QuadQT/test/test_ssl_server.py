@@ -12,7 +12,7 @@ import re
 import os
 
 class SSLLoginServer:
-    def __init__(self, host='192.168.0.10', port=8080):
+    def __init__(self, host='127.0.0.1', port=8080):
         self.host = host
         self.port = port
         self.users = {}  # Simple in-memory user storage
