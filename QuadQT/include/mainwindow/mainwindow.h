@@ -5,13 +5,13 @@
 #include <QStackedWidget>
 #include <QCloseEvent>
 #include <QShowEvent>
-#include <QtMultimedia/QMediaPlayer>
 #include <QtMultimediaWidgets/QVideoWidget>
 #include "mainwindow/topbarwidget.h"
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/historyview.h"
 #include "mainwindow/mqttmanager.h"
+#include "mainwindow/rtspplayer.h"
 #include "login/networkmanager.h"
 
 class QLabel;
@@ -61,8 +61,8 @@ private:
     QLabel *notifTitleLabel;
 
     // RTSP 스트리밍
-    QMediaPlayer *player;
     QVideoWidget *videoWidget;
+    RtspPlayer* rtspPlayer;
 
     // 알림 패널 및 설정
     NotificationPanel *notificationPanel;
