@@ -61,7 +61,7 @@ private:
     QLabel *notifTitleLabel;
 
     // RTSP 스트리밍
-    QVideoWidget *videoWidget;
+    QLabel *videoLabel;
     RtspPlayer* rtspPlayer;
 
     // 알림 패널 및 설정

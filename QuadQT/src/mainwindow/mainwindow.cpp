@@ -18,7 +18,6 @@
 #include <QFile>
 #include <QSslConfiguration>
 #include <QSslCertificate>
-#include <QtMultimediaWidgets/QVideoWidget>
 #include <QTimer>
 #include <QSettings>
 #include <QPalette>
@@ -39,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     videoSettingLine(nullptr),
     cameraTitle(nullptr),
     notifTitleLabel(nullptr),
-    videoWidget(nullptr),
+    videoLabel(nullptr),
     mqttManager(nullptr),
     networkManager(nullptr),
     notificationPanel(nullptr),
@@ -89,9 +88,15 @@ MainWindow::MainWindow(QWidget *parent)
     QSettings settings("config.ini", QSettings::IniFormat);
     QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
 
-    rtspPlayer = new RtspPlayer(videoWidget, this);
+    rtspPlayer = new RtspPlayer(videoLabel, this);
     rtspPlayer->setUrl(rtspUrl);
     rtspPlayer->start();
+    connect(rtspPlayer, &RtspPlayer::frameReceived, this, [this](const QVideoFrame &frame, qint64 recvTime){
+        QString ts = QDateTime::fromMSecsSinceEpoch(recvTime).toString("yyyy-MM-dd HH:mm:ss");
+        qDebug() << "[LatencyTest] Frame received at:" << ts;
+        // 나중에 서버 타임스탬프와 비교할 때 사용
+    });
+
 
     mqttManager = new MqttManager(this);
 
@@ -216,8 +221,9 @@ QWidget* MainWindow::createCameraPage()
     notifTitleLabel->setFont(titleFont);
     notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
 
-    videoWidget = new QVideoWidget(page);
-    videoWidget->setStyleSheet("background-color: black; border: 1px solid #ccc;");
+    videoLabel = new QLabel(page);
+    videoLabel->setAlignment(Qt::AlignCenter);
+    videoLabel->setStyleSheet("background-color: black; border: 1px solid #ccc;");
 
     notificationPanel = new NotificationPanel(page);
     notificationPanel->setStyleSheet("background-color: #FFFFFF; border-left: 1px solid #ccc;");
@@ -391,7 +397,7 @@ void MainWindow::updateLayout()
 
 void MainWindow::updateCameraPageLayout()
 {
-    if (!cameraTitle || !notifTitleLabel || !videoWidget || !notificationPanel) return;
+    if (!cameraTitle || !notifTitleLabel || !videoLabel || !notificationPanel) return;
 
     int w = stackedWidget->width();
     int h = stackedWidget->height();
@@ -415,8 +421,8 @@ void MainWindow::updateCameraPageLayout()
     notifTitleLabel->setGeometry(notif_x, h_unit * 0, notif_w, h_unit);
     notifTitleLabel->update();
 
-    videoWidget->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
-    videoWidget->update();
+    videoLabel->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
+    videoLabel->update();
     
     // 알림 패널을 영상처리 박스 아래까지 확장 (h_unit * 19까지)
     double notifHeight = h_unit * 19;

@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QGuiApplication>
 #include <QDebug>
 #include <QDir>
 #include <QPixmap>
@@ -73,6 +74,13 @@ QString getHanwhaFontFamily() { return g_hanwhaFontFamily; }
 
 int main(int argc, char *argv[])
 {
+    qputenv("QT_MEDIA_BACKEND", "ffmpeg");
+    qputenv("QT_FFMPEG_EXTRA_FLAGS",
+            "-fflags nobuffer -flags low_delay -framedrop -avioflags direct -rtsp_transport tcp");
+
+    qDebug() << "[Debug] QT_MEDIA_BACKEND =" << qgetenv("QT_MEDIA_BACKEND");
+    qDebug() << "[Debug] QT_FFMPEG_EXTRA_FLAGS =" << qgetenv("QT_FFMPEG_EXTRA_FLAGS");
+
     // DPI 스케일링 설정 (Qt 5.6+)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
