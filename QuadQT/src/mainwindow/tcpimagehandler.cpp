@@ -44,9 +44,19 @@ TcpImageHandler::TcpImageHandler(QObject *parent)
     connect(socket_, &QSslSocket::connected,        this, &TcpImageHandler::onConnected);
     connect(socket_, &QSslSocket::readyRead,        this, &TcpImageHandler::onReadyRead);
     connect(socket_, &QSslSocket::disconnected,     this, &TcpImageHandler::onDisconnected);
+    
+    // 에러 처리 추가
+    connect(socket_, QOverload<QAbstractSocket::SocketError>::of(&QSslSocket::errorOccurred),
+            this, [this](QAbstractSocket::SocketError error) {
+                qDebug() << "[TcpImageHandler] Socket 에러 발생:" << error << socket_->errorString();
+                emit errorOccurred(QString("Socket error: %1").arg(socket_->errorString()));
+            });
 }
 
 void TcpImageHandler::connectToServerThenRequestImage(const QString &host, quint16 port, const QString &imagePath) {
+    qDebug() << "[TcpImageHandler] connectToServerThenRequestImage 호출됨";
+    qDebug() << "[TcpImageHandler] Host:" << host << "Port:" << port << "Path:" << imagePath;
+    
     host_ = host;
     port_ = port;
     currentPath_ = imagePath;
@@ -55,8 +65,10 @@ void TcpImageHandler::connectToServerThenRequestImage(const QString &host, quint
     expectedSize_ = 0;
     headerParsed_ = false;
 
+    qDebug() << "[TcpImageHandler] 기존 연결 중단 후 새 연결 시도...";
     socket_->abort();
     socket_->connectToHostEncrypted(host_, port_);
+    qDebug() << "[TcpImageHandler] connectToHostEncrypted 호출 완료";
 }
 
 void TcpImageHandler::onConnected() {
@@ -69,16 +81,23 @@ void TcpImageHandler::onEncrypted() {
 }
 
 void TcpImageHandler::sendGetImageRequest() {
+    qDebug() << "[TcpImageHandler] sendGetImageRequest 호출됨";
+    qDebug() << "[TcpImageHandler] Socket 상태:" << socket_->state();
+    
     if (socket_->state() != QAbstractSocket::ConnectedState) {
+        qDebug() << "[TcpImageHandler] 서버에 연결되지 않음, 에러 발생";
         emit errorOccurred("Not connected to server");
         return;
     }
 
     QByteArray cmd = "GET_IMAGE " + currentPath_.toUtf8() + "\n";
-    socket_->write(cmd);
+    qDebug() << "[TcpImageHandler] 전송할 명령:" << cmd;
+    
+    qint64 written = socket_->write(cmd);
     socket_->flush();
 
-    qDebug() << "[TcpImageHandler] Sent GET_IMAGE for" << currentPath_;
+    qDebug() << "[TcpImageHandler] GET_IMAGE 명령 전송 완료, 전송된 바이트:" << written;
+    qDebug() << "[TcpImageHandler] 요청한 이미지 경로:" << currentPath_;
 }
 
 void TcpImageHandler::onSslErrors(const QList<QSslError>& errs) {

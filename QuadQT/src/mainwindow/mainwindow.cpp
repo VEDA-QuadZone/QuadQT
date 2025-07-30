@@ -67,8 +67,10 @@ MainWindow::MainWindow(QWidget *parent)
     setupUI();
     setupFonts();
     setupPages();
-    updateLayout();
     showPage(PageType::Camera);
+    
+    // 초기 레이아웃 설정을 위한 타이머
+    QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
     // QMediaPlayer 초기화 및 RTSP 재생
     player = new QMediaPlayer(this);
@@ -280,7 +282,15 @@ QWidget* MainWindow::createSettingsPage()
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
-    updateLayout();
+    // 약간의 지연을 두고 레이아웃 업데이트 (리사이즈 완료 후)
+    QTimer::singleShot(10, this, &MainWindow::forceLayoutUpdate);
+}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QMainWindow::showEvent(event);
+    // 윈도우가 표시될 때 레이아웃 강제 업데이트
+    QTimer::singleShot(50, this, &MainWindow::forceLayoutUpdate);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -313,30 +323,61 @@ void MainWindow::showPage(PageType pageType)
     case PageType::Document: stackedWidget->setCurrentWidget(documentPage); break;
     case PageType::Settings: stackedWidget->setCurrentWidget(settingsPage); break;
     }
+    
+    // 페이지 전환 후 레이아웃 강제 업데이트
+    QTimer::singleShot(0, this, [this]() {
+        updateLayout();
+        // 현재 페이지의 모든 자식 위젯들도 업데이트
+        if (stackedWidget->currentWidget()) {
+            stackedWidget->currentWidget()->update();
+            stackedWidget->currentWidget()->repaint();
+        }
+    });
 }
 
 void MainWindow::updateLayout()
 {
     qDebug() << "📐 레이아웃 업데이트 시작";
-    if (!topBar || !cameraTitle || !notifTitleLabel || !videoWidget || !notificationPanel) {
-        qDebug() << "❌ 필수 UI 요소가 null이어서 레이아웃 업데이트 중단";
-        return;
-    }
-
+    
     int w = width();
     int h = height();
+    
+    qDebug() << "현재 윈도우 크기:" << w << "x" << h;
 
     double w_unit = w / 24.0;
     double h_unit = h / 24.0;
 
-    topBar->setGeometry(0, 0, w, h_unit * 3);
-    topBar->updateLayout(w, h);
+    if (topBar) {
+        topBar->setGeometry(0, 0, w, h_unit * 3);
+        topBar->updateLayout(w, h);
+    }
 
-    stackedWidget->setGeometry(0, h_unit * 3, w, h - h_unit * 3);
-
-    if (stackedWidget->currentWidget() == cameraPage)
-        updateCameraPageLayout();
+    if (stackedWidget) {
+        stackedWidget->setGeometry(0, h_unit * 3, w, h - h_unit * 3);
+        
+        // 현재 페이지에 따라 레이아웃 업데이트
+        QWidget* currentPage = stackedWidget->currentWidget();
+        if (currentPage == cameraPage) {
+            updateCameraPageLayout();
+        } else if (currentPage == documentPage && historyView) {
+            // 문서 페이지 레이아웃 업데이트
+            historyView->setGeometry(0, 0, stackedWidget->width(), stackedWidget->height());
+            historyView->update();
+        } else if (currentPage == settingsPage) {
+            // 설정 페이지의 모든 자식 위젯들 업데이트
+            for (QWidget* child : settingsPage->findChildren<QWidget*>()) {
+                child->update();
+            }
+        }
+        
+        // 현재 페이지 강제 업데이트
+        if (currentPage) {
+            currentPage->updateGeometry();
+            currentPage->update();
+        }
+    }
 }
+
 
 void MainWindow::updateCameraPageLayout()
 {
@@ -344,6 +385,8 @@ void MainWindow::updateCameraPageLayout()
 
     int w = stackedWidget->width();
     int h = stackedWidget->height();
+    
+    qDebug() << "카메라 페이지 레이아웃 업데이트 - 스택 위젯 크기:" << w << "x" << h;
 
     double w_unit = w / 24.0;
     double h_unit = h / 21.0;
@@ -355,28 +398,85 @@ void MainWindow::updateCameraPageLayout()
     double cctv_x = padding;
     double notif_x = cctv_x + cctv_w + middle_pad;
 
+    // 각 위젯의 geometry 설정 및 강제 업데이트
     cameraTitle->setGeometry(cctv_x, h_unit * 0, cctv_w, h_unit);
+    cameraTitle->update();
+    
     notifTitleLabel->setGeometry(notif_x, h_unit * 0, notif_w, h_unit);
+    notifTitleLabel->update();
 
     videoWidget->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
-    notificationPanel->setGeometry(notif_x, h_unit * 1, notif_w, h_unit * 13);
-    notificationPanel->setMinimumHeight(h_unit * 13);
-    notificationPanel->setMaximumHeight(h_unit * 13);
+    videoWidget->update();
+    
+    // 알림 패널을 영상처리 박스 아래까지 확장 (h_unit * 19까지)
+    double notifHeight = h_unit * 19;
+    notificationPanel->setGeometry(notif_x, h_unit * 1, notif_w, notifHeight);
+    notificationPanel->setMinimumHeight(notifHeight);
+    notificationPanel->setMaximumHeight(notifHeight);
+    notificationPanel->updateGeometry();
+    notificationPanel->update();
 
     double settingTop = h_unit * 14;
     double labelTop   = h_unit * 15;
     double boxTop     = h_unit * 16;
 
-    if (videoSettingTitle)
+    if (videoSettingTitle) {
         videoSettingTitle->setGeometry(cctv_x, settingTop, cctv_w, h_unit);
-    if (videoSettingLine)
+        videoSettingTitle->update();
+    }
+    if (videoSettingLine) {
         videoSettingLine->setGeometry(cctv_x, settingTop + h_unit - 1, cctv_w, 1);
-    if (displayTitle)
+        videoSettingLine->update();
+    }
+    if (displayTitle) {
         displayTitle->setGeometry(cctv_x, labelTop, w_unit * 6, h_unit);
-    if (procTitle)
+        displayTitle->update();
+    }
+    if (procTitle) {
         procTitle->setGeometry(cctv_x + w_unit * (6 + 0.5), labelTop, w_unit * 10, h_unit);
-    if (displayBox)
+        procTitle->update();
+    }
+    if (displayBox) {
         displayBox->setGeometry(cctv_x, boxTop, w_unit * 6, h_unit * 4);
-    if (procBox)
+        displayBox->updateGeometry();
+        displayBox->update();
+    }
+    if (procBox) {
         procBox->setGeometry(cctv_x + w_unit * (6 + 0.5), boxTop, w_unit * 10, h_unit * 4);
+        procBox->updateGeometry();
+        procBox->update();
+    }
+}
+
+void MainWindow::forceLayoutUpdate()
+{
+    qDebug() << "🔄 강제 레이아웃 업데이트 실행";
+    
+    // 현재 윈도우 상태 확인
+    if (!isVisible() || isMinimized()) {
+        qDebug() << "윈도우가 보이지 않거나 최소화됨 - 레이아웃 업데이트 건너뜀";
+        return;
+    }
+    
+    updateLayout();
+    
+    // 모든 자식 위젯들의 geometry 강제 업데이트
+    if (stackedWidget && stackedWidget->currentWidget()) {
+        QWidget* currentPage = stackedWidget->currentWidget();
+        
+        // 현재 페이지의 모든 자식 위젯들 업데이트
+        QList<QWidget*> allChildren = currentPage->findChildren<QWidget*>();
+        for (QWidget* child : allChildren) {
+            child->updateGeometry();
+            child->update();
+        }
+        
+        currentPage->updateGeometry();
+        currentPage->update();
+        currentPage->repaint();
+    }
+    
+    // 전체 윈도우 repaint
+    update();
+    repaint();
 }
