@@ -13,6 +13,10 @@ class DisplaySettingBox : public QWidget
 public:
     explicit DisplaySettingBox(QWidget *parent = nullptr);
 
+signals:
+    void requestCommand(const QString &command);
+
+
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 

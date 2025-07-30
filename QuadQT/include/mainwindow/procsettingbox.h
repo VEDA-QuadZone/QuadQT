@@ -15,6 +15,8 @@ class ProcSettingBox : public QWidget
 
 public:
     explicit ProcSettingBox(QWidget *parent = nullptr);
+signals:
+    void requestCommand(const QString &command);
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;

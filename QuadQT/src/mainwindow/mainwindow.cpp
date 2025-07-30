@@ -4,7 +4,7 @@
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/mqttmanager.h"
-
+#include "login/networkmanager.h"
 
 #include <QResizeEvent>
 #include <QLabel>
@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     notifTitleLabel(nullptr),
     videoWidget(nullptr),
     mqttManager(nullptr),
-    //videoArea(nullptr),
+    networkManager(nullptr),
     notificationPanel(nullptr),
     player(nullptr),
     m_isLogout(false)
@@ -56,13 +56,26 @@ MainWindow::MainWindow(QWidget *parent)
     centralW->setStyleSheet("background-color: #FFFFFF;");
     centralW->setAutoFillBackground(true);
     setCentralWidget(centralW);
-    
-    // MainWindow 자체 배경도 설정
+
     this->setStyleSheet("MainWindow { background-color: #FFFFFF; }");
     this->setAutoFillBackground(true);
-    
+
     setMinimumSize(1600, 900);
     showMaximized();
+
+    // ✅ 네트워크 메니저 초기화 및 TCP 연결 시도
+    networkManager = new NetworkManager(this);
+    networkManager->connectToServer();
+
+    connect(networkManager, &NetworkManager::connected, this, []() {
+        qDebug() << "[TCP] 서버 연결 성공!";
+    });
+    connect(networkManager, &NetworkManager::disconnected, this, []() {
+        qDebug() << "[TCP] 서버 연결 끊기면!";
+    });
+    connect(networkManager, &NetworkManager::networkError, this, [](const QString &msg) {
+        qDebug() << "[TCP] 오류:" << msg;
+    });
 
     setupUI();
     setupFonts();
@@ -72,35 +85,29 @@ MainWindow::MainWindow(QWidget *parent)
     // 초기 레이아웃 설정을 위한 타이머
     QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
-    // QMediaPlayer 초기화 및 RTSP 재생
     player = new QMediaPlayer(this);
     player->setVideoOutput(videoWidget);
-    
-    // config.ini에서 RTSP URL 읽기
+
     QSettings settings("config.ini", QSettings::IniFormat);
     QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
     player->setSource(QUrl(rtspUrl));
     player->play();
 
-    // === MQTT 매니저 초기화 ===
     mqttManager = new MqttManager(this);
 
-    // 연결 성공 시 테스트 메시지 발행
     connect(mqttManager, &MqttManager::connected, this, [this]() {
         qDebug() << "[MQTT] Connected signal received!";
         QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
         qDebug() << "[MQTT] Publishing test message:" << testPayload;
-        mqttManager->publish(testPayload); // 기본 토픽 사용
+        mqttManager->publish(testPayload);
     });
 
     connect(mqttManager, &MqttManager::messageReceived,
             notificationPanel, &NotificationPanel::handleMqttMessage);
 
-    // 이벤트 루프 시작 후 연결 시도 (TransportInvalid 방지)
     QTimer::singleShot(0, this, [this]() {
         mqttManager->connectToBroker();
     });
-
 
     qDebug() << "MainWindow 생성 완료";
 }
@@ -238,6 +245,9 @@ QWidget* MainWindow::createCameraPage()
 
     procBox = new ProcSettingBox(page);
     procBox->setStyleSheet("background-color: #FFFFFF; border: 1px solid #ccc;");
+    // 여기서 NetworkManager 연결
+    connect(displayBox, &DisplaySettingBox::requestCommand,networkManager, &NetworkManager::sendCommand);
+    connect(procBox, &ProcSettingBox::requestCommand, networkManager, &NetworkManager::sendCommand);
 
     return page;
 }
