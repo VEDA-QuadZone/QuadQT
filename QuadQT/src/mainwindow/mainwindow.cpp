@@ -210,11 +210,11 @@ QWidget* MainWindow::createCameraPage()
 
     cameraTitle = new QLabel("역삼 초등학교 앞 CCTV", page);
     cameraTitle->setFont(titleFont);
-    cameraTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+    cameraTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     notifTitleLabel = new QLabel("실시간 알림", page);
     notifTitleLabel->setFont(titleFont);
-    notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+    notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     videoWidget = new QVideoWidget(page);
     videoWidget->setStyleSheet("background-color: black; border: 1px solid #ccc;");
