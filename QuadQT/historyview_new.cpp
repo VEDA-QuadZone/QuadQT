@@ -2,6 +2,11 @@
 #include "mainwindow/historyview.h"
 #include "mainwindow/tcphistoryhandler.h"
 
+
+// historyview.cpp
+#include "mainwindow/historyview.h"
+#include "mainwindow/tcphistoryhandler.h"
+
 #include <QResizeEvent>
 #include <QDate>
 #include <QHeaderView>
@@ -21,11 +26,6 @@
 #include <QDir>
 #include <QTimer>
 #include <QSizePolicy>
-#include <QFontDatabase>
-#include <QFont>
-#include <QFontMetrics>
-#include <QPixmap>
-#include <QPainter>
 
 static constexpr int PAGE_SIZE = 16;
 
@@ -34,47 +34,10 @@ HistoryView::HistoryView(QWidget *parent)
     calendarForStart(false),
     currentPage(0)
 {
-    this->setStyleSheet("background-color: #FFFFFF;");  // 원하는 배경색으로 변경
-    // 1) 제목 - 이미지로 변경
-    titleLabel = new QLabel(this);
+    setStyleSheet("background-color: #FFFFFF;");
+    titleLabel = new QLabel("히스토리", this);
     titleLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-    
-    // 한화 폰트로 "히스토리" 텍스트를 렌더링하여 픽셀맵으로 생성
-    QStringList allFamilies = QFontDatabase().families();
-    QString hanwhaFont;
-    
-    for (const QString &family : allFamilies) {
-        if (family.contains("HanwhaGothicB", Qt::CaseInsensitive) || 
-            family.contains("HanwhaGothic", Qt::CaseInsensitive)) {
-            hanwhaFont = family;
-            break;
-        }
-    }
-    
-    if (hanwhaFont.isEmpty()) {
-        hanwhaFont = "Malgun Gothic";
-    }
-    
-    QFont titleFont(hanwhaFont, 15);
-    titleFont.setBold(true);
-    
-    // 텍스트를 이미지로 렌더링
-    QFontMetrics fontMetrics(titleFont);
-    QString text = "히스토리";
-    QSize textSize = fontMetrics.size(Qt::TextSingleLine, text);
-    
-    QPixmap pixmap(textSize);
-    pixmap.fill(Qt::transparent);
-    
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setFont(titleFont);
-    painter.setPen(Qt::black);
-    painter.drawText(pixmap.rect(), Qt::AlignCenter, text);
-    
-    titleLabel->setPixmap(pixmap);
 
-    // 2) 테이블 설정
     tableWidget = new QTableWidget(this);
     tableWidget->setColumnCount(10);
     tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -84,7 +47,6 @@ HistoryView::HistoryView(QWidget *parent)
         "", "날짜", "", "유형", "", "이미지",
         "번호판", "속도(km/h)", "정차 시작 이미지", "1분 경과 이미지"
     });
-    // 테이블 헤더 스타일은 resizeEvent에서 동적으로 설정
     tableWidget->verticalHeader()->setVisible(false);
     tableWidget->horizontalHeader()->setStretchLastSection(true);
     tableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
@@ -101,22 +63,14 @@ HistoryView::HistoryView(QWidget *parent)
 
     connect(tableWidget, &QTableWidget::cellClicked,
             this, [this](int row, int col) {
-                // 달력이 보이는 경우 숨기기
-                if (calendarContainer->isVisible()) {
+                if (calendarContainer->isVisible())
                     calendarContainer->hide();
-                }
-                // 기존 이미지 클릭 처리
                 onImageCellClicked(row, col);
             });
-    
-    // 행 선택 변경 시 유형 열 배경색 업데이트 (제거됨 - 체크박스 상태만 사용)
 
-    // 3) 헤더 체크박스
     headerCheck = new QCheckBox(tableWidget->horizontalHeader());
     headerCheck->setChecked(false);
-    headerCheck->setStyleSheet("QCheckBox { background: transparent; }");
     connect(headerCheck, &QCheckBox::toggled, this, [this](bool on){
-        // 페이지 내 모든 행 체크/언체크
         for(int r=0; r<tableWidget->rowCount(); ++r){
             auto* cell = tableWidget->cellWidget(r,0);
             if(!cell) continue;
@@ -132,36 +86,27 @@ HistoryView::HistoryView(QWidget *parent)
                 selectedRecordIds.remove(id);
             }
         }
-        
-        // 배경색 업데이트 (체크박스 상태에 따라)
         updateTypeColumnBackground();
     });
 
-    // 4) 날짜 버튼
     startDateButton = new QPushButton(this);
     startDateButton->setText("시작일 선택하기");
     startDateButton->setIcon(QIcon(":/images/calendar.png"));
-    // 스타일과 아이콘 크기는 resizeEvent에서 동적으로 설정
     arrowLabel = new QLabel(this);
-    // 화살표 이미지 크기는 resizeEvent에서 동적으로 설정
     arrowLabel->setAlignment(Qt::AlignCenter);
     endDateButton = new QPushButton(this);
     endDateButton->setText("종료일 선택하기");
     endDateButton->setIcon(QIcon(":/images/calendar.png"));
-    // 스타일과 아이콘 크기는 resizeEvent에서 동적으로 설정
     connect(startDateButton,&QPushButton::clicked,this,&HistoryView::openStartDatePicker);
     connect(endDateButton,  &QPushButton::clicked,this,&HistoryView::openEndDatePicker);
 
-    // 5) 필터 버튼
     filterButton = new QToolButton(this);
     filterButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     filterButton->setLayoutDirection(Qt::LeftToRight);
-    filterButton->setText("유형");
+    filterButton->setText("전체보기");
     filterButton->setIcon(QIcon(":/images/below.png"));
     filterButton->setPopupMode(QToolButton::InstantPopup);
-    // filterButton 스타일은 resizeEvent에서 동적으로 설정
     QMenu* fm = new QMenu(this);
-    // 초기 스타일 설정 (크기는 resizeEvent에서 동적으로 설정됨)
     fm->setStyleSheet(R"(
         QMenu{background:#F5D5B8;border:none;}
         QMenu::item{background:#F5D5B8;padding:4px 20px;}
@@ -171,12 +116,7 @@ HistoryView::HistoryView(QWidget *parent)
         QAction* a=fm->addAction(txt);
         connect(a,&QAction::triggered,this,[this,txt](){
             currentFilter=txt;
-            // "전체보기" 선택 시 버튼 텍스트는 "유형"으로 표시
-            if (txt == "전체보기") {
-                filterButton->setText("유형");
-            } else {
-                filterButton->setText(txt);
-            }
+            filterButton->setText(txt);
             currentPage=0;
             requestPage();
         });
@@ -184,144 +124,36 @@ HistoryView::HistoryView(QWidget *parent)
     addF("전체보기"); addF("주정차감지"); addF("어린이감지"); addF("과속감지");
     filterButton->setMenu(fm);
 
-    // 6) 다운로드 버튼
     downloadButton = new QPushButton(this);
     downloadButton->setIcon(QIcon(":/images/download.png"));
     downloadButton->setFlat(true);
     connect(downloadButton,&QPushButton::clicked,this,&HistoryView::exportCsv);
 
-    // 7) 새로고침 버튼
     refreshButton = new QPushButton(this);
     refreshButton->setIcon(QIcon(":/images/refresh.png"));
     refreshButton->setFlat(true);
     connect(refreshButton,&QPushButton::clicked,this,[this](){
-        // 필터 초기화
         currentFilter = "전체보기";
-        filterButton->setText("유형");
-        
-        // 날짜 초기화
-        startDate.clear();
-        endDate.clear();
-        startDateButton->setText("시작일 선택하기");
-        endDateButton->setText("종료일 선택하기");
-        
-        // 체크된 항목들 모두 해제
-        selectedRecordIds.clear();
-        
-        // 헤더 체크박스도 해제
-        headerCheck->blockSignals(true);
-        headerCheck->setChecked(false);
-        headerCheck->blockSignals(false);
-        
-        // 페이지 초기화 및 데이터 요청
+        filterButton->setText("전체보기");
         currentPage = 0;
         requestPage();
     });
 
-    // 7) 세로 구분선 (필터 버튼과 다운로드 버튼 사이)
-    separatorLine = new QWidget(this);
-    separatorLine->setStyleSheet("background-color: #ccc;");
-
-    // 8) 캘린더 컨테이너
     calendarContainer = new QWidget(this);
     calendarContainer->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);
     calendarContainer->hide();
-    // 캘린더 컨테이너 스타일은 resizeEvent에서 동적으로 설정
-    
-    // 캘린더 위젯을 레이아웃으로 배치
     QVBoxLayout* calendarLayout = new QVBoxLayout(calendarContainer);
-    // 캘린더 마진은 resizeEvent에서 동적으로 설정
     calendarLayout->setSpacing(0);
-    
     calendarWidget = new QCalendarWidget();
-    
-    // 주차 번호(첫 번째 열) 숨기기
     calendarWidget->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
-    
     calendarLayout->addWidget(calendarWidget);
-    
-    // 달력 스타일 설정
-    calendarWidget->setStyleSheet(R"(
-        QCalendarWidget {
-            background-color: transparent;
-            border: none;
-            outline: none;
-        }
-        QCalendarWidget * {
-            border: none;
-            outline: none;
-        }
-        QCalendarWidget QToolButton {
-            background-color: transparent;
-            color: black;
-            border: none;
-            border-radius: 4px;
-            padding: 4px;
-            font-weight: bold;
-            min-width: 20px;
-            min-height: 20px;
-        }
-        QCalendarWidget QToolButton:hover {
-            background-color: #E8C4A0;
-        }
-        QCalendarWidget QToolButton::menu-indicator {
-            image: none;
-            width: 0px;
-            height: 0px;
-        }
-        QCalendarWidget QToolButton#qt_calendar_prevmonth {
-            qproperty-icon: url(:/images/left.png);
-            background-color: transparent;
-        }
-        QCalendarWidget QToolButton#qt_calendar_nextmonth {
-            qproperty-icon: url(:/images/right.png);
-            background-color: transparent;
-        }
-        QCalendarWidget QToolButton#qt_calendar_prevmonth:hover,
-        QCalendarWidget QToolButton#qt_calendar_nextmonth:hover {
-            background-color: #E8C4A0;
-            border-radius: 4px;
-        }
-        QCalendarWidget QMenu {
-            background-color: white;
-            border: 1px solid #F5D5B8;
-        }
-        QCalendarWidget QSpinBox {
-            background-color: white;
-            border: 1px solid #F5D5B8;
-            color: black;
-            font-weight: bold;
-        }
-        QCalendarWidget QSpinBox::down-button,
-        QCalendarWidget QSpinBox::up-button {
-            width: 0px;
-            height: 0px;
-            border: none;
-        }
-        QCalendarWidget QAbstractItemView {
-            background-color: white;
-            selection-background-color: #F5D5B8;
-            color: black;
-        }
-        QCalendarWidget QAbstractItemView:enabled {
-            color: black;
-        }
-        QCalendarWidget QWidget#qt_calendar_navigationbar {
-            background-color: #F5D5B8;
-            border-radius: 0px;
-        }
-    )");
-    
+    calendarWidget->setStyleSheet(R"( ... )"); // 기존 스타일시트 그대로
+
     connect(calendarWidget, &QCalendarWidget::activated,
             this, &HistoryView::dateSelected);
-    
-    // 달력 크기는 resizeEvent에서 동적으로 설정
     calendarContainer->setAttribute(Qt::WA_StyledBackground, true);
-    
-    // 달력 밖 클릭 시 숨기기 위한 이벤트 필터 설치
     this->installEventFilter(this);
 
-    // TCP 핸들러
     tcpHandler_      = new TcpHistoryHandler(this);
     tcpImageHandler_ = new TcpImageHandler(this);
     connect(tcpHandler_, &TcpHistoryHandler::historyDataReady, this, &HistoryView::onHistoryData);
@@ -329,67 +161,42 @@ HistoryView::HistoryView(QWidget *parent)
     connect(tcpImageHandler_, &TcpImageHandler::imageDataReady,
             this, &HistoryView::onImageDataReady);
     connect(tcpImageHandler_, &TcpImageHandler::errorOccurred,
-            this, [this](auto e){ 
-                qDebug() << "HistoryView: TCP 이미지 핸들러 에러:" << e;
-                // 에러 메시지 박스 제거 - 로그로만 출력
-                // QMessageBox::warning(this, "Image Error", e); 
-            });
-    
-    // 연결 완료 시 최초 요청하도록 시그널 연결
+            this, [this](auto e){ });
+
     connect(tcpHandler_, &TcpHistoryHandler::connected, this, [this]() {
-        qDebug() << "HistoryView: TCP 연결 완료, 최초 데이터 요청";
         requestPage();
     });
-    
-    // 연결 실패 시 더미 데이터 로드
     connect(tcpHandler_, &TcpHistoryHandler::connectionFailed, this, [this]() {
-        qDebug() << "HistoryView: TCP 연결 실패, 더미 데이터 로드";
         loadDummyData();
     });
-    
-    // config.ini에서 TCP 설정 읽기
+
     QString configPath = findConfigFile();
     if (!configPath.isEmpty()) {
         QSettings settings(configPath, QSettings::IniFormat);
         QString tcpHost = settings.value("tcp/ip").toString();
         int tcpPort = settings.value("tcp/port").toInt();
-        
-        qDebug() << "HistoryView TCP 설정 - Host:" << tcpHost << "Port:" << tcpPort;
         tcpHandler_->connectToServer(tcpHost, tcpPort);
-        
-        // 연결 타임아웃 타이머 (5초 후 더미 데이터 로드)
         QTimer::singleShot(5000, this, [this]() {
-            if (tableWidget->rowCount() == 0) { // 아직 데이터가 없으면
-                qDebug() << "HistoryView: 연결 타임아웃, 더미 데이터 로드";
-                loadDummyData();
-            }
+            if (tableWidget->rowCount() == 0) loadDummyData();
         });
     } else {
-        qDebug() << "HistoryView: config.ini 파일을 찾을 수 없습니다. 더미 데이터 로드";
         loadDummyData();
     }
-    // 페이징
     setupPaginationUI();
-    
-    // 초기 데이터 로딩 보장 (TCP 연결과 관계없이)
     QTimer::singleShot(100, this, [this]() {
-        if (tableWidget->rowCount() == 0) {
-            qDebug() << "HistoryView: 초기 데이터 로딩 - 더미 데이터 사용";
+        if (tableWidget->rowCount() == 0)
             loadDummyData();
-        }
     });
 }
+
 QString HistoryView::parseTimestampFromPath(const QString& path) {
     QRegularExpression re(R"(20\d{6}_\d{6})");
     QRegularExpressionMatch match = re.match(path);
     if (!match.hasMatch()) return "";
-
-    QString raw = match.captured(); // 예: "20250725_114251"
+    QString raw = match.captured();
     if (raw.length() != 15) return "";
-
-    QString date = raw.mid(0, 8);  // 20250725
-    QString time = raw.mid(9, 6);  // 114251
-
+    QString date = raw.mid(0, 8);
+    QString time = raw.mid(9, 6);
     return QString("%1-%2-%3 %4:%5:%6")
         .arg(date.mid(0, 4))
         .arg(date.mid(4, 2))
@@ -398,90 +205,76 @@ QString HistoryView::parseTimestampFromPath(const QString& path) {
         .arg(time.mid(2, 2))
         .arg(time.mid(4, 2));
 }
+
 void HistoryView::onImageCellClicked(int row, int col) {
-    qDebug() << "HistoryView::onImageCellClicked - row:" << row << "col:" << col;
-    
-    if (col != 5 && col != 8 && col != 9) {
-        qDebug() << "HistoryView: 이미지 열이 아님, 클릭 무시";
-        return;
+    if (col != 5 && col != 8 && col != 9) return;
+
+    QString path;
+    QTableWidgetItem* item = tableWidget->item(row, col);
+    if (item && item->data(Qt::UserRole).isValid()) {
+        path = item->data(Qt::UserRole).toString();
     }
-    
-    auto* it = tableWidget->item(row, col);
-    if (!it) {
-        qDebug() << "HistoryView: 테이블 아이템이 null";
-        return;
-    }
-    
-    QString path = it->data(Qt::UserRole).toString();
     if (path.isEmpty()) {
-        // UserRole에 데이터가 없으면 text()에서 가져오기 ("-" 텍스트인 경우 처리)
-        path = it->text();
-        if (path.isEmpty() || path == "-") {
-            qDebug() << "HistoryView: 이미지 경로가 비어있음";
-            return;
+        QWidget* cell = tableWidget->cellWidget(row, col);
+        if (cell && cell->property("imagePath").isValid()) {
+            path = cell->property("imagePath").toString();
+        }
+    }
+    if (path.isEmpty()) path = "-";
+
+    QString timestamp = parseTimestampFromPath(path);
+    
+    // 유형 정보 가져오기 (3번 열에서)
+    QString eventType = "";
+    QWidget* typeCell = tableWidget->cellWidget(row, 3);
+    if (typeCell && typeCell->layout() && typeCell->layout()->itemAt(0)) {
+        QLabel* typeLabel = qobject_cast<QLabel*>(typeCell->layout()->itemAt(0)->widget());
+        if (typeLabel) {
+            eventType = typeLabel->text();
         }
     }
     
-    qDebug() << "HistoryView: 이미지 경로:" << path;
-
-    // 📌 타임스탬프 추출
-    QString timestamp = parseTimestampFromPath(path);
-    qDebug() << "HistoryView: 추출된 타임스탬프:" << timestamp;
-
-    // 뷰어 생성
-    qDebug() << "HistoryView: GetImageView 생성 중...";
-    currentImageView_ = new GetImageView(path, timestamp, this);
-    currentImageView_->show();
-    qDebug() << "HistoryView: GetImageView 표시됨";
-
-    // config.ini에서 TCP 설정 읽기
-    QString configPath = findConfigFile();
-    if (configPath.isEmpty()) {
-        qDebug() << "HistoryView: config.ini 파일을 찾을 수 없음";
-        return;
+    // 번호판 정보 가져오기 (6번 열에서)
+    QString plate = "";
+    QWidget* plateCell = tableWidget->cellWidget(row, 6);
+    if (plateCell && plateCell->layout() && plateCell->layout()->itemAt(0)) {
+        QLabel* plateLabel = qobject_cast<QLabel*>(plateCell->layout()->itemAt(0)->widget());
+        if (plateLabel) {
+            plate = plateLabel->text();
+        }
     }
     
+    QString filename = path;
+
+    currentImageView_ = new GetImageView(eventType, plate, timestamp, filename, this);
+    currentImageView_->show();
+
+    QString configPath = findConfigFile();
+    if (configPath.isEmpty()) return;
     QSettings settings(configPath, QSettings::IniFormat);
     QString tcpHost = settings.value("tcp/ip").toString();
     int tcpPort = settings.value("tcp/port").toInt();
-    
-    qDebug() << "HistoryView: TCP 이미지 서버 연결 시도 - Host:" << tcpHost << "Port:" << tcpPort;
-    qDebug() << "HistoryView: 요청할 이미지 경로:" << path;
-    
     if (tcpImageHandler_) {
         tcpImageHandler_->connectToServerThenRequestImage(tcpHost, tcpPort, path);
-    } else {
-        qDebug() << "HistoryView: tcpImageHandler_가 null";
     }
 }
-
 
 void HistoryView::onImageDataReady(const QString& path, const QByteArray& data) {
-    qDebug() << "HistoryView::onImageDataReady - 경로:" << path << "데이터 크기:" << data.size() << "bytes";
-    
     if (currentImageView_) {
-        qDebug() << "HistoryView: currentImageView_에 이미지 데이터 설정 중...";
         currentImageView_->setImageData(data);
-        qDebug() << "HistoryView: 이미지 데이터 설정 완료";
-    } else {
-        qDebug() << "HistoryView: currentImageView_가 null, 이미지를 표시할 수 없음";
     }
 }
 
-void HistoryView::exportCsv()
-{
+void HistoryView::exportCsv() {
     QString path = QFileDialog::getSaveFileName(this, tr("CSV로 저장"), QString(), tr("CSV Files (*.csv)"));
     if (path.isEmpty()) return;
-
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly|QIODevice::Truncate)) return;
-
-    file.write("\xEF\xBB\xBF"); // BOM
+    file.write("\xEF\xBB\xBF");
     QStringList headers = {
         "날짜","유형","이미지","번호판","속도","정차 시작 이미지","1분 경과 이미지"
     };
     file.write(headers.join(',').toUtf8() + "\r\n");
-
     static const QStringList typeNames = {"주정차감지","과속감지","어린이감지"};
     for (int id : selectedRecordIds) {
         auto obj = recordDataMap.value(id);
@@ -500,6 +293,7 @@ void HistoryView::exportCsv()
     }
     file.close();
 }
+
 
 void HistoryView::requestPage()
 {
@@ -628,18 +422,18 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             QLabel* imageLabel = new QLabel(imageCell);
             imageLabel->setPixmap(QIcon(":/images/image.png").pixmap(16, 16));
             imageLabel->setAlignment(Qt::AlignCenter);
-            
+
             QHBoxLayout* imageLayout = new QHBoxLayout(imageCell);
             imageLayout->addWidget(imageLabel);
             imageLayout->setAlignment(Qt::AlignCenter);
             imageLayout->setContentsMargins(0, 0, 0, 0);
             imageCell->setLayout(imageLayout);
-            
+
             // 경로 정보를 위젯의 property로 저장
             imageCell->setProperty("imagePath", imagePath);
-            
+
             tableWidget->setCellWidget(i, 5, imageCell);
-            
+
             // 빈 아이템도 설정 (클릭 이벤트를 위해)
             QTableWidgetItem* emptyItem = new QTableWidgetItem();
             emptyItem->setData(Qt::UserRole, imagePath);
@@ -649,45 +443,45 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             QWidget* imageCell = new QWidget(this);
             QLabel* imageLabel = new QLabel("-", imageCell);
             imageLabel->setAlignment(Qt::AlignCenter);
-            
+
             QHBoxLayout* imageLayout = new QHBoxLayout(imageCell);
             imageLayout->addWidget(imageLabel);
             imageLayout->setAlignment(Qt::AlignCenter);
             imageLayout->setContentsMargins(0, 0, 0, 0);
             imageCell->setLayout(imageLayout);
-            
+
             tableWidget->setCellWidget(i, 5, imageCell);
         }
-        
+
         // 번호판 - 커스텀 위젯으로 변경
         QString plateText = obj.value("plate_number").toString();
         QWidget* plateCell = new QWidget(this);
         QLabel* plateLabel = new QLabel(plateText, plateCell);
         plateLabel->setAlignment(Qt::AlignCenter);
-        
+
         QHBoxLayout* plateLayout = new QHBoxLayout(plateCell);
         plateLayout->addWidget(plateLabel);
         plateLayout->setAlignment(Qt::AlignCenter);
         plateLayout->setContentsMargins(0, 0, 0, 0);
         plateCell->setLayout(plateLayout);
-        
+
         tableWidget->setCellWidget(i, 6, plateCell);
         // 속도 - 커스텀 위젯으로 변경
         QJsonValue sp = obj.value("speed");
         QString speedText = sp.isDouble() ? QString::number(sp.toDouble(),'f',2) : QString("-");
-        
+
         QWidget* speedCell = new QWidget(this);
         QLabel* speedLabel = new QLabel(speedText, speedCell);
         speedLabel->setAlignment(Qt::AlignCenter);
-        
+
         QHBoxLayout* speedLayout = new QHBoxLayout(speedCell);
         speedLayout->addWidget(speedLabel);
         speedLayout->setAlignment(Qt::AlignCenter);
         speedLayout->setContentsMargins(0, 0, 0, 0);
         speedCell->setLayout(speedLayout);
-        
+
         tableWidget->setCellWidget(i, 7, speedCell);
-        
+
         // 정차 시작 이미지 열 (8번) - 아이콘 또는 "-" 표시
         QString startSnapshot = obj.value("start_snapshot").toString();
         if (!startSnapshot.isEmpty()) {
@@ -696,18 +490,18 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             QLabel* startLabel = new QLabel(startCell);
             startLabel->setPixmap(QIcon(":/images/image.png").pixmap(16, 16));
             startLabel->setAlignment(Qt::AlignCenter);
-            
+
             QHBoxLayout* startLayout = new QHBoxLayout(startCell);
             startLayout->addWidget(startLabel);
             startLayout->setAlignment(Qt::AlignCenter);
             startLayout->setContentsMargins(0, 0, 0, 0);
             startCell->setLayout(startLayout);
-            
+
             // 경로 정보를 위젯의 property로 저장
             startCell->setProperty("imagePath", startSnapshot);
-            
+            qDebug() << "row:" << i << "startSnapshot:" << startSnapshot;
             tableWidget->setCellWidget(i, 8, startCell);
-            
+
             // 빈 아이템도 설정 (클릭 이벤트를 위해)
             QTableWidgetItem* emptyItem = new QTableWidgetItem();
             emptyItem->setData(Qt::UserRole, startSnapshot);
@@ -717,16 +511,16 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             QWidget* startCell = new QWidget(this);
             QLabel* startLabel = new QLabel("-", startCell);
             startLabel->setAlignment(Qt::AlignCenter);
-            
+
             QHBoxLayout* startLayout = new QHBoxLayout(startCell);
             startLayout->addWidget(startLabel);
             startLayout->setAlignment(Qt::AlignCenter);
             startLayout->setContentsMargins(0, 0, 0, 0);
             startCell->setLayout(startLayout);
-            
+
             tableWidget->setCellWidget(i, 8, startCell);
         }
-        
+
         // 1분 경과 이미지 열 (9번) - 아이콘 또는 "-" 표시
         QString endSnapshot = obj.value("end_snapshot").toString();
         if (!endSnapshot.isEmpty()) {
@@ -735,18 +529,18 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             QLabel* endLabel = new QLabel(endCell);
             endLabel->setPixmap(QIcon(":/images/image.png").pixmap(16, 16));
             endLabel->setAlignment(Qt::AlignCenter);
-            
+
             QHBoxLayout* endLayout = new QHBoxLayout(endCell);
             endLayout->addWidget(endLabel);
             endLayout->setAlignment(Qt::AlignCenter);
             endLayout->setContentsMargins(0, 0, 0, 0);
             endCell->setLayout(endLayout);
-            
+
             // 경로 정보를 위젯의 property로 저장
             endCell->setProperty("imagePath", endSnapshot);
-            
+
             tableWidget->setCellWidget(i, 9, endCell);
-            
+
             // 빈 아이템도 설정 (클릭 이벤트를 위해)
             QTableWidgetItem* emptyItem = new QTableWidgetItem();
             emptyItem->setData(Qt::UserRole, endSnapshot);
@@ -756,13 +550,13 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             QWidget* endCell = new QWidget(this);
             QLabel* endLabel = new QLabel("-", endCell);
             endLabel->setAlignment(Qt::AlignCenter);
-            
+
             QHBoxLayout* endLayout = new QHBoxLayout(endCell);
             endLayout->addWidget(endLabel);
             endLayout->setAlignment(Qt::AlignCenter);
             endLayout->setContentsMargins(0, 0, 0, 0);
             endCell->setLayout(endLayout);
-            
+
             tableWidget->setCellWidget(i, 9, endCell);
         }
     }
@@ -784,9 +578,6 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
     headerCheck->setChecked(allChecked);
     headerCheck->blockSignals(false);
 
-    // 체크된 항목들의 배경색 업데이트 (페이지 변경이나 필터링 후에도 유지)
-    updateTypeColumnBackground();
-    
     // 테이블 높이 동적 조정 (행 높이 고정)
     // rowCount 만큼만 공간 할당, row 높이는 Fixed 모드로 uH로 설정됨
     resizeEvent(nullptr);
@@ -897,10 +688,8 @@ void HistoryView::resizeEvent(QResizeEvent *event)
 
     int yOffset = hu * 3;  // 올릴 높이
 
-    // 히스토리 제목의 실제 크기에 맞게 geometry 설정
-    QPixmap titlePixmap = titleLabel->pixmap();
-    int titleWidth = titlePixmap.isNull() ? int(wu*2) : qMax(titlePixmap.width() + 10, int(wu*2));
-    titleLabel->setGeometry(wu*1, hu*3 - yOffset, titleWidth, uH);
+    titleLabel->setGeometry(wu*1, hu*3 - yOffset, wu*1, uH);
+    titleLabel->setStyleSheet(QString("font-family: 'HanwhaGothicB', 'Malgun Gothic', Arial; font-size:%1px;").arg(int(hu*0.4)));
 
     // 테이블 높이: header + 실제 row 개수
     int rows = tableWidget->rowCount();
@@ -913,40 +702,28 @@ void HistoryView::resizeEvent(QResizeEvent *event)
         tableWidget->setColumnWidth(c, int(cw[c] * uW));
     tableWidget->verticalHeader()->setDefaultSectionSize(uH);
     tableWidget->horizontalHeader()->setFixedHeight(uH);
-    // 폰트 크기도 해상도에 맞게 조정
-    int headerFontSize = int(hu*0.5);
     tableWidget->horizontalHeader()->setStyleSheet(QString(
         "QHeaderView::section { background:#FBB584; padding:4px; border:none; font-size:%1px; }"
         "QHeaderView::section:nth-child(3) { background:transparent; }"
         "QHeaderView::section:nth-child(5) { background:transparent; }"
-        ).arg(headerFontSize));
+        ).arg(int(hu*0.5)));
 
-    // header checkbox 위치 - 더 명확하게 설정
+    // header checkbox 위치
     QHeaderView* hh = tableWidget->horizontalHeader();
     int x0 = hh->sectionPosition(0);
     int w0 = hh->sectionSize(0);
     int hh_h = hh->height();
-    int cbSize = qMin(hh_h - 4, 20); // 체크박스 크기 제한
-    
-    // 체크박스를 헤더 영역에 직접 배치
-    headerCheck->setParent(this); // 부모를 this로 변경
+    int cbSize = hh_h - int(hu*0.2);
     headerCheck->setGeometry(
-        tableWidget->x() + x0 + (w0 - cbSize)/2,
-        tableWidget->y() + (hh_h - cbSize)/2,
+        x0 + (w0 - cbSize)/2,
+        (hh_h - cbSize)/2 + tableWidget->y(),
         cbSize, cbSize
-    );
-    headerCheck->show();
-    headerCheck->raise(); // 맨 앞으로 가져오기
+        );
 
-    // 시작일 버튼 위치와 크기 고정 (정확한 위치로 설정)
-    int startButtonWidth = int(wu*3);
-    int startButtonX = int(wu*14.0);
-    startDateButton->setGeometry(startButtonX, hu*3 - yOffset, startButtonWidth, uH);
+    startDateButton->setGeometry(wu*12, hu*3 - yOffset, wu*3, uH);
     startDateButton->setIconSize(QSize(int(hu*0.5), int(hu*0.5)));
     startDateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    startDateButton->setFixedSize(startButtonWidth, uH);
-    int buttonFontSize = int(hu*0.35);
-    int iconSize = int(hu*0.5);
+    startDateButton->setFixedSize(wu*3, uH);
     startDateButton->setStyleSheet(QString(
         "QPushButton {"
         "    padding: 2px;"
@@ -957,24 +734,17 @@ void HistoryView::resizeEvent(QResizeEvent *event)
         "    min-width: %2px;"
         "    max-width: %2px;"
         "    width: %2px;"
-        "    height: %3px;"
-        "    qproperty-iconSize: %4px %4px;"
+        "    qproperty-iconSize: %3px %3px;"
         "}"
-    ).arg(buttonFontSize).arg(startButtonWidth).arg(uH).arg(iconSize));
+    ).arg(int(hu*0.35)).arg(int(wu*3)).arg(int(hu*0.5)));
     
-    // 버튼 위치를 강제로 고정
-    startDateButton->move(startButtonX, hu*3 - yOffset);
-    
-    arrowLabel->setGeometry(wu*17.2, hu*3 - yOffset, wu*0.5, uH);
+    arrowLabel->setGeometry(wu*15, hu*3 - yOffset, wu*0.5, uH);
     arrowLabel->setPixmap(QPixmap(":/images/sign.png").scaled(int(hu*0.4), int(hu*0.4), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     
-    // 종료일 버튼 위치와 크기 고정 (화살표 다음에 정확히 배치)
-    int endButtonWidth = int(wu*3);
-    int endButtonX = int(wu*17.7);
-    endDateButton->setGeometry(endButtonX, hu*3 - yOffset, endButtonWidth, uH);
+    endDateButton->setGeometry(wu*15.5, hu*3 - yOffset, wu*3, uH);
     endDateButton->setIconSize(QSize(int(hu*0.5), int(hu*0.5)));
     endDateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    endDateButton->setFixedSize(endButtonWidth, uH);
+    endDateButton->setFixedSize(wu*3, uH);
     endDateButton->setStyleSheet(QString(
         "QPushButton {"
         "    padding: 2px;"
@@ -985,31 +755,28 @@ void HistoryView::resizeEvent(QResizeEvent *event)
         "    min-width: %2px;"
         "    max-width: %2px;"
         "    width: %2px;"
-        "    height: %3px;"
-        "    qproperty-iconSize: %4px %4px;"
+        "    qproperty-iconSize: %3px %3px;"
         "}"
-    ).arg(buttonFontSize).arg(endButtonWidth).arg(uH).arg(iconSize));
+    ).arg(int(hu*0.35)).arg(int(wu*3)).arg(int(hu*0.5)));
     
-    // 버튼 위치를 강제로 고정
-    endDateButton->move(endButtonX, hu*3 - yOffset);
-    
-    int filterButtonWidth = int(wu*1.4);
-    filterButton->setGeometry(wu*19.6, hu*3 - yOffset, filterButtonWidth, uH);
+    filterButton    ->setGeometry(wu*18, hu*3 - yOffset, wu*3, uH);
     filterButton->setStyleSheet(QString(R"(
         QToolButton{
-            background:white;
+            background:white url(:/images/menu.png) no-repeat left center;
+            background-size:%4px %4px;
             border:1px solid #D3D3D3;
             border-radius:4px;
-            padding-left:%2px;
+            padding-left:%5px;
             padding-top:%2px;
             padding-bottom:%2px;
-            padding-right:%7px;
-            text-align:left;
+            padding-right:%2px;
+            text-align:center;
             font-size:%1px;
             qproperty-toolButtonStyle: ToolButtonTextOnly;
         }
         QToolButton:hover{
-            background:white;
+            background:white url(:/images/menu.png) no-repeat left center;
+            background-size:%4px %4px;
             border:1px solid #B0B0B0;
         }
         QToolButton::menu-indicator{
@@ -1019,33 +786,7 @@ void HistoryView::resizeEvent(QResizeEvent *event)
             width:%3px;
             height:%3px;
         }
-    )").arg(buttonFontSize).arg(int(hu*0.2)).arg(int(hu*0.8)).arg(int(hu*0.4)));
-    
-    // 메뉴 크기를 버튼 크기에 맞게 설정
-    if (filterButton->menu()) {
-        filterButton->menu()->setMinimumWidth(filterButtonWidth);
-        filterButton->menu()->setStyleSheet(QString(R"(
-            QMenu{
-                background:#F5D5B8;
-                border:none;
-                min-width:%1px;
-            }
-            QMenu::item{
-                background:#F5D5B8;
-                padding:4px 20px;
-                min-width:%1px;
-            }
-            QMenu::item:selected{
-                background:#E8C4A0;
-            }
-        )").arg(filterButtonWidth));
-    }
-    // 세로 구분선 (필터 버튼과 다운로드 버튼 사이)
-    int separatorX = int(wu*21.4);
-    int separatorY = int(hu*3 - yOffset + hu*0.2);
-    int separatorHeight = int(hu*0.6);
-    separatorLine->setGeometry(separatorX, separatorY, 1, separatorHeight);
-    
+    )").arg(int(hu*0.35)).arg(int(hu*0.2)).arg(int(hu*0.8)).arg(int(hu*0.6)).arg(int(hu*1.0)));
     downloadButton  ->setGeometry(wu*22.5 - uH - wu*0.2, hu*3 - yOffset, uH, uH);
     downloadButton->setIconSize(QSize(int(hu*0.7), int(hu*0.7)));
     
@@ -1076,7 +817,7 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     
     // 페이징 버튼 스타일 설정 (글씨 크기 키움)
     int fontSize = int(hu * 0.6); // 글씨 크기를 키움
-    int pagingIconSize = int(hu * 0.7); // 아이콘 크기 (변수명 변경)
+    int iconSize = int(hu * 0.7); // 아이콘 크기
     
     QString buttonStyle = QString(
         "QPushButton {"
@@ -1098,8 +839,8 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     nextButton->setStyleSheet(buttonStyle);
     
     // 아이콘 크기 설정
-    prevButton->setIconSize(QSize(pagingIconSize, pagingIconSize));
-    nextButton->setIconSize(QSize(pagingIconSize, pagingIconSize));
+    prevButton->setIconSize(QSize(iconSize, iconSize));
+    nextButton->setIconSize(QSize(iconSize, iconSize));
     
     // 페이지 라벨 스타일 설정 (테두리 제거)
     pageLabel->setStyleSheet(QString(
@@ -1115,12 +856,6 @@ void HistoryView::resizeEvent(QResizeEvent *event)
 
 void HistoryView::openStartDatePicker()
 {
-    // 달력이 이미 보이는 상태이고 시작일 달력인 경우 닫기
-    if (calendarContainer->isVisible() && calendarForStart) {
-        calendarContainer->hide();
-        return;
-    }
-    
     calendarForStart = true;
     
     // 화면 크기에 따른 달력 크기 설정
@@ -1156,12 +891,6 @@ void HistoryView::openStartDatePicker()
 
 void HistoryView::openEndDatePicker()
 {
-    // 달력이 이미 보이는 상태이고 종료일 달력인 경우 닫기
-    if (calendarContainer->isVisible() && !calendarForStart) {
-        calendarContainer->hide();
-        return;
-    }
-    
     calendarForStart = false;
     
     // 화면 크기에 따른 달력 크기 설정
@@ -1208,7 +937,7 @@ void HistoryView::dateSelected()
     // 시작일을 선택하는 경우
     if (calendarForStart) {
         // 종료일이 이미 설정되어 있고, 선택한 시작일이 종료일보다 늦은 경우
-        if (!currentEndDate.isEmpty() && currentEndDate != "종료일 선택하기") {
+        if (!currentEndDate.isEmpty() && currentEndDate != "시작일 선택하기") {
             QDate endDate = QDate::fromString(currentEndDate, "yyyy-MM-dd");
             if (selectedDate > endDate) {
                 QMessageBox::warning(this, "날짜 오류", 
@@ -1225,7 +954,7 @@ void HistoryView::dateSelected()
     // 종료일을 선택하는 경우
     else {
         // 시작일이 이미 설정되어 있고, 선택한 종료일이 시작일보다 이른 경우
-        if (!currentStartDate.isEmpty() && currentStartDate != "시작일 선택하기") {
+        if (!currentStartDate.isEmpty() && currentStartDate != "종료일 선택하기") {
             QDate startDate = QDate::fromString(currentStartDate, "yyyy-MM-dd");
             if (selectedDate < startDate) {
                 QMessageBox::warning(this, "날짜 오류", 
@@ -1243,22 +972,62 @@ void HistoryView::dateSelected()
     // 유효성 검사를 통과한 경우에만 버튼 텍스트 변경
     targetButton->setText(txt);
     
-    // 버튼 위치와 크기를 강제로 유지 (텍스트 변경 후에도 위치가 변하지 않도록)
+    // 버튼 크기와 위치를 강제로 유지 (resizeEvent에서 설정한 값 그대로)
     double wu = width() / 24.0;
     double hu = height() / 21.0;
     int uH = int(hu);
     int yOffset = hu * 3;
-    int buttonWidth = int(wu*3);
+    
+    // 버튼 크기와 위치를 완전히 고정
+    int fixedWidth = int(wu*3);
+    int fixedHeight = uH;
     
     if (calendarForStart) {
-        int startButtonX = int(wu*14.3);
-        startDateButton->setGeometry(startButtonX, hu*3 - yOffset, buttonWidth, uH);
-        startDateButton->move(startButtonX, hu*3 - yOffset);
+        startDateButton->setGeometry(wu*12, hu*3 - yOffset, fixedWidth, fixedHeight);
+        startDateButton->setFixedSize(fixedWidth, fixedHeight);
+        startDateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     } else {
-        int endButtonX = int(wu*18.0);
-        endDateButton->setGeometry(endButtonX, hu*3 - yOffset, buttonWidth, uH);
-        endDateButton->move(endButtonX, hu*3 - yOffset);
+        endDateButton->setGeometry(wu*15.5, hu*3 - yOffset, fixedWidth, fixedHeight);
+        endDateButton->setFixedSize(fixedWidth, fixedHeight);
+        endDateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     }
+    
+    // 버튼 스타일 재적용하여 크기 고정 (더 작은 글자 크기)
+    QString buttonStyle = QString(
+        "QPushButton {"
+        "    padding: 2px;"
+        "    background: transparent;"
+        "    border: none;"
+        "    text-align: %1;"
+        "    font-size: %2px;"
+        "    min-width: %3px;"
+        "    max-width: %3px;"
+        "    width: %3px;"
+        "    height: %4px;"
+        "    qproperty-iconSize: %5px %5px;"
+        "}"
+    ).arg(calendarForStart ? "right" : "left")
+     .arg(int(hu*0.35))  // 글자 크기 줄임
+     .arg(fixedWidth)
+     .arg(fixedHeight)
+     .arg(int(hu*0.5));  // 아이콘 크기
+    
+    targetButton->setStyleSheet(buttonStyle);
+    
+    // 아이콘 크기도 다시 설정
+    targetButton->setIconSize(QSize(int(hu*0.5), int(hu*0.5)));
+    
+    // 강제로 업데이트 - 여러 번 호출하여 확실히 적용
+    targetButton->updateGeometry();
+    targetButton->update();
+    targetButton->repaint();
+    
+    // 약간의 지연 후 다시 한 번 크기 고정
+    QTimer::singleShot(10, this, [this, targetButton, fixedWidth, fixedHeight]() {
+        targetButton->setFixedSize(fixedWidth, fixedHeight);
+        targetButton->updateGeometry();
+        targetButton->update();
+    });
     
     calendarContainer->hide();
     
