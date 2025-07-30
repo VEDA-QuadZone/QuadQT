@@ -4,6 +4,7 @@
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/mqttmanager.h"
+#include "mainwindow/rtspplayer.h"
 #include "login/networkmanager.h"
 
 #include <QResizeEvent>
@@ -17,7 +18,6 @@
 #include <QFile>
 #include <QSslConfiguration>
 #include <QSslCertificate>
-#include <QtMultimedia/QMediaPlayer>
 #include <QtMultimediaWidgets/QVideoWidget>
 #include <QTimer>
 #include <QSettings>
@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     mqttManager(nullptr),
     networkManager(nullptr),
     notificationPanel(nullptr),
-    player(nullptr),
+    rtspPlayer(nullptr),
     m_isLogout(false)
 {
     qDebug() << "🏠 MainWindow 생성자 시작";
@@ -85,13 +85,13 @@ MainWindow::MainWindow(QWidget *parent)
     // 초기 레이아웃 설정을 위한 타이머
     QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
-    player = new QMediaPlayer(this);
-    player->setVideoOutput(videoWidget);
-
+    // RTSP 생성
     QSettings settings("config.ini", QSettings::IniFormat);
     QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
-    player->setSource(QUrl(rtspUrl));
-    player->play();
+
+    rtspPlayer = new RtspPlayer(videoWidget, this);
+    rtspPlayer->setUrl(rtspUrl);
+    rtspPlayer->start();
 
     mqttManager = new MqttManager(this);
 

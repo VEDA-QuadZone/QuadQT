@@ -25,6 +25,7 @@ SOURCES += \
     src/mainwindow/notificationitem.cpp \
     src/mainwindow/notificationpanel.cpp \
     src/mainwindow/procsettingbox.cpp \
+    src/mainwindow/rtspplayer.cpp \
     src/mainwindow/tcphistoryhandler.cpp \
     src/mainwindow/tcpimagehandler.cpp \
     src/mainwindow/topbarwidget.cpp
@@ -41,6 +42,7 @@ HEADERS += \
     include/mainwindow/notificationitem.h \
     include/mainwindow/notificationpanel.h \
     include/mainwindow/procsettingbox.h \
+    include/mainwindow/rtspplayer.h \
     include/mainwindow/tcphistoryhandler.h \
     include/mainwindow/tcpimagehandler.h \
     include/mainwindow/topbarwidget.h
