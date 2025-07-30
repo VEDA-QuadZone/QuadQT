@@ -12,6 +12,7 @@
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/historyview.h"
 #include "mainwindow/mqttmanager.h"
+#include "login/networkmanager.h"
 
 class QLabel;
 class DisplaySettingBox;
@@ -79,6 +80,8 @@ private:
     QWidget *cameraPage;
     QWidget *documentPage;
     QWidget *settingsPage;
+
+    NetworkManager* networkManager;
 
     // 로그아웃 상태
     bool m_isLogout;

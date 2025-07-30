@@ -73,6 +73,8 @@ signals:
     
     // Log API signals
     void getLogResponse(const QJsonObject &response);
+public slots:
+    void sendCommand(const QString &command);
 
 private slots:
     void onConnected();
@@ -85,7 +87,6 @@ private slots:
 
 private:
     void loadConfig();
-    void sendCommand(const QString &command);
     QJsonObject parseResponse(const QString &response);
     QString findCertificateFile(const QString &filename);
     QString findConfigFile();

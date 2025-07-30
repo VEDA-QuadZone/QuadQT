@@ -74,10 +74,20 @@ bool DisplaySettingBox::eventFilter(QObject *watched, QEvent *event)
         if (watched == objectBoxWidget) {
             objectBoxOn = !objectBoxOn;
             updateObjectBoxUI();
+
+            // 객체 박스 상태 변경 → 명령 전송
+            QString cmd = QString("CHANGE_FRAME 0 %1").arg(objectBoxOn ? 1 : 0);
+            emit requestCommand(cmd);
+
             return true;
         } else if (watched == timestampWidget) {
             timestampOn = !timestampOn;
             updateTimestampUI();
+
+            // 타임스탬프 상태 변경 → 명령 전송
+            QString cmd = QString("CHANGE_FRAME 1 %1").arg(timestampOn ? 1 : 0);
+            emit requestCommand(cmd);
+
             return true;
         }
     } else if (event->type() == QEvent::Enter) {
@@ -86,12 +96,16 @@ bool DisplaySettingBox::eventFilter(QObject *watched, QEvent *event)
         }
     } else if (event->type() == QEvent::Leave) {
         if (watched == objectBoxWidget || watched == timestampWidget) {
-            QString borderStyle = watched == objectBoxWidget ? "border-right: 1px solid #ccc;" : "border-left: 1px solid #ccc;";
+            QString borderStyle = (watched == objectBoxWidget)
+            ? "border-right: 1px solid #ccc;"
+            : "border-left: 1px solid #ccc;";
             static_cast<QWidget *>(watched)->setStyleSheet("background-color: transparent; " + borderStyle);
         }
     }
+
     return QWidget::eventFilter(watched, event);
 }
+
 
 void DisplaySettingBox::updateObjectBoxUI()
 {
