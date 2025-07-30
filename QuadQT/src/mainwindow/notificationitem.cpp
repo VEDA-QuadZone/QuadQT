@@ -45,12 +45,6 @@ NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *
         message = "어린이 인식";
         iconPath = ":/images/info.png";
         break;
-    default:
-        bgColor = "rgba(224, 224, 224, 0.8)";
-        lineColor = "#CCCCCC";
-        message = "알 수 없는 이벤트";
-        iconPath = "";
-        break;
     }
 
     setStyleSheet(QString(
