@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QMessageBox>
 #include "login/networkmanager.h"
+#include "login/custommessagebox.h"
 
 namespace Ui {
 class LoginPage;

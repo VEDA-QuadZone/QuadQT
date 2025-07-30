@@ -38,6 +38,7 @@ protected:
 
 public:
     void setUserEmail(const QString &email);
+    bool wasLogout() const;  // 로그아웃 여부 확인용
 
 private:
     void setupUI();
@@ -60,20 +61,22 @@ private:
     QLabel *cameraTitle;
     QLabel *notifTitleLabel;
 
+    // 영상 설정 라벨 및 구분선
+    QLabel *videoSettingTitle;
+    QLabel *displayTitle;
+    QLabel *procTitle;
+    QWidget *videoSettingLine;
+
     // RTSP 스트리밍
     QMediaPlayer *player;
     QVideoWidget *videoWidget;
 
     // 알림 패널 및 설정
     NotificationPanel *notificationPanel;
-    QLabel *videoSettingTitle;
-    QLabel *displayTitle;
-    QLabel *procTitle;
     DisplaySettingBox *displayBox;
     ProcSettingBox *procBox;
-    QWidget *videoSettingLine;
 
-    // MQTT 매니저
+    // MQTT
     MqttManager *mqttManager;
 
     // 페이지들
@@ -81,12 +84,15 @@ private:
     QWidget *documentPage;
     QWidget *settingsPage;
 
-    NetworkManager* networkManager;
+    // 네트워크 매니저
+    NetworkManager *networkManager;
 
     // 로그아웃 상태
     bool m_isLogout;
-private:
+
+    // 기록 뷰
     HistoryView *historyView;
+
 private slots:
     void onCameraClicked();
     void onDocumentClicked();
