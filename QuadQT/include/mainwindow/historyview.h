@@ -85,6 +85,7 @@ private:
     GetImageView*      currentImageView_;
 private:
     QString parseTimestampFromPath(const QString& path);
+    QString findConfigFile();
 };
 
 #endif // HISTORYVIEW_H

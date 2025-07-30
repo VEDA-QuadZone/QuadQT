@@ -24,7 +24,11 @@ private:
     QSslConfiguration sslConfig;
     QString subscribeTopic;
     QString publishTopic;
+    QString brokerUrl;
+    bool useSSL = false;
     void loadCertificates();
+    QString findCertificateFile(const QString &filename);
+    QString findConfigFile();
 };
 
 #endif // MQTTMANAGER_H

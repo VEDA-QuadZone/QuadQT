@@ -553,6 +553,7 @@ QString NetworkManager::findCertificateFile(const QString &filename)
         "./" + filename,            // 현재 디렉토리
         "../" + filename,           // 상위 디렉토리
         "../../" + filename,        // 상위의 상위 디렉토리
+        "resources/certs/" + QFileInfo(filename).fileName(),  // resources/certs 디렉토리
         QCoreApplication::applicationDirPath() + "/" + filename,  // 실행 파일 디렉토리
         QDir::currentPath() + "/" + filename  // 현재 작업 디렉토리
     };

@@ -30,6 +30,8 @@ public:
                                            int limit, int offset);
 
 signals:
+    /// 서버 연결 완료 시
+    void connected();
     /// 서버로부터 JSON 응답 수신 시
     void historyDataReady(const QJsonObject &response);
     /// 오류 발생 시
@@ -39,8 +41,11 @@ private slots:
     void onEncrypted();
     void onReadyRead();
     void onSslErrors(const QList<QSslError> &errors);
+    void onSocketError(QAbstractSocket::SocketError error);
+    void onDisconnected();
 
 private:
     QSslSocket *socket_;
     void sendCommand(const QString &cmd);
+    QString findCertificateFile(const QString &filename);
 };
