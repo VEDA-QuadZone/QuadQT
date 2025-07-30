@@ -57,6 +57,7 @@ private:
     QAction*         actionChildren;
     QAction*         actionSpeed;
     QPushButton*     downloadButton;
+    QPushButton*     refreshButton;
     QWidget*         calendarContainer;
     QCalendarWidget* calendarWidget;
     bool             calendarForStart;
