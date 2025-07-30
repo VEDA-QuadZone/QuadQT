@@ -310,7 +310,7 @@ void MainWindow::onSettingsClicked() { showPage(PageType::Settings); }
 
 void MainWindow::onLogoutRequested()
 {
-    bool confirmed = CustomMessageBox::showConfirm(this, "로그아웃 확인", "정말 로그아웃 하시겠습니까?", "info");
+    bool confirmed = CustomMessageBox::showConfirm(this, "로그아웃 확인", "정말 로그아웃 하시겠습니까?");
     qDebug() << "[MainWindow] 로그아웃 확인 여부:" << confirmed;
 
     if (confirmed) {
