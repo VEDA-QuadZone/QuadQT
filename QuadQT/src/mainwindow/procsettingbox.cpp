@@ -162,11 +162,25 @@ void ProcSettingBox::setupConnections()
         if (ok) {
             val = std::clamp(val, 0, 100);
             sharpnessSlider->setValue(val);
+
+            // ✅ 선명도 라디오가 선택된 상태에서만 전송
+            if (sharpnessRadio->isChecked()) {
+                QString command = QString("CHANGE_FRAME 2 sharp %1").arg(val);
+                emit requestCommand(command);
+            }
         }
     });
 
     connect(sharpnessSlider, &QSlider::valueChanged, this, [=](int val) {
-        sharpnessEdit->setText(QString::number(val));
+        sharpnessEdit->setText(QString::number(val));  // ✅ 실시간으로 QLineEdit 업데이트
+    });
+
+    connect(sharpnessSlider, &QSlider::sliderReleased, this, [=]() {
+        if (sharpnessRadio->isChecked()) {
+            int val = sharpnessSlider->value();
+            QString command = QString("CHANGE_FRAME 2 sharp %1").arg(val);
+            emit requestCommand(command);
+        }
     });
 
     connect(minusButton, &QPushButton::clicked, this, [=]() {
@@ -237,6 +251,29 @@ bool ProcSettingBox::eventFilter(QObject *watched, QEvent *event)
             }
         }
         updateModeUI();
+
+        // 🔽 모드에 따라 TCP 명령 전송
+        QString mode;
+        if (dayRadio->isChecked()) {
+            mode = "day";
+        } else if (nightRadio->isChecked()) {
+            mode = "night";
+        } else if (sharpnessRadio->isChecked()) {
+            mode = "sharp";
+        }
+
+        if (!mode.isEmpty()) {
+            QString command;
+            if (mode == "sharp") {
+                int level = sharpnessSlider->value();
+                command = QString("CHANGE_FRAME 2 sharp %1").arg(level);
+            } else {
+                command = QString("CHANGE_FRAME 2 %1").arg(mode);
+            }
+            emit requestCommand(command);
+        } else {
+            emit requestCommand("CHANGE_FRAME 2 original");
+        }
         return true;
     }
 
