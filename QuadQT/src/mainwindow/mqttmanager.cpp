@@ -1,4 +1,4 @@
-#include "MqttManager.h"
+#include "mainwindow/mqttmanager.h"
 #include <QFile>
 #include <QDebug>
 #include <QSslKey>
