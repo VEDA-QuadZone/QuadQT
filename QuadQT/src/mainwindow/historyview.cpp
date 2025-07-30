@@ -20,6 +20,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QTimer>
+#include <QSizePolicy>
 
 static constexpr int PAGE_SIZE = 16;
 
@@ -149,6 +150,10 @@ HistoryView::HistoryView(QWidget *parent)
     calendarLayout->setSpacing(0);
     
     calendarWidget = new QCalendarWidget();
+    
+    // 주차 번호(첫 번째 열) 숨기기
+    calendarWidget->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
+    
     calendarLayout->addWidget(calendarWidget);
     
     // 달력 스타일 설정
@@ -279,6 +284,14 @@ HistoryView::HistoryView(QWidget *parent)
     }
     // 페이징
     setupPaginationUI();
+    
+    // 초기 데이터 로딩 보장 (TCP 연결과 관계없이)
+    QTimer::singleShot(100, this, [this]() {
+        if (tableWidget->rowCount() == 0) {
+            qDebug() << "HistoryView: 초기 데이터 로딩 - 더미 데이터 사용";
+            loadDummyData();
+        }
+    });
 }
 QString HistoryView::parseTimestampFromPath(const QString& path) {
     QRegularExpression re(R"(20\d{6}_\d{6})");
@@ -578,10 +591,17 @@ void HistoryView::nextPage()
 
 void HistoryView::setupPaginationUI()
 {
-    prevButton = new QPushButton("< 이전", this);
-    nextButton = new QPushButton("다음 >", this);
-    pageLabel  = new QLabel("1", this);
+    prevButton = new QPushButton(this);
+    prevButton->setIcon(QIcon(":/images/left.png"));
+    // 텍스트 제거 - 아이콘만 표시
+    
+    nextButton = new QPushButton(this);
+    nextButton->setIcon(QIcon(":/images/right.png"));
+    // 텍스트 제거 - 아이콘만 표시
+    
+    pageLabel = new QLabel("1", this);
     pageLabel->setAlignment(Qt::AlignCenter);
+    
     prevButton->setEnabled(false);
     connect(prevButton, &QPushButton::clicked, this, &HistoryView::prevPage);
     connect(nextButton, &QPushButton::clicked, this, &HistoryView::nextPage);
@@ -630,10 +650,12 @@ void HistoryView::resizeEvent(QResizeEvent *event)
         );
 
     startDateButton->setGeometry(wu*13+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
-    startDateButton->setIconSize(QSize(int(hu*0.6), int(hu*0.6)));
+    startDateButton->setIconSize(QSize(int(hu*0.5), int(hu*0.5)));
+    startDateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    startDateButton->setFixedSize(wu*2.5, uH);
     startDateButton->setStyleSheet(QString(
         "QPushButton {"
-        "    padding: 4px;"
+        "    padding: 2px;"
         "    background: transparent;"
         "    border: none;"
         "    text-align: right;"
@@ -641,17 +663,20 @@ void HistoryView::resizeEvent(QResizeEvent *event)
         "    min-width: %2px;"
         "    max-width: %2px;"
         "    width: %2px;"
+        "    qproperty-iconSize: %3px %3px;"
         "}"
-    ).arg(int(hu*0.5)).arg(int(wu*2.5)));
+    ).arg(int(hu*0.35)).arg(int(wu*2.5)).arg(int(hu*0.5)));
     
     arrowLabel->setGeometry(wu*16, hu*3 - yOffset, wu*0.5, uH);
     arrowLabel->setPixmap(QPixmap(":/images/sign.png").scaled(int(hu*0.6), int(hu*0.6), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     
     endDateButton->setGeometry(wu*16+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
-    endDateButton->setIconSize(QSize(int(hu*0.6), int(hu*0.6)));
+    endDateButton->setIconSize(QSize(int(hu*0.5), int(hu*0.5)));
+    endDateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    endDateButton->setFixedSize(wu*2.5, uH);
     endDateButton->setStyleSheet(QString(
         "QPushButton {"
-        "    padding: 4px;"
+        "    padding: 2px;"
         "    background: transparent;"
         "    border: none;"
         "    text-align: left;"
@@ -659,8 +684,9 @@ void HistoryView::resizeEvent(QResizeEvent *event)
         "    min-width: %2px;"
         "    max-width: %2px;"
         "    width: %2px;"
+        "    qproperty-iconSize: %3px %3px;"
         "}"
-    ).arg(int(hu*0.5)).arg(int(wu*2.5)));
+    ).arg(int(hu*0.35)).arg(int(wu*2.5)).arg(int(hu*0.5)));
     
     filterButton    ->setGeometry(wu*19, hu*3 - yOffset, wu*2.5, uH);
     filterButton->setStyleSheet(QString(R"(
@@ -702,9 +728,48 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     int navW = int(wu*8);
     int navH = uH;
     int btnW = navW / 3;
+    
+    // 페이징 버튼 geometry 설정
     prevButton->setGeometry(navX,           navY, btnW, navH);
     pageLabel ->setGeometry(navX + btnW,    navY, btnW, navH);
     nextButton->setGeometry(navX + btnW*2,  navY, btnW, navH);
+    
+    // 페이징 버튼 스타일 설정 (글씨 크기 키움)
+    int fontSize = int(hu * 0.6); // 글씨 크기를 키움
+    int iconSize = int(hu * 0.7); // 아이콘 크기
+    
+    QString buttonStyle = QString(
+        "QPushButton {"
+        "    background-color: transparent;"
+        "    border: none;"
+        "    padding: 4px;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: rgba(232, 196, 160, 0.3);"
+        "    border-radius: 4px;"
+        "}"
+        "QPushButton:disabled {"
+        "    background-color: transparent;"
+        "    opacity: 0.3;"
+        "}"
+    );
+    
+    prevButton->setStyleSheet(buttonStyle);
+    nextButton->setStyleSheet(buttonStyle);
+    
+    // 아이콘 크기 설정
+    prevButton->setIconSize(QSize(iconSize, iconSize));
+    nextButton->setIconSize(QSize(iconSize, iconSize));
+    
+    // 페이지 라벨 스타일 설정 (테두리 제거)
+    pageLabel->setStyleSheet(QString(
+        "QLabel {"
+        "    font-size: %1px;"
+        "    font-weight: bold;"
+        "    background-color: transparent;"
+        "    border: none;"
+        "}"
+    ).arg(fontSize));
 }
 
 
@@ -792,16 +857,24 @@ void HistoryView::dateSelected()
     int uH = int(hu);
     int yOffset = hu * 3;
     
+    // 버튼 크기와 위치를 완전히 고정
+    int fixedWidth = int(wu*2.5);
+    int fixedHeight = uH;
+    
     if (calendarForStart) {
-        startDateButton->setGeometry(wu*13+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
+        startDateButton->setGeometry(wu*13+wu*0.5, hu*3 - yOffset, fixedWidth, fixedHeight);
+        startDateButton->setFixedSize(fixedWidth, fixedHeight);
+        startDateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     } else {
-        endDateButton->setGeometry(wu*16+wu*0.5, hu*3 - yOffset, wu*2.5, uH);
+        endDateButton->setGeometry(wu*16+wu*0.5, hu*3 - yOffset, fixedWidth, fixedHeight);
+        endDateButton->setFixedSize(fixedWidth, fixedHeight);
+        endDateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     }
     
-    // 버튼 스타일 재적용하여 크기 고정
+    // 버튼 스타일 재적용하여 크기 고정 (더 작은 글자 크기)
     QString buttonStyle = QString(
         "QPushButton {"
-        "    padding: 4px;"
+        "    padding: 2px;"
         "    background: transparent;"
         "    border: none;"
         "    text-align: %1;"
@@ -809,24 +882,56 @@ void HistoryView::dateSelected()
         "    min-width: %3px;"
         "    max-width: %3px;"
         "    width: %3px;"
+        "    height: %4px;"
+        "    qproperty-iconSize: %5px %5px;"
         "}"
     ).arg(calendarForStart ? "right" : "left")
-     .arg(int(hu*0.5))
-     .arg(int(wu*2.5));
+     .arg(int(hu*0.35))  // 글자 크기 줄임
+     .arg(fixedWidth)
+     .arg(fixedHeight)
+     .arg(int(hu*0.5));  // 아이콘 크기
     
     targetButton->setStyleSheet(buttonStyle);
     
     // 아이콘 크기도 다시 설정
-    targetButton->setIconSize(QSize(int(hu*0.6), int(hu*0.6)));
+    targetButton->setIconSize(QSize(int(hu*0.5), int(hu*0.5)));
     
-    // 강제로 업데이트
+    // 강제로 업데이트 - 여러 번 호출하여 확실히 적용
     targetButton->updateGeometry();
     targetButton->update();
+    targetButton->repaint();
+    
+    // 약간의 지연 후 다시 한 번 크기 고정
+    QTimer::singleShot(10, this, [this, targetButton, fixedWidth, fixedHeight]() {
+        targetButton->setFixedSize(fixedWidth, fixedHeight);
+        targetButton->updateGeometry();
+        targetButton->update();
+    });
     
     calendarContainer->hide();
     
+    // 두 날짜가 모두 선택되었는지 확인
     if (!startDateButton->text().isEmpty() && !endDateButton->text().isEmpty() &&
         startDateButton->text() != "시작일 선택하기" && endDateButton->text() != "종료일 선택하기") {
+        
+        // 날짜 문자열을 QDate로 변환하여 비교
+        QDate startDateObj = QDate::fromString(startDateButton->text(), "yyyy-MM-dd");
+        QDate endDateObj = QDate::fromString(endDateButton->text(), "yyyy-MM-dd");
+        
+        // 시작날짜가 종료날짜보다 늦은지 확인
+        if (startDateObj > endDateObj) {
+            QMessageBox::warning(this, "날짜 오류", 
+                QString("시작날짜가 종료날짜보다 늦을 수 없습니다.\n\n"
+                       "현재 선택된 날짜:\n"
+                       "시작날짜: %1\n"
+                       "종료날짜: %2\n\n"
+                       "올바른 날짜 범위를 선택해주세요.")
+                .arg(startDateButton->text())
+                .arg(endDateButton->text()));
+            return;
+        }
+        
+        // 날짜가 유효하면 검색 실행
         startDate = startDateButton->text();
         endDate   = endDateButton->text();
         currentPage = 0;
@@ -884,6 +989,7 @@ QString HistoryView::findConfigFile()
 void HistoryView::loadDummyData()
 {
     qDebug() << "히스토리 서버 연결 실패 - 더미 데이터 로드";
+    currentPage = 0; // 페이지를 0으로 초기화
     QJsonObject dummyResponse = createDummyHistoryResponse();
     onHistoryData(dummyResponse);
 }
