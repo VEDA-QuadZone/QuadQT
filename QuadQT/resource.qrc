@@ -38,6 +38,7 @@
         <file alias="menu.png">resources/images/menu.png</file>
         <file alias="left.png">resources/images/left.png</file>
         <file alias="right.png">resources/images/right.png</file>
+        <file alias="image.png">resources/images/image.png</file>
     </qresource>
     <qresource prefix="/fonts">
         <file>resources/fonts/01HanwhaB.ttf</file>
