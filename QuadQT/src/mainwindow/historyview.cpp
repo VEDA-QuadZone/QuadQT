@@ -361,10 +361,13 @@ void HistoryView::onImageCellClicked(int row, int col) {
     qDebug() << "HistoryView: 추출된 타임스탬프:" << timestamp;
 
     // 뷰어 생성
-    qDebug() << "HistoryView: GetImageView 생성 중...";
-    currentImageView_ = new GetImageView(path, timestamp, this);
+    QString eventType = tableWidget->cellWidget(row, 2)
+                            ? qobject_cast<QLabel*>(tableWidget->cellWidget(row, 2)->layout()->itemAt(0)->widget())->text() : "";
+    QString plate = tableWidget->item(row, 4) ? tableWidget->item(row, 4)->text() : "";
+    QString filename = tableWidget->item(row, col) ? tableWidget->item(row, col)->text() : "";
+
+    currentImageView_ = new GetImageView(eventType, plate, timestamp, filename, this);
     currentImageView_->show();
-    qDebug() << "HistoryView: GetImageView 표시됨";
 
     // config.ini에서 TCP 설정 읽기
     QString configPath = findConfigFile();
