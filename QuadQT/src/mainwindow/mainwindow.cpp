@@ -20,6 +20,9 @@
 #include <QtMultimedia/QMediaPlayer>
 #include <QtMultimediaWidgets/QVideoWidget>
 #include <QTimer>
+#include <QSettings>
+#include <QPalette>
+#include <QFontDatabase>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -50,7 +53,14 @@ MainWindow::MainWindow(QWidget *parent)
     QSslConfiguration::setDefaultConfiguration(sslConf);
 
     QWidget *centralW = new QWidget(this);
+    centralW->setStyleSheet("background-color: #FFFFFF;");
+    centralW->setAutoFillBackground(true);
     setCentralWidget(centralW);
+    
+    // MainWindow 자체 배경도 설정
+    this->setStyleSheet("MainWindow { background-color: #FFFFFF; }");
+    this->setAutoFillBackground(true);
+    
     setMinimumSize(1600, 900);
     showMaximized();
 
@@ -63,7 +73,11 @@ MainWindow::MainWindow(QWidget *parent)
     // QMediaPlayer 초기화 및 RTSP 재생
     player = new QMediaPlayer(this);
     player->setVideoOutput(videoWidget);
-    player->setSource(QUrl("rtsps://192.168.0.10:8555/test"));  // 주소 필요 시 수정
+    
+    // config.ini에서 RTSP URL 읽기
+    QSettings settings("config.ini", QSettings::IniFormat);
+    QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
+    player->setSource(QUrl(rtspUrl));
     player->play();
 
     // === MQTT 매니저 초기화 ===
@@ -74,7 +88,7 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug() << "[MQTT] Connected signal received!";
         QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
         qDebug() << "[MQTT] Publishing test message:" << testPayload;
-        mqttManager->publish("alert", testPayload);
+        mqttManager->publish(testPayload); // 기본 토픽 사용
     });
 
     connect(mqttManager, &MqttManager::messageReceived,
@@ -102,6 +116,13 @@ void MainWindow::setupUI()
     QWidget *parent = centralWidget();
 
     topBar = new TopBarWidget(parent);
+    topBar->setStyleSheet("background-color: #FFFFFF !important;");
+    topBar->setAutoFillBackground(true);
+    
+    // QPalette을 사용한 추가 설정
+    QPalette topBarPalette = topBar->palette();
+    topBarPalette.setColor(QPalette::Window, QColor(255, 255, 255));
+    topBar->setPalette(topBarPalette);
     connect(topBar, &TopBarWidget::cameraClicked, this, &MainWindow::onCameraClicked);
     connect(topBar, &TopBarWidget::documentClicked, this, &MainWindow::onDocumentClicked);
     connect(topBar, &TopBarWidget::settingsClicked, this, &MainWindow::onSettingsClicked);
@@ -114,10 +135,33 @@ void MainWindow::setupUI()
 
 void MainWindow::setupFonts()
 {
-    QFont defaultFont("HanwhaGothicR", 12);
-    QFont titleFont("HanwhaGothicR", 15);
+    // 한화 글꼴 로드 확인
+    QStringList allFamilies = QFontDatabase().families();
+    QString hanwhaFont;
+    
+    // HanwhaGothicB 폰트 찾기
+    for (const QString &family : allFamilies) {
+        if (family.contains("HanwhaGothicB", Qt::CaseInsensitive) || 
+            family.contains("HanwhaGothic", Qt::CaseInsensitive)) {
+            hanwhaFont = family;
+            break;
+        }
+    }
+    
+    // 폰트가 없으면 시스템 기본 폰트 사용
+    if (hanwhaFont.isEmpty()) {
+        hanwhaFont = "Arial"; // 또는 "Malgun Gothic" (한글 지원)
+        qDebug() << "한화 글꼴을 찾을 수 없어 기본 글꼴 사용:" << hanwhaFont;
+    } else {
+        qDebug() << "한화 글꼴 발견:" << hanwhaFont;
+    }
+    
+    QFont defaultFont(hanwhaFont, 12);
+    QFont titleFont(hanwhaFont, 15);
     titleFont.setBold(true);
     setFont(defaultFont);
+    
+    qDebug() << "기본 글꼴 설정 완료:" << defaultFont.family();
 }
 
 void MainWindow::setupPages()
@@ -135,7 +179,24 @@ QWidget* MainWindow::createCameraPage()
 {
     QWidget *page = new QWidget();
 
-    QFont titleFont("HanwhaGothicR", 15);
+    // 한화 글꼴 확인 및 fallback 설정
+    QStringList allFamilies = QFontDatabase().families();
+    QString hanwhaFont;
+    
+    for (const QString &family : allFamilies) {
+        if (family.contains("HanwhaGothicB", Qt::CaseInsensitive) || 
+            family.contains("HanwhaGothic", Qt::CaseInsensitive)) {
+            hanwhaFont = family;
+            break;
+        }
+    }
+    
+    if (hanwhaFont.isEmpty()) {
+        hanwhaFont = "Malgun Gothic"; // 한글 지원 기본 폰트
+        qDebug() << "카메라 페이지: 한화 글꼴을 찾을 수 없어 기본 글꼴 사용:" << hanwhaFont;
+    }
+
+    QFont titleFont(hanwhaFont, 15);
     titleFont.setBold(true);
 
     cameraTitle = new QLabel("역삼 초등학교 앞 CCTV", page);
@@ -150,17 +211,17 @@ QWidget* MainWindow::createCameraPage()
     videoWidget->setStyleSheet("background-color: black; border: 1px solid #ccc;");
 
     notificationPanel = new NotificationPanel(page);
-    notificationPanel->setStyleSheet("background-color: #f8f9fa; border-left: 1px solid #ccc;");
+    notificationPanel->setStyleSheet("background-color: #FFFFFF; border-left: 1px solid #ccc;");
 
-    QFont settingTitleFont("HanwhaGothicR", 16); settingTitleFont.setBold(true);
-    QFont subTitleFont("HanwhaGothicR", 13);     subTitleFont.setBold(true);
+    QFont settingTitleFont(hanwhaFont, 16); settingTitleFont.setBold(true);
+    QFont subTitleFont(hanwhaFont, 13);     subTitleFont.setBold(true);
 
     videoSettingTitle = new QLabel("영상 설정", page);
     videoSettingTitle->setFont(settingTitleFont);
     videoSettingTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     videoSettingLine = new QWidget(page);
-    videoSettingLine->setStyleSheet("background-color: #999;");
+    videoSettingLine->setStyleSheet("background-color: #ccc;");
 
     displayTitle = new QLabel("화면 표시", page);
     displayTitle->setFont(subTitleFont);
@@ -171,10 +232,10 @@ QWidget* MainWindow::createCameraPage()
     procTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
 
     displayBox = new DisplaySettingBox(page);
-    displayBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
+    displayBox->setStyleSheet("background-color: #FFFFFF; border: 1px solid #ccc;");
 
     procBox = new ProcSettingBox(page);
-    procBox->setStyleSheet("background-color: #f0f0f0; border: 1px solid #ccc;");
+    procBox->setStyleSheet("background-color: #FFFFFF; border: 1px solid #ccc;");
 
     return page;
 }
@@ -182,7 +243,7 @@ QWidget* MainWindow::createCameraPage()
 QWidget* MainWindow::createDocumentPage()
 {
     QWidget *page = new QWidget();
-    page->setStyleSheet("background-color: #f5f5f5;");
+    page->setStyleSheet("background-color: #FFFFFF;");
 
     // 1) HistoryView 인스턴스 생성 (멤버로 만들어 관리)
     historyView = new HistoryView(page);  // parent 지정해도 되고 안 해도 됨
@@ -198,7 +259,7 @@ QWidget* MainWindow::createDocumentPage()
 QWidget* MainWindow::createSettingsPage()
 {
     QWidget *page = new QWidget();
-    page->setStyleSheet("background-color: #f0f8ff;");
+    page->setStyleSheet("background-color: #FFFFFF;");
 
     QFont titleFont("HanwhaGothicR", 24); titleFont.setBold(true);
     QFont contentFont("HanwhaGothicR", 16);

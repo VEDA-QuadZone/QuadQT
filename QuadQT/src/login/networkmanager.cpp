@@ -72,9 +72,9 @@ void NetworkManager::loadConfig()
         return;
     }
     
-    m_serverIp = settings.value("TCP/ip", "192.168.0.10").toString();
-    m_serverPort = settings.value("TCP/port", 8080).toInt();
-    m_timeout = settings.value("TCP/timeout", 5000).toInt();
+    m_serverIp = settings.value("tcp/ip", "192.168.0.10").toString();
+    m_serverPort = settings.value("tcp/port", 8080).toInt();
+    m_timeout = settings.value("tcp/timeout", 5000).toInt();
     
     // SSL 설정 로드
     m_sslEnabled = settings.value("SSL/enabled", false).toBool();
@@ -553,6 +553,7 @@ QString NetworkManager::findCertificateFile(const QString &filename)
         "./" + filename,            // 현재 디렉토리
         "../" + filename,           // 상위 디렉토리
         "../../" + filename,        // 상위의 상위 디렉토리
+        "resources/certs/" + QFileInfo(filename).fileName(),  // resources/certs 디렉토리
         QCoreApplication::applicationDirPath() + "/" + filename,  // 실행 파일 디렉토리
         QDir::currentPath() + "/" + filename  // 현재 작업 디렉토리
     };
