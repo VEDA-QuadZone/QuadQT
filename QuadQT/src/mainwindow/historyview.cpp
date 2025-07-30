@@ -17,6 +17,8 @@
 #include <QJsonArray>
 #include <QMessageBox>
 #include <QSettings>
+#include <QCoreApplication>
+#include <QDir>
 
 static constexpr int PAGE_SIZE = 16;
 
@@ -222,17 +224,26 @@ HistoryView::HistoryView(QWidget *parent)
     connect(tcpImageHandler_, &TcpImageHandler::errorOccurred,
             this, [this](auto e){ QMessageBox::warning(this, "Image Error", e); });
     
-    // config.ini에서 TCP 설정 읽기
-    QSettings settings("config.ini", QSettings::IniFormat);
-    QString tcpHost = settings.value("tcp/ip").toString();
-    int tcpPort = settings.value("tcp/port").toInt();
+    // 연결 완료 시 최초 요청하도록 시그널 연결
+    connect(tcpHandler_, &TcpHistoryHandler::connected, this, [this]() {
+        qDebug() << "HistoryView: TCP 연결 완료, 최초 데이터 요청";
+        requestPage();
+    });
     
-    tcpHandler_->connectToServer(tcpHost, tcpPort);
+    // config.ini에서 TCP 설정 읽기
+    QString configPath = findConfigFile();
+    if (!configPath.isEmpty()) {
+        QSettings settings(configPath, QSettings::IniFormat);
+        QString tcpHost = settings.value("tcp/ip").toString();
+        int tcpPort = settings.value("tcp/port").toInt();
+        
+        qDebug() << "HistoryView TCP 설정 - Host:" << tcpHost << "Port:" << tcpPort;
+        tcpHandler_->connectToServer(tcpHost, tcpPort);
+    } else {
+        qDebug() << "HistoryView: config.ini 파일을 찾을 수 없습니다.";
+    }
     // 페이징
     setupPaginationUI();
-
-    // 최초 요청
-    requestPage();
 }
 QString HistoryView::parseTimestampFromPath(const QString& path) {
     QRegularExpression re(R"(20\d{6}_\d{6})");
@@ -277,6 +288,7 @@ void HistoryView::onImageCellClicked(int row, int col) {
 
 
 void HistoryView::onImageDataReady(const QString& path, const QByteArray& data) {
+    Q_UNUSED(path);
     if (currentImageView_) {
         currentImageView_->setImageData(data);
     }
@@ -632,4 +644,32 @@ bool HistoryView::eventFilter(QObject *obj, QEvent *event)
     }
     
     return QWidget::eventFilter(obj, event);
+}
+
+QString HistoryView::findConfigFile()
+{
+    // config.ini 파일을 여러 경로에서 찾아봅니다
+    QStringList searchPaths = {
+        "config.ini",                    // 현재 디렉토리
+        "./config.ini",                  // 명시적 현재 디렉토리
+        "../config.ini",                 // 상위 디렉토리
+        "../../config.ini",              // 상위의 상위 디렉토리
+        QCoreApplication::applicationDirPath() + "/config.ini",  // 실행 파일 디렉토리
+        QDir::currentPath() + "/config.ini"  // 현재 작업 디렉토리
+    };
+    
+    for (const QString &path : searchPaths) {
+        QFile file(path);
+        if (file.exists()) {
+            qDebug() << "HistoryView 설정 파일 발견:" << path;
+            return path;
+        }
+    }
+    
+    qDebug() << "HistoryView: 다음 경로들에서 config.ini 파일을 찾을 수 없습니다:";
+    for (const QString &path : searchPaths) {
+        qDebug() << "  -" << path;
+    }
+    
+    return QString(); // 빈 문자열 반환
 }

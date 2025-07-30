@@ -1,4 +1,4 @@
-QT       += core gui network multimedia multimediawidgets widgets mqtt
+QT       += core gui network widgets mqtt multimedia multimediawidgets
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++17
 
