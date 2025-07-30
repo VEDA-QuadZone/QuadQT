@@ -24,10 +24,20 @@ void loadFonts()
     int fontId8 = QFontDatabase::addApplicationFont(":/fonts/resources/fonts/08HanwhaGothicT.ttf");
     
     qDebug() << "폰트 로드 결과:";
-    qDebug() << "  HanwhaB:" << (fontId1 != -1 ? "성공" : "실패");
-    qDebug() << "  HanwhaR:" << (fontId2 != -1 ? "성공" : "실패");
-    qDebug() << "  HanwhaGothicB:" << (fontId4 != -1 ? "성공" : "실패");
-    qDebug() << "  HanwhaGothicR:" << (fontId5 != -1 ? "성공" : "실패");
+    qDebug() << "  HanwhaB:" << (fontId1 != -1 ? "성공" : "실패") << "ID:" << fontId1;
+    qDebug() << "  HanwhaR:" << (fontId2 != -1 ? "성공" : "실패") << "ID:" << fontId2;
+    qDebug() << "  HanwhaGothicB:" << (fontId4 != -1 ? "성공" : "실패") << "ID:" << fontId4;
+    qDebug() << "  HanwhaGothicR:" << (fontId5 != -1 ? "성공" : "실패") << "ID:" << fontId5;
+    
+    // 각 폰트 ID에서 실제 패밀리명 확인
+    if (fontId1 != -1) {
+        QStringList families1 = QFontDatabase::applicationFontFamilies(fontId1);
+        qDebug() << "  HanwhaB 패밀리명:" << families1;
+    }
+    if (fontId5 != -1) {
+        QStringList families5 = QFontDatabase::applicationFontFamilies(fontId5);
+        qDebug() << "  HanwhaGothicR 패밀리명:" << families5;
+    }
     
     // 모든 로드된 폰트 패밀리 확인
     QStringList allFamilies = QFontDatabase().families();

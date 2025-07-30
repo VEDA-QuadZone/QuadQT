@@ -7,6 +7,7 @@
 GetImageView::GetImageView(const QString& path, const QString& timestamp, QWidget* parent)
     : QDialog(parent)
 {
+    this->setStyleSheet("background-color: #FFFFFF;");
     QVBoxLayout* layout = new QVBoxLayout(this);
 
     // 1. 이미지 영역
