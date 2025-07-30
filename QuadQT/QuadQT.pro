@@ -19,6 +19,7 @@ SOURCES += \
     src/login/loginpage.cpp \
     src/login/networkmanager.cpp \
     src/mainwindow/displaysettingbox.cpp \
+    src/mainwindow/compareimageview.cpp \
     src/mainwindow/getimageview.cpp \
     src/mainwindow/historyview.cpp \
     src/mainwindow/mainwindow.cpp \
@@ -35,6 +36,7 @@ HEADERS += \
     include/login/custommessagebox.h \
     include/login/loginpage.h \
     include/login/networkmanager.h \
+    include/mainwindow/compareimageview.h \
     include/mainwindow/displaysettingbox.h \
     include/mainwindow/getimageview.h \
     include/mainwindow/historyview.h \

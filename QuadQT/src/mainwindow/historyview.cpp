@@ -1,11 +1,7 @@
 // historyview.cpp
 #include "mainwindow/historyview.h"
 #include "mainwindow/tcphistoryhandler.h"
-
-
-// historyview.cpp
-#include "mainwindow/historyview.h"
-#include "mainwindow/tcphistoryhandler.h"
+#include "mainwindow/compareimageview.h"
 
 #include <QResizeEvent>
 #include <QDate>
@@ -37,7 +33,9 @@ static constexpr int PAGE_SIZE = 16;
 HistoryView::HistoryView(QWidget *parent)
     : QWidget(parent),
     calendarForStart(false),
-    currentPage(0)
+    currentPage(0),
+    currentImageView_(nullptr),
+    currentCompareView_(nullptr)
 {
     this->setStyleSheet("background-color: #FFFFFF;");  // 원하는 배경색으로 변경
     // 1) 제목 - 이미지로 변경
@@ -279,6 +277,83 @@ QString HistoryView::parseTimestampFromPath(const QString& path) {
 void HistoryView::onImageCellClicked(int row, int col) {
     if (col != 5 && col != 8 && col != 9) return;
 
+    // 정차 시작 이미지(8번) 또는 1분 경과 이미지(9번) 클릭 시 비교 창 표시
+    if (col == 8 || col == 9) {
+        // 정차 시작 이미지 경로 가져오기
+        QString startPath = "";
+        QWidget* startCell = tableWidget->cellWidget(row, 8);
+        if (startCell && startCell->property("imagePath").isValid()) {
+            startPath = startCell->property("imagePath").toString();
+        }
+        if (startPath.isEmpty()) {
+            QTableWidgetItem* startItem = tableWidget->item(row, 8);
+            if (startItem && startItem->data(Qt::UserRole).isValid()) {
+                startPath = startItem->data(Qt::UserRole).toString();
+            }
+        }
+
+        // 1분 경과 이미지 경로 가져오기
+        QString endPath = "";
+        QWidget* endCell = tableWidget->cellWidget(row, 9);
+        if (endCell && endCell->property("imagePath").isValid()) {
+            endPath = endCell->property("imagePath").toString();
+        }
+        if (endPath.isEmpty()) {
+            QTableWidgetItem* endItem = tableWidget->item(row, 9);
+            if (endItem && endItem->data(Qt::UserRole).isValid()) {
+                endPath = endItem->data(Qt::UserRole).toString();
+            }
+        }
+
+        // 두 이미지 경로가 모두 있는 경우에만 비교 창 표시
+        if (!startPath.isEmpty() && !endPath.isEmpty() && startPath != "-" && endPath != "-") {
+            QString timestamp = parseTimestampFromPath(startPath);
+
+            // 유형 정보 가져오기 (3번 열에서)
+            QString eventType = "";
+            QWidget* typeCell = tableWidget->cellWidget(row, 3);
+            if (typeCell && typeCell->layout() && typeCell->layout()->itemAt(0)) {
+                QLabel* typeLabel = qobject_cast<QLabel*>(typeCell->layout()->itemAt(0)->widget());
+                if (typeLabel) {
+                    eventType = typeLabel->text();
+                }
+            }
+
+            // 번호판 정보 가져오기 (6번 열에서)
+            QString plate = "";
+            QWidget* plateCell = tableWidget->cellWidget(row, 6);
+            if (plateCell && plateCell->layout() && plateCell->layout()->itemAt(0)) {
+                QLabel* plateLabel = qobject_cast<QLabel*>(plateCell->layout()->itemAt(0)->widget());
+                if (plateLabel) {
+                    plate = plateLabel->text();
+                }
+            }
+
+            // 비교 창 생성 및 표시
+            currentCompareView_ = new CompareImageView(eventType, plate, timestamp, startPath, endPath, this);
+            currentCompareView_->show();
+
+            // 이미지 데이터 요청
+            pendingStartImagePath_ = startPath;
+            pendingEndImagePath_ = endPath;
+            startImageData_.clear();
+            endImageData_.clear();
+
+            QString configPath = findConfigFile();
+            if (!configPath.isEmpty()) {
+                QSettings settings(configPath, QSettings::IniFormat);
+                QString tcpHost = settings.value("tcp/ip").toString();
+                int tcpPort = settings.value("tcp/port").toInt();
+                if (tcpImageHandler_) {
+                    // 첫 번째 이미지 요청
+                    tcpImageHandler_->connectToServerThenRequestImage(tcpHost, tcpPort, startPath);
+                }
+            }
+            return;
+        }
+    }
+
+    // 기존 단일 이미지 보기 로직 (5번 열 클릭 시)
     QString path;
     QTableWidgetItem* item = tableWidget->item(row, col);
     if (item && item->data(Qt::UserRole).isValid()) {
@@ -330,8 +405,33 @@ void HistoryView::onImageCellClicked(int row, int col) {
 }
 
 void HistoryView::onImageDataReady(const QString& path, const QByteArray& data) {
+    // 단일 이미지 뷰어에 데이터 설정
     if (currentImageView_) {
         currentImageView_->setImageData(data);
+    }
+    
+    // 비교 뷰어에 데이터 설정
+    if (currentCompareView_) {
+        if (path == pendingStartImagePath_) {
+            startImageData_ = data;
+            currentCompareView_->setStartImageData(data);
+            
+            // 첫 번째 이미지를 받았으면 두 번째 이미지 요청
+            if (!pendingEndImagePath_.isEmpty() && endImageData_.isEmpty()) {
+                QString configPath = findConfigFile();
+                if (!configPath.isEmpty()) {
+                    QSettings settings(configPath, QSettings::IniFormat);
+                    QString tcpHost = settings.value("tcp/ip").toString();
+                    int tcpPort = settings.value("tcp/port").toInt();
+                    if (tcpImageHandler_) {
+                        tcpImageHandler_->connectToServerThenRequestImage(tcpHost, tcpPort, pendingEndImagePath_);
+                    }
+                }
+            }
+        } else if (path == pendingEndImagePath_) {
+            endImageData_ = data;
+            currentCompareView_->setEndImageData(data);
+        }
     }
 }
 
