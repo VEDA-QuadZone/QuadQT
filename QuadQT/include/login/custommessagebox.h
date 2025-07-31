@@ -14,21 +14,17 @@ class CustomMessageBox : public QDialog
 public:
     explicit CustomMessageBox(const QString &title,
                               const QString &message,
-                              const QString &iconKey = "",
-                              QWidget *parent = nullptr);
+                              QWidget *parent = nullptr);  // iconKey 제거
 
     static void showMessage(QWidget *parent,
                             const QString &title,
-                            const QString &message,
-                            const QString &iconKey = "");
+                            const QString &message);
 
     static bool showConfirm(QWidget *parent,
                             const QString &title,
-                            const QString &message,
-                            const QString &iconKey = "");
+                            const QString &message);
 
 private:
-    QLabel *m_iconLabel;
     QLabel *m_titleLabel;
     QLabel *m_messageLabel;
     QPushButton *m_okButton;
