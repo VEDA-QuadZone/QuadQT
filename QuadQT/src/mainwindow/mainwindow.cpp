@@ -23,13 +23,12 @@
 #include <QSettings>
 #include <QPalette>
 #include <QFontDatabase>
+#include <QThread>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     topBar(nullptr),
     stackedWidget(nullptr),
-    player(nullptr),
-    videoWidget(nullptr),
     cameraPage(nullptr),
     documentPage(nullptr),
     settingsPage(nullptr),
@@ -42,12 +41,9 @@ MainWindow::MainWindow(QWidget *parent)
     notificationPanel(nullptr),
     displayBox(nullptr),
     procBox(nullptr),
-    videoSettingLine(nullptr),
-    cameraTitle(nullptr),
-    notifTitleLabel(nullptr),
     videoLabel(nullptr),
-    notificationPanel(nullptr),
     rtspPlayer(nullptr),
+    rtspThread(nullptr),
     mqttManager(nullptr),
     networkManager(nullptr),
     m_isLogout(false),
@@ -64,12 +60,10 @@ MainWindow::MainWindow(QWidget *parent)
     centralW->setAutoFillBackground(true);
     setCentralWidget(centralW);
 
-    this->setStyleSheet("MainWindow { background-color: #FFFFFF; }");
-    this->setAutoFillBackground(true);
-
     setMinimumSize(1600, 900);
     showMaximized();
 
+    // ----- NetworkManager -----
     networkManager = new NetworkManager(this);
     networkManager->connectToServer();
 
@@ -83,47 +77,80 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug() << "[TCP] 오류:" << msg;
     });
 
-    setupUI();
     setupFonts();
+    setupUI();
     setupPages();
     showPage(PageType::Camera);
 
     QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
-    // RTSP 생성
+    // ----- RTSP Player 스레드 분리 -----
     QSettings settings("config.ini", QSettings::IniFormat);
     QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
 
-    rtspPlayer = new RtspPlayer(videoLabel, this);
-    rtspPlayer->setUrl(rtspUrl);
-    rtspPlayer->start();
+    rtspThread = new QThread(this);
+    rtspPlayer = new RtspPlayer();  // UI 의존성 제거
+    rtspPlayer->moveToThread(rtspThread);
+
+    connect(rtspThread, &QThread::started, [this, rtspUrl]() {
+        rtspPlayer->setUrl(rtspUrl);
+        rtspPlayer->start();
+    });
+
     connect(rtspPlayer, &RtspPlayer::frameReceived, this, [this](const QVideoFrame &frame, qint64 recvTime){
         QString ts = QDateTime::fromMSecsSinceEpoch(recvTime).toString("yyyy-MM-dd HH:mm:ss");
         qDebug() << "[LatencyTest] Frame received at:" << ts;
-        // 나중에 서버 타임스탬프와 비교할 때 사용
-    });
 
+        QVideoFrame copy = frame;
+        if (!copy.map(QVideoFrame::ReadOnly)) return;
+        QImage img = copy.toImage();
+        copy.unmap();
 
+        if (videoLabel) {
+            videoLabel->setPixmap(QPixmap::fromImage(img).scaled(
+                videoLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        }
+    }, Qt::QueuedConnection);
+
+    rtspThread->start();
+
+    // ----- MQTT -----
     mqttManager = new MqttManager(this);
 
     connect(mqttManager, &MqttManager::connected, this, [this]() {
         qDebug() << "[MQTT] Connected signal received!";
         QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
-        qDebug() << "[MQTT] Publishing test message:" << testPayload;
         mqttManager->publish(testPayload);
     });
 
-    connect(mqttManager, &MqttManager::messageReceived,
-            notificationPanel, &NotificationPanel::handleMqttMessage);
+    // notificationPanel이 null일 수 있으니 체크
+    if (notificationPanel) {
+        connect(mqttManager, &MqttManager::messageReceived,
+                notificationPanel, &NotificationPanel::handleMqttMessage);
+    }
 
-    QTimer::singleShot(0, this, [this]() {
-        mqttManager->connectToBroker();
+    connect(networkManager, &NetworkManager::connected, this, [this]() {
+        QTimer::singleShot(200, this, [this]() {
+            if (mqttManager) {
+                qDebug() << "[MQTT] Network ready. Connecting to broker...";
+                mqttManager->connectToBroker();
+            }
+        });
     });
 
     qDebug() << "MainWindow 생성 완료";
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow() {
+    if (rtspPlayer) {
+        QMetaObject::invokeMethod(rtspPlayer, "stop", Qt::BlockingQueuedConnection);
+    }
+    if (rtspThread) {
+        rtspThread->quit();
+        rtspThread->wait();
+    }
+}
+
 
 void MainWindow::setUserEmail(const QString &email)
 {

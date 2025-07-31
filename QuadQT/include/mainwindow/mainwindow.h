@@ -5,6 +5,7 @@
 #include <QStackedWidget>
 #include <QCloseEvent>
 #include <QShowEvent>
+#include <QThread>
 #include <QtMultimediaWidgets/QVideoWidget>
 #include "mainwindow/topbarwidget.h"
 #include "mainwindow/notificationpanel.h"
@@ -70,6 +71,7 @@ private:
     // RTSP 스트리밍
     QLabel *videoLabel;
     RtspPlayer* rtspPlayer;
+    QThread *rtspThread;
 
     // 알림 패널 및 설정
     NotificationPanel *notificationPanel;

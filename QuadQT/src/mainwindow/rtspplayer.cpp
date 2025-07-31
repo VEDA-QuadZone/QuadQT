@@ -2,38 +2,26 @@
 #include <QDebug>
 #include <QDateTime>
 #include <QImage>
-#include <QPixmap>
 
-RtspPlayer::RtspPlayer(QLabel* outputLabel, QObject* parent)
+RtspPlayer::RtspPlayer(QObject* parent)
     : QObject(parent),
     player(new QMediaPlayer(this)),
-    sink(new QVideoSink(this)),
-    videoLabel(outputLabel)
+    sink(new QVideoSink(this))
 {
     player->setVideoSink(sink);
 
-    // 프레임 수신 시그널
+    // 프레임 수신 시그널 → 신호만 방출
     connect(sink, &QVideoSink::videoFrameChanged, this, [this](const QVideoFrame &frame){
         qint64 now = QDateTime::currentMSecsSinceEpoch();
         emit frameReceived(frame, now);
-
-        if (videoLabel) {
-            QVideoFrame copy = frame;
-            if (!copy.map(QVideoFrame::ReadOnly)) return;
-            QImage img = copy.toImage();
-            copy.unmap();
-
-            videoLabel->setPixmap(QPixmap::fromImage(img).scaled(
-                videoLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-        }
     });
 
-    qDebug() << "[RtspPlayer] QLabel 기반 초기화 완료";
+    qDebug() << "[RtspPlayer] 초기화 완료 (UI 의존 제거)";
 }
 
 RtspPlayer::~RtspPlayer()
 {
-    player->stop();
+    stop();
     qDebug() << "[RtspPlayer] 해제";
 }
 
