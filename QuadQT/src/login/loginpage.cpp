@@ -1,4 +1,5 @@
 #include "login/loginpage.h"
+#include "login/custommessagebox.h"
 #include "ui_loginpage.h"
 #include <QRegularExpression>
 #include <QDebug>
@@ -24,6 +25,8 @@ LoginPage::LoginPage(QWidget *parent) :
 
     // 기본적으로 Sign In 페이지 표시
     ui->stackedWidget->setCurrentIndex(0);
+
+    ui->pushButton_SignIn->setDefault(true);
 
     // 연결 설정
     setupConnections();
@@ -363,12 +366,25 @@ void LoginPage::onNetworkError(const QString &error)
 
 void LoginPage::showMessage(const QString &title, const QString &message, QMessageBox::Icon icon)
 {
-    QMessageBox msgBox(this);
-    msgBox.setWindowTitle(title);
-    msgBox.setText(message);
-    msgBox.setIcon(icon);
-    msgBox.exec();
+    QString iconKey;
+    switch (icon) {
+    case QMessageBox::Information:
+        iconKey = "info";
+        break;
+    case QMessageBox::Warning:
+        iconKey = "warning";
+        break;
+    case QMessageBox::Critical:
+        iconKey = "error";
+        break;
+    default:
+        iconKey = "";
+        break;
+    }
+
+    CustomMessageBox::showMessage(this, title, message, iconKey);
 }
+
 
 bool LoginPage::validateEmail(const QString &email)
 {
