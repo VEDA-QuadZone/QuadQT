@@ -16,6 +16,8 @@
 #include <QLabel>
 #include <QFrame>
 #include <QGridLayout>
+constexpr int IMAGE_WIDTH = 427;
+constexpr int IMAGE_HEIGHT = 240;
 
 GetImageView::GetImageView(const QString& event, const QString& plate,
                            const QString& datetime, const QString& filename, QWidget* parent)
@@ -29,6 +31,7 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     border->setFrameShape(QFrame::Box);
     border->setLineWidth(1);
     border->setStyleSheet("QFrame { border: 1px solid #222; border-radius: 3px; background:#fff; }");
+    border->setFixedWidth(IMAGE_WIDTH);
     QVBoxLayout* borderLayout = new QVBoxLayout(border);
     borderLayout->setSpacing(0);
     borderLayout->setContentsMargins(0,0,0,0);
@@ -37,7 +40,9 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     int rowCount = (plate != "-" && !plate.trimmed().isEmpty()) ? 3 : 2;
     QTableWidget* table = new QTableWidget(rowCount, 2, this);
     table->setFixedHeight(rowCount * 32);
+    table->setFixedWidth(IMAGE_WIDTH);
     table->setColumnWidth(0, 120);
+    table->setColumnWidth(1, IMAGE_WIDTH - 120 - 2);
     table->horizontalHeader()->hide();
     table->verticalHeader()->hide();
     table->setShowGrid(true);
@@ -79,7 +84,7 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
 
     // --- 2. 이미지 영역 ---
     imageLabel_ = new QLabel(this);
-    imageLabel_->setMinimumHeight(180);
+    imageLabel_->setFixedSize(IMAGE_WIDTH, IMAGE_HEIGHT);
     imageLabel_->setAlignment(Qt::AlignCenter);
     imageLabel_->setStyleSheet("background:#ccc; border:none; color:#888; font-size:18px;");
     imageLabel_->setText("이미지");
@@ -87,25 +92,32 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
 
     // --- 3. 파일이름 행 ---
     QHBoxLayout* fileRow = new QHBoxLayout;
-    fileRow->setContentsMargins(8,0,8,0);
+    fileRow->setContentsMargins(8, 0, 8, 0);
 
+    // "파일 이름" 라벨 (border, background 제거)
     QLabel* fileKey = new QLabel("파일 이름", this);
     fileKey->setMinimumWidth(64);
+    fileKey->setStyleSheet("border:none; background:transparent; font-size:15px; color:#222;");
     fileRow->addWidget(fileKey);
 
+    // 파일명(하이퍼링크처럼)
     filenameLabel_ = new QLabel(
         QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;\">%1</a>").arg(filename), this);
     filenameLabel_->setTextInteractionFlags(Qt::TextBrowserInteraction);
     filenameLabel_->setOpenExternalLinks(false);
+    filenameLabel_->setStyleSheet("border:none; background:transparent; color:#1976D2; font-size:15px;");
     connect(filenameLabel_, &QLabel::linkActivated, [=](const QString&) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(filename));
     });
     fileRow->addWidget(filenameLabel_);
 
+    // Stretch for right-align download button
     fileRow->addStretch();
+
+    // 다운로드 버튼 (border, background 제거)
     downloadButton_ = new QPushButton("⬇", this);
     downloadButton_->setFixedWidth(28);
-    downloadButton_->setStyleSheet("background:#fff; border:none; font-size:15px;");
+    downloadButton_->setStyleSheet("border:none; background:transparent; font-size:15px; padding:0 2px;");
     fileRow->addWidget(downloadButton_);
 
     borderLayout->addLayout(fileRow);
@@ -130,14 +142,17 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     vLayout->addSpacing(8);
     vLayout->addLayout(btnLayout);
 
-    setMinimumWidth(360);
+    setFixedWidth(IMAGE_WIDTH + 32); // 좌우 마진 여유 포함
     setLayout(vLayout);
 
-    // 닫기
+    // 버튼 연결
     connect(closeButton_, &QPushButton::clicked, this, &QDialog::accept);
+    connect(downloadButton_, &QPushButton::clicked, this, &GetImageView::downloadImage);
+    connect(printButton_, &QPushButton::clicked, this, &GetImageView::printToPdf);
 }
 
 void GetImageView::setImageData(const QByteArray& data) {
+    imageData_ = data; // 이미지 데이터 저장
     if (data.isEmpty()) {
         imageLabel_->setText("이미지 없음");
         return;
@@ -147,8 +162,62 @@ void GetImageView::setImageData(const QByteArray& data) {
         imageLabel_->setText("이미지 오류");
         return;
     }
-    imageLabel_->setPixmap(pix);
-    // 원본 이미지 크기에 맞게 라벨 및 다이얼로그 크기 조정
-    imageLabel_->resize(pix.size());
-    this->resize(width(), imageLabel_->height() + 200); // 상단 정보+버튼 여유치
+    // 427x240에 원본 비율 유지하며 최대 크기로 맞춤
+    QPixmap scaledPix = pix.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    imageLabel_->setPixmap(scaledPix);
+    imageLabel_->setAlignment(Qt::AlignCenter);
+}
+
+void GetImageView::downloadImage() {
+    if (imageData_.isEmpty()) {
+        QMessageBox::warning(this, "경고", "다운로드할 이미지가 없습니다.");
+        return;
+    }
+    
+    QString fileName = QFileDialog::getSaveFileName(this, 
+        "이미지 저장", 
+        QString("image_%1.jpg").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
+        "JPEG Files (*.jpg);;PNG Files (*.png);;All Files (*)");
+    
+    if (!fileName.isEmpty()) {
+        QFile file(fileName);
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(imageData_);
+            file.close();
+            QMessageBox::information(this, "완료", "이미지가 저장되었습니다.");
+        } else {
+            QMessageBox::warning(this, "오류", "파일을 저장할 수 없습니다.");
+        }
+    }
+}
+
+void GetImageView::printToPdf() {
+    QString fileName = QFileDialog::getSaveFileName(this, 
+        "PDF로 저장", 
+        QString("report_%1.pdf").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
+        "PDF Files (*.pdf)");
+    
+    if (!fileName.isEmpty()) {
+        QPdfWriter pdfWriter(fileName);
+        pdfWriter.setPageSize(QPageSize::A4);
+        pdfWriter.setPageMargins(QMarginsF(20, 20, 20, 20));
+        
+        QPainter painter(&pdfWriter);
+        
+        // 현재 창을 PDF로 렌더링
+        QPixmap windowPixmap = this->grab();
+        
+        // PDF 페이지 크기에 맞게 조정
+        QRect pageRect = pdfWriter.pageLayout().paintRectPixels(pdfWriter.resolution());
+        QPixmap scaledPixmap = windowPixmap.scaled(pageRect.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        
+        // 중앙에 배치
+        int x = (pageRect.width() - scaledPixmap.width()) / 2;
+        int y = (pageRect.height() - scaledPixmap.height()) / 2;
+        
+        painter.drawPixmap(x, y, scaledPixmap);
+        painter.end();
+        
+        QMessageBox::information(this, "완료", "PDF가 저장되었습니다.");
+    }
 }
