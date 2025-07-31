@@ -110,7 +110,11 @@ bool DisplaySettingBox::eventFilter(QObject *watched, QEvent *event)
 void DisplaySettingBox::updateObjectBoxUI()
 {
     QString iconPath = objectBoxOn ? ":/images/objectbox_orange.png" : ":/images/objectbox_gray.png";
-    objectIcon->setPixmap(QPixmap(iconPath).scaled(130, 130, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    QPixmap originalPixmap(iconPath);
+    // 원본 크기의 80%로 조정
+    int scaledWidth = originalPixmap.width() * 0.7;
+    int scaledHeight = originalPixmap.height() * 0.7;
+    objectIcon->setPixmap(originalPixmap.scaled(scaledWidth, scaledHeight, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     objectIcon->setStyleSheet("border: none; background: transparent;");
     objectLabel->setStyleSheet(QString("font-size: 14px; color: %1; border: none; background: transparent;")
                                    .arg(objectBoxOn ? "#F37321" : "#aaa"));
@@ -119,7 +123,11 @@ void DisplaySettingBox::updateObjectBoxUI()
 void DisplaySettingBox::updateTimestampUI()
 {
     QString iconPath = timestampOn ? ":/images/timestamp_orange.png" : ":/images/timestamp_gray.png";
-    timestampIcon->setPixmap(QPixmap(iconPath));
+    QPixmap originalPixmap(iconPath);
+    // 원본 크기의 80%로 조정
+    int scaledWidth = originalPixmap.width() * 0.8;
+    int scaledHeight = originalPixmap.height() * 0.8;
+    timestampIcon->setPixmap(originalPixmap.scaled(scaledWidth, scaledHeight, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     timestampLabel->setStyleSheet(QString("font-size: 14px; color: %1; border: none; background: transparent;")
                                       .arg(timestampOn ? "#F37321" : "#aaa"));
 }

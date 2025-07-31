@@ -66,7 +66,7 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     titleLayout->addSpacing(20);
     
     // 제목 라벨 (가운데 정렬)
-    QLabel* titleLabel = new QLabel("이미지 상세정보", this);
+    QLabel* titleLabel = new QLabel("    이미지 상세정보", this);
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setStyleSheet("font-size:16px; color:#333; font-weight:bold;");
     titleLayout->addWidget(titleLabel, 1);
@@ -85,8 +85,8 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     QTableWidget* table = new QTableWidget(rowCount, 2, this);
     table->setFixedHeight(rowCount * 32);
     table->setFixedWidth(IMAGE_WIDTH);
-    table->setColumnWidth(0, 120);
-    table->setColumnWidth(1, IMAGE_WIDTH - 120 - 2);
+    table->setColumnWidth(0, 45);  // 레이블 컬럼 너비를 70px로 설정하여 값들이 더 가운데 오도록 조정
+    table->setColumnWidth(1, IMAGE_WIDTH - 75);
     table->horizontalHeader()->hide();
     table->verticalHeader()->hide();
     table->setShowGrid(false);
@@ -98,7 +98,10 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
         );
 
     // 이벤트 유형
-    auto* typeItem = new QTableWidgetItem("이벤트 유형");
+    auto* typeItem = new QTableWidgetItem("유형");
+    QFont labelBoldFont = typeItem->font();
+    labelBoldFont.setBold(true);
+    typeItem->setFont(labelBoldFont);
     auto* typeVal  = new QTableWidgetItem(event);
     typeVal->setTextAlignment(Qt::AlignCenter);
     table->setItem(0, 0, typeItem);
@@ -108,18 +111,17 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     // 번호판(필요시)
     if (plate != "-" && !plate.trimmed().isEmpty()) {
         auto* plateItem = new QTableWidgetItem("번호판");
+        plateItem->setFont(labelBoldFont);
         auto* plateVal  = new QTableWidgetItem(plate);
         plateVal->setTextAlignment(Qt::AlignCenter);
         table->setItem(curRow, 0, plateItem);
         table->setItem(curRow, 1, plateVal);
         ++curRow;
     }
-    // 일시 (값 bold)
+    // 일시 (레이블만 bold)
     auto* timeItem = new QTableWidgetItem("일시");
+    timeItem->setFont(labelBoldFont);
     auto* timeVal  = new QTableWidgetItem(datetime);
-    QFont boldFont = timeVal->font();
-    boldFont.setBold(true);
-    timeVal->setFont(boldFont);
     timeVal->setTextAlignment(Qt::AlignCenter);
     table->setItem(curRow, 0, timeItem);
     table->setItem(curRow, 1, timeVal);
@@ -138,23 +140,24 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     QHBoxLayout* fileRow = new QHBoxLayout;
     fileRow->setContentsMargins(8, 0, 8, 0);
 
-    // "파일 이름" 라벨
+    // "파일 이름" 라벨 (볼드, 작은 크기)
     QLabel* fileKey = new QLabel("파일 이름", this);
     fileKey->setMinimumWidth(64);
-    fileKey->setStyleSheet("border:none; background:transparent; font-size:15px; color:#222;");
+    fileKey->setStyleSheet("border:none; background:transparent; font-size:12px; color:#222; font-weight:bold;");
     fileRow->addWidget(fileKey);
 
     // 파일명(하이퍼링크처럼) - 변환된 파일명 사용 (이벤트 타입 전달)
     QString displayFilename = convertFilename(filename, event);
     filenameLabel_ = new QLabel(
-        QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;\">%1</a>").arg(displayFilename), this);
+        QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;font-weight:bold;\">%1</a>").arg(displayFilename), this);
     filenameLabel_->setTextInteractionFlags(Qt::TextBrowserInteraction);
     filenameLabel_->setOpenExternalLinks(false);
-    filenameLabel_->setStyleSheet("border:none; background:transparent; color:#1976D2; font-size:15px;");
+    filenameLabel_->setAlignment(Qt::AlignCenter);
+    filenameLabel_->setStyleSheet("border:none; background:transparent; color:#1976D2; font-size:12px; font-weight:bold; text-align:center;");
     connect(filenameLabel_, &QLabel::linkActivated, [=](const QString&) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(filename));
     });
-    fileRow->addWidget(filenameLabel_);
+    fileRow->addWidget(filenameLabel_, 1, Qt::AlignCenter);
 
     // Stretch for right-align download button
     fileRow->addStretch();
@@ -173,7 +176,7 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     btnLayout->addStretch();
     printButton_ = new QPushButton("인쇄", this);
     printButton_->setFixedSize(72, 24);
-    printButton_->setStyleSheet("background:#F37321; color:black; font-weight:bold; border:none;");
+    printButton_->setStyleSheet("background:#F37321; color:black; border:none;");
     closeButton_ = new QPushButton("닫기", this);
     closeButton_->setFixedSize(72, 24);
     closeButton_->setStyleSheet("background:#FBB584; color:black; border:none;");

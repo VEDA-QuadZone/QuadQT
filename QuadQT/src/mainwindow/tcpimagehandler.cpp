@@ -8,35 +8,50 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QtNetwork/QSslConfiguration>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
 
 TcpImageHandler::TcpImageHandler(QObject *parent)
     : QObject(parent),
     socket_(new QSslSocket(this))
 {
     // 1) client private key 로드
-    QFile keyFile("../../client.key.pem");
-    if (keyFile.open(QIODevice::ReadOnly)) {
-        QByteArray keyData = keyFile.readAll();
-        QSslKey key(keyData, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey);
-        socket_->setPrivateKey(key);
+    QString keyPath = findCertificateFile("client.key.pem");
+    if (!keyPath.isEmpty()) {
+        QFile keyFile(keyPath);
+        if (keyFile.open(QIODevice::ReadOnly)) {
+            QByteArray keyData = keyFile.readAll();
+            QSslKey key(keyData, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey);
+            socket_->setPrivateKey(key);
+            qDebug() << "클라이언트 개인키 로드 성공:" << keyPath;
+        }
     }
 
     // 2) client certificate 로드
-    QFile certFile("../../client.cert.pem");
-    if (certFile.open(QIODevice::ReadOnly)) {
-        QByteArray certData = certFile.readAll();
-        QSslCertificate cert(certData, QSsl::Pem);
-        socket_->setLocalCertificate(cert);
+    QString certPath = findCertificateFile("client.cert.pem");
+    if (!certPath.isEmpty()) {
+        QFile certFile(certPath);
+        if (certFile.open(QIODevice::ReadOnly)) {
+            QByteArray certData = certFile.readAll();
+            QSslCertificate cert(certData, QSsl::Pem);
+            socket_->setLocalCertificate(cert);
+            qDebug() << "클라이언트 인증서 로드 성공:" << certPath;
+        }
     }
 
     // 3) CA certificate 로드해서 SSL config 에 추가
-    QFile caFile("../../ca.cert.pem");
-    if (caFile.open(QIODevice::ReadOnly)) {
-        QByteArray caData = caFile.readAll();
-        auto caCerts = QSslCertificate::fromData(caData, QSsl::Pem);
-        QSslConfiguration cfg = socket_->sslConfiguration();
-        cfg.setCaCertificates(caCerts);
-        socket_->setSslConfiguration(cfg);
+    QString caPath = findCertificateFile("ca.cert.pem");
+    if (!caPath.isEmpty()) {
+        QFile caFile(caPath);
+        if (caFile.open(QIODevice::ReadOnly)) {
+            QByteArray caData = caFile.readAll();
+            auto caCerts = QSslCertificate::fromData(caData, QSsl::Pem);
+            QSslConfiguration cfg = socket_->sslConfiguration();
+            cfg.setCaCertificates(caCerts);
+            socket_->setSslConfiguration(cfg);
+            qDebug() << "CA 인증서 로드 성공:" << caPath;
+        }
     }
 
     connect(socket_, &QSslSocket::encrypted,        this, &TcpImageHandler::onEncrypted);
@@ -148,4 +163,44 @@ void TcpImageHandler::onDisconnected() {
     } else if (!buffer_.isEmpty()) {
         emit imageDataReady(currentPath_, buffer_);
     }
+}
+
+QString TcpImageHandler::findCertificateFile(const QString &filename)
+{
+    // 여러 경로에서 인증서 파일을 찾아봅니다
+    QStringList searchPaths = {
+        QString(":/certs/%1").arg(filename),  // 리소스 경로 우선
+        filename,                    // 원본 경로
+        "./" + filename,            // 현재 디렉토리
+        "../" + filename,           // 상위 디렉토리
+        "../../" + filename,        // 상위의 상위 디렉토리
+        "resources/certs/" + QFileInfo(filename).fileName(),  // resources/certs 디렉토리
+        QCoreApplication::applicationDirPath() + "/" + filename,  // 실행 파일 디렉토리
+        QDir::currentPath() + "/" + filename  // 현재 작업 디렉토리
+    };
+    
+    for (const QString &path : searchPaths) {
+        if (path.startsWith(":/")) {
+            // 리소스 파일인 경우
+            QFile file(path);
+            if (file.exists()) {
+                qDebug() << "인증서 파일 발견 (리소스):" << path;
+                return path;
+            }
+        } else {
+            // 일반 파일인 경우
+            QFile file(path);
+            if (file.exists()) {
+                qDebug() << "인증서 파일 발견:" << path;
+                return path;
+            }
+        }
+    }
+    
+    qDebug() << "다음 경로들에서 인증서 파일을 찾을 수 없습니다:";
+    for (const QString &path : searchPaths) {
+        qDebug() << "  -" << path;
+    }
+    
+    return QString(); // 빈 문자열 반환
 }

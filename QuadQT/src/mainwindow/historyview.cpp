@@ -27,6 +27,8 @@
 #include <QFontMetrics>
 #include <QPixmap>
 #include <QPainter>
+#include <QSpinBox>
+#include <QLayout>
 
 
 static constexpr int PAGE_SIZE = 16;
@@ -150,9 +152,9 @@ HistoryView::HistoryView(QWidget *parent)
     QMenu* fm = new QMenu(this);
     // 초기 스타일 설정 (크기는 resizeEvent에서 동적으로 설정됨)
     fm->setStyleSheet(R"(
-        QMenu{background:#F5D5B8;border:none;}
-        QMenu::item{background:#F5D5B8;padding:4px 20px;}
-        QMenu::item:selected{background:#E8C4A0;}
+        QMenu{background:#FBB584;border:none;}
+        QMenu::item{background:#FBB584;padding:4px 20px;color:black;}
+        QMenu::item:selected{background:#E8A066;}
     )");
     auto addF=[&](auto txt){
         QAction* a=fm->addAction(txt);
@@ -223,6 +225,45 @@ HistoryView::HistoryView(QWidget *parent)
     // 주차 번호(첫 번째 열) 숨기기
     calendarWidget->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
     
+    // 연도 선택 비활성화 및 한국어 형식 적용을 위한 설정
+    QTimer::singleShot(100, this, [this]() {
+        // 달력 위젯이 완전히 생성된 후 내부 위젯들을 찾아서 설정
+        QList<QSpinBox*> spinBoxes = calendarWidget->findChildren<QSpinBox*>();
+        
+        // 스핀박스들을 년도와 월로 분리
+        QSpinBox* yearSpinBox = nullptr;
+        QSpinBox* monthSpinBox = nullptr;
+        
+        for (QSpinBox* spinBox : spinBoxes) {
+            // 연도 스핀박스인지 확인 (값이 년도 범위인지 체크)
+            if (spinBox->minimum() >= 1900 && spinBox->maximum() >= 2000) {
+                yearSpinBox = spinBox;
+                spinBox->setReadOnly(true);  // 연도 스핀박스를 읽기 전용으로 설정
+                spinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);  // 버튼 숨기기
+                spinBox->setFocusPolicy(Qt::NoFocus);  // 포커스 비활성화
+                spinBox->setSuffix("년");  // "2025년" 형식으로 표시
+            } else if (spinBox->minimum() >= 1 && spinBox->maximum() <= 12) {
+                monthSpinBox = spinBox;
+                spinBox->setSuffix("월");  // "7월" 형식으로 표시
+            }
+        }
+        
+        // 년도를 월 앞에 표시하기 위해 탭 순서 조정
+        if (yearSpinBox && monthSpinBox) {
+            // 년도 스핀박스를 월 스핀박스 앞으로 이동
+            QWidget* parent = yearSpinBox->parentWidget();
+            if (parent && parent->layout()) {
+                QHBoxLayout* layout = qobject_cast<QHBoxLayout*>(parent->layout());
+                if (layout) {
+                    layout->removeWidget(yearSpinBox);
+                    layout->removeWidget(monthSpinBox);
+                    layout->addWidget(yearSpinBox);
+                    layout->addWidget(monthSpinBox);
+                }
+            }
+        }
+    });
+    
     calendarLayout->addWidget(calendarWidget);
     // 달력 스타일 설정
     calendarWidget->setStyleSheet(R"(
@@ -246,7 +287,8 @@ HistoryView::HistoryView(QWidget *parent)
             min-height: 20px;
         }
         QCalendarWidget QToolButton:hover {
-            background-color: #E8C4A0;
+            background-color: #FBB584;
+            color: white;
         }
         QCalendarWidget QToolButton::menu-indicator {
             image: none;
@@ -263,16 +305,16 @@ HistoryView::HistoryView(QWidget *parent)
         }
         QCalendarWidget QToolButton#qt_calendar_prevmonth:hover,
         QCalendarWidget QToolButton#qt_calendar_nextmonth:hover {
-            background-color: #E8C4A0;
+            background-color: #FBB584;
             border-radius: 4px;
         }
         QCalendarWidget QMenu {
             background-color: white;
-            border: 1px solid #F5D5B8;
+            border: 1px solid #FBB584;
         }
         QCalendarWidget QSpinBox {
             background-color: white;
-            border: 1px solid #F5D5B8;
+            border: 1px solid #FBB584;
             color: black;
             font-weight: bold;
         }
@@ -284,14 +326,14 @@ HistoryView::HistoryView(QWidget *parent)
         }
         QCalendarWidget QAbstractItemView {
             background-color: white;
-            selection-background-color: #F5D5B8;
-            color: black;
+            selection-background-color: #FBB584;
+            color: white;
         }
         QCalendarWidget QAbstractItemView:enabled {
             color: black;
         }
         QCalendarWidget QWidget#qt_calendar_navigationbar {
-            background-color: #F5D5B8;
+            background-color: #FBB584;
             border-radius: 0px;
         }
     )");
@@ -312,7 +354,7 @@ HistoryView::HistoryView(QWidget *parent)
     connect(tcpImageHandler_, &TcpImageHandler::imageDataReady,
             this, &HistoryView::onImageDataReady);
     connect(tcpImageHandler_, &TcpImageHandler::errorOccurred,
-            this, [this](auto e){ });
+            this, [this](const QString&){ });
 
     connect(tcpHandler_, &TcpHistoryHandler::connected, this, [this]() {
         requestPage();
@@ -1088,17 +1130,18 @@ void HistoryView::resizeEvent(QResizeEvent *event)
         filterButton->menu()->setFixedWidth(filterButtonWidth);  // 정확히 버튼 너비와 맞춤
         filterButton->menu()->setStyleSheet(QString(R"(
             QMenu{
-                background:#F5D5B8;
+                background:#FBB584;
                 border:none;
                 min-width:%1px;
             }
             QMenu::item{
-                background:#F5D5B8;
+                background:#FBB584;
+                color:black;
                 padding:4px 20px;
                 min-width:%1px;
             }
             QMenu::item:selected{
-                background:#E8C4A0;
+                background:#E8A066;
             }
         )").arg(filterButtonWidth));
     }
@@ -1118,7 +1161,7 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     calendarContainer->setStyleSheet(QString(R"(
         QWidget {
             background-color: white;
-            border: %1px solid #F5D5B8;
+            border: %1px solid #FBB584;
             border-radius: 8px;
         }
     )").arg(int(hu*0.1)));
@@ -1312,24 +1355,23 @@ void HistoryView::dateSelected()
     double hu = height() / 21.0;
     int uH = int(hu);
     int yOffset = hu * 3;
-    int buttonWidth = int(wu*3);
     
 
-    // 버튼 크기와 위치를 완전히 고정
+    // 버튼 크기와 위치를 완전히 고정 (resizeEvent와 동일한 값 사용)
     int fixedWidth = int(wu*3);
     int fixedHeight = uH;
 
     if (calendarForStart) {
-        int startButtonX = int(wu*14.3);
-        startDateButton->setGeometry(startButtonX, hu*3 - yOffset, buttonWidth, uH);
+        int startButtonX = int(wu*14.0);  // resizeEvent와 동일한 값 사용
+        startDateButton->setGeometry(startButtonX, hu*3 - yOffset, fixedWidth, fixedHeight);
         startDateButton->move(startButtonX, hu*3 - yOffset);
     } else {
-        int endButtonX = int(wu*18.0);
-        endDateButton->setGeometry(endButtonX, hu*3 - yOffset, buttonWidth, uH);
+        int endButtonX = int(wu*17.7);  // resizeEvent와 동일한 값 사용
+        endDateButton->setGeometry(endButtonX, hu*3 - yOffset, fixedWidth, fixedHeight);
         endDateButton->move(endButtonX, hu*3 - yOffset);
     }
 
-    // 버튼 스타일 재적용하여 크기 고정 (더 작은 글자 크기)
+    // 버튼 스타일 재적용하여 크기 고정 (resizeEvent와 동일한 스타일 사용)
     QString buttonStyle = QString(
                               "QPushButton {"
                               "    padding: 2px;"
@@ -1344,24 +1386,36 @@ void HistoryView::dateSelected()
                               "    qproperty-iconSize: %5px %5px;"
                               "}"
                               ).arg(calendarForStart ? "right" : "left")
-                              .arg(int(hu*0.35))  // 글자 크기 줄임
+                              .arg(int(hu*0.35))
                               .arg(fixedWidth)
                               .arg(fixedHeight)
-                              .arg(int(hu*0.5));  // 아이콘 크기
+                              .arg(int(hu*0.5));
 
     targetButton->setStyleSheet(buttonStyle);
 
     // 아이콘 크기도 다시 설정
     targetButton->setIconSize(QSize(int(hu*0.5), int(hu*0.5)));
+    
+    // 버튼 크기를 고정하고 위치 정책 설정
+    targetButton->setFixedSize(fixedWidth, fixedHeight);
+    targetButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     // 강제로 업데이트 - 여러 번 호출하여 확실히 적용
     targetButton->updateGeometry();
     targetButton->update();
     targetButton->repaint();
 
-    // 약간의 지연 후 다시 한 번 크기 고정
-    QTimer::singleShot(10, this, [this, targetButton, fixedWidth, fixedHeight]() {
+    // 약간의 지연 후 다시 한 번 크기와 위치 고정
+    QTimer::singleShot(10, this, [this, targetButton, fixedWidth, fixedHeight, wu, hu, yOffset]() {
         targetButton->setFixedSize(fixedWidth, fixedHeight);
+        // 위치도 다시 한 번 확실히 설정
+        if (calendarForStart) {
+            int startButtonX = int(wu*14.0);
+            targetButton->move(startButtonX, hu*3 - yOffset);
+        } else {
+            int endButtonX = int(wu*17.7);
+            targetButton->move(endButtonX, hu*3 - yOffset);
+        }
         targetButton->updateGeometry();
         targetButton->update();
     });
@@ -1414,8 +1468,12 @@ bool HistoryView::eventFilter(QObject *obj, QEvent *event)
                 return QWidget::eventFilter(obj, event);
             }
 
-            // 클릭 위치가 달력 영역 밖이면 달력 숨기기
-            if (!calendarRect.contains(clickPos)) {
+            // topbar 영역 체크 (상단 3 unit 높이)
+            double h_unit = height() / 21.0;
+            QRect topbarRect(0, 0, width(), int(h_unit * 3));
+            
+            // 클릭 위치가 달력 영역 밖이거나 topbar 영역이면 달력 숨기기
+            if (!calendarRect.contains(clickPos) || topbarRect.contains(clickPos)) {
                 calendarContainer->hide();
             }
         }

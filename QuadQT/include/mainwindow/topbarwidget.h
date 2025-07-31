@@ -8,8 +8,7 @@ class QMenu;
 
 enum class TopBarButton {
     Camera,
-    Document,
-    Settings
+    Document
 };
 
 class TopBarWidget : public QWidget
@@ -26,7 +25,6 @@ public:
 signals:
     void cameraClicked();
     void documentClicked();
-    void settingsClicked();
     void logoutRequested();
 
 protected:
@@ -41,13 +39,11 @@ private:
     void showUserMenu();
     QRect getCameraRect() const;
     QRect getDocumentRect() const;
-    QRect getSettingsRect() const;
     QRect getUserRect() const;
 
     QLabel *logoLabel;
     QLabel *cameraIcon;
     QLabel *docIcon;
-    QLabel *settingIcon;
     QLabel *loginStatus;
     QWidget *topLine;
     

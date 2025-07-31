@@ -211,8 +211,17 @@ void ProcSettingBox::updateModeUI()
     plusButton->setIcon(QIcon(plusIcon));
     plusButton->setIconSize(QSize(20, 20));
 
-    dayIcon->setPixmap(QPixmap(isDay ? ":/images/sun_orange.png" : ":/images/sun_gray.png"));
-    nightIcon->setPixmap(QPixmap(isNight ? ":/images/moon_orange.png" : ":/images/moon_gray.png"));
+    // 주간모드 아이콘 (80% 크기로 조정)
+    QPixmap dayPixmap(isDay ? ":/images/sun_orange.png" : ":/images/sun_gray.png");
+    int dayScaledWidth = dayPixmap.width() * 0.6;
+    int dayScaledHeight = dayPixmap.height() * 0.6;
+    dayIcon->setPixmap(dayPixmap.scaled(dayScaledWidth, dayScaledHeight, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    
+    // 야간모드 아이콘 (80% 크기로 조정)
+    QPixmap nightPixmap(isNight ? ":/images/moon_orange.png" : ":/images/moon_gray.png");
+    int nightScaledWidth = nightPixmap.width() * 0.6;
+    int nightScaledHeight = nightPixmap.height() * 0.6;
+    nightIcon->setPixmap(nightPixmap.scaled(nightScaledWidth, nightScaledHeight, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     dayLabel->setStyleSheet(isDay ? textStyleOrange : textStyleGray);
     nightLabel->setStyleSheet(isNight ? textStyleOrange : textStyleGray);
