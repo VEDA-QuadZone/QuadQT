@@ -77,7 +77,7 @@ void NotificationPanel::handleMqttMessage(const QByteArray &message)
     int eventType = obj.value("event").toInt(-1);
 
     // test 메시지 등 특정 eventType 무시
-    if (eventType == 99)  // 99는 예시, 실제 테스트 메시지 event 번호 넣으세요
+    if (eventType == -1)  // 99는 예시, 실제 테스트 메시지 event 번호 넣으세요
         return;
 
     QString timestamp = obj.value("timestamp").toString();
