@@ -4,7 +4,7 @@
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/notificationpanel.h"
 #include "mainwindow/mqttmanager.h"
-#include "mainwindow/rtspplayer.h"
+#include "mainwindow/rtspplayer_gst.h"
 #include "login/networkmanager.h"
 
 #include <QResizeEvent>
@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     videoSettingLine(nullptr),
     cameraTitle(nullptr),
     notifTitleLabel(nullptr),
-    videoLabel(nullptr),
+    videoWidget(nullptr),
     mqttManager(nullptr),
     networkManager(nullptr),
     notificationPanel(nullptr),
@@ -47,75 +47,39 @@ MainWindow::MainWindow(QWidget *parent)
 {
     qDebug() << "🏠 MainWindow 생성자 시작";
 
-    QSslConfiguration sslConf = QSslConfiguration::defaultConfiguration();
-    sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
-    QSslConfiguration::setDefaultConfiguration(sslConf);
-
     QWidget *centralW = new QWidget(this);
-    centralW->setStyleSheet("background-color: #FFFFFF;");
-    centralW->setAutoFillBackground(true);
     setCentralWidget(centralW);
-
-    this->setStyleSheet("MainWindow { background-color: #FFFFFF; }");
-    this->setAutoFillBackground(true);
-
     setMinimumSize(1600, 900);
     showMaximized();
 
-    // ✅ 네트워크 메니저 초기화 및 TCP 연결 시도
     networkManager = new NetworkManager(this);
     networkManager->connectToServer();
-
-    connect(networkManager, &NetworkManager::connected, this, []() {
-        qDebug() << "[TCP] 서버 연결 성공!";
-    });
-    connect(networkManager, &NetworkManager::disconnected, this, []() {
-        qDebug() << "[TCP] 서버 연결 끊기면!";
-    });
-    connect(networkManager, &NetworkManager::networkError, this, [](const QString &msg) {
-        qDebug() << "[TCP] 오류:" << msg;
-    });
 
     setupUI();
     setupFonts();
     setupPages();
     showPage(PageType::Camera);
-    
-    // 초기 레이아웃 설정을 위한 타이머
-    QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
-    // RTSP 생성
-    QSettings settings("config.ini", QSettings::IniFormat);
-    QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
+    // ✅ UI 안정화 후 강제 레이아웃 업데이트 (조금 늦춰서 실행)
+    QTimer::singleShot(500, this, &MainWindow::forceLayoutUpdate);
 
-    rtspPlayer = new RtspPlayer(videoLabel, this);
-    rtspPlayer->setUrl(rtspUrl);
-    rtspPlayer->start();
-    connect(rtspPlayer, &RtspPlayer::frameReceived, this, [this](const QVideoFrame &frame, qint64 recvTime){
-        QString ts = QDateTime::fromMSecsSinceEpoch(recvTime).toString("yyyy-MM-dd HH:mm:ss");
-        qDebug() << "[LatencyTest] Frame received at:" << ts;
-        // 나중에 서버 타임스탬프와 비교할 때 사용
-    });
+    // ✅ RTSP도 UI가 안정된 후 시작
+    QTimer::singleShot(800, this, [this]() {
+        QSettings settings("config.ini", QSettings::IniFormat);
+        QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
 
-
-    mqttManager = new MqttManager(this);
-
-    connect(mqttManager, &MqttManager::connected, this, [this]() {
-        qDebug() << "[MQTT] Connected signal received!";
-        QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
-        qDebug() << "[MQTT] Publishing test message:" << testPayload;
-        mqttManager->publish(testPayload);
-    });
-
-    connect(mqttManager, &MqttManager::messageReceived,
-            notificationPanel, &NotificationPanel::handleMqttMessage);
-
-    QTimer::singleShot(0, this, [this]() {
-        mqttManager->connectToBroker();
+        if (videoWidget) {
+            rtspPlayer = new RtspPlayerGst(videoWidget, this);
+            rtspPlayer->start(rtspUrl);
+            qDebug() << "[RTSP] Started after UI stabilization";
+        } else {
+            qWarning() << "[RTSP] videoWidget is null!";
+        }
     });
 
     qDebug() << "MainWindow 생성 완료";
 }
+
 
 MainWindow::~MainWindow() {}
 
@@ -132,7 +96,7 @@ void MainWindow::setupUI()
     topBar = new TopBarWidget(parent);
     topBar->setStyleSheet("background-color: #FFFFFF !important;");
     topBar->setAutoFillBackground(true);
-    
+
     // QPalette을 사용한 추가 설정
     QPalette topBarPalette = topBar->palette();
     topBarPalette.setColor(QPalette::Window, QColor(255, 255, 255));
@@ -152,16 +116,16 @@ void MainWindow::setupFonts()
     // 한화 글꼴 로드 확인
     QStringList allFamilies = QFontDatabase().families();
     QString hanwhaFont;
-    
+
     // HanwhaGothicB 폰트 찾기
     for (const QString &family : allFamilies) {
-        if (family.contains("HanwhaGothicB", Qt::CaseInsensitive) || 
+        if (family.contains("HanwhaGothicB", Qt::CaseInsensitive) ||
             family.contains("HanwhaGothic", Qt::CaseInsensitive)) {
             hanwhaFont = family;
             break;
         }
     }
-    
+
     // 폰트가 없으면 시스템 기본 폰트 사용
     if (hanwhaFont.isEmpty()) {
         hanwhaFont = "Arial"; // 또는 "Malgun Gothic" (한글 지원)
@@ -169,12 +133,12 @@ void MainWindow::setupFonts()
     } else {
         qDebug() << "한화 글꼴 발견:" << hanwhaFont;
     }
-    
+
     QFont defaultFont(hanwhaFont, 12);
     QFont titleFont(hanwhaFont, 15);
     titleFont.setBold(true);
     setFont(defaultFont);
-    
+
     qDebug() << "기본 글꼴 설정 완료:" << defaultFont.family();
 }
 
@@ -196,15 +160,15 @@ QWidget* MainWindow::createCameraPage()
     // 한화 글꼴 확인 및 fallback 설정
     QStringList allFamilies = QFontDatabase().families();
     QString hanwhaFont;
-    
+
     for (const QString &family : allFamilies) {
-        if (family.contains("HanwhaGothicB", Qt::CaseInsensitive) || 
+        if (family.contains("HanwhaGothicB", Qt::CaseInsensitive) ||
             family.contains("HanwhaGothic", Qt::CaseInsensitive)) {
             hanwhaFont = family;
             break;
         }
     }
-    
+
     if (hanwhaFont.isEmpty()) {
         hanwhaFont = "Malgun Gothic"; // 한글 지원 기본 폰트
         qDebug() << "카메라 페이지: 한화 글꼴을 찾을 수 없어 기본 글꼴 사용:" << hanwhaFont;
@@ -221,9 +185,8 @@ QWidget* MainWindow::createCameraPage()
     notifTitleLabel->setFont(titleFont);
     notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
 
-    videoLabel = new QLabel(page);
-    videoLabel->setAlignment(Qt::AlignCenter);
-    videoLabel->setStyleSheet("background-color: black; border: 1px solid #ccc;");
+    videoWidget = new QWidget(page);
+    videoWidget->setStyleSheet("background-color: black; border: 1px solid #ccc;");
 
     notificationPanel = new NotificationPanel(page);
     notificationPanel->setStyleSheet("background-color: #FFFFFF; border-left: 1px solid #ccc;");
@@ -339,7 +302,7 @@ void MainWindow::showPage(PageType pageType)
     case PageType::Document: stackedWidget->setCurrentWidget(documentPage); break;
     case PageType::Settings: stackedWidget->setCurrentWidget(settingsPage); break;
     }
-    
+
     // 페이지 전환 후 레이아웃 강제 업데이트
     QTimer::singleShot(0, this, [this]() {
         updateLayout();
@@ -354,10 +317,10 @@ void MainWindow::showPage(PageType pageType)
 void MainWindow::updateLayout()
 {
     qDebug() << "📐 레이아웃 업데이트 시작";
-    
+
     int w = width();
     int h = height();
-    
+
     qDebug() << "현재 윈도우 크기:" << w << "x" << h;
 
     double w_unit = w / 24.0;
@@ -370,7 +333,7 @@ void MainWindow::updateLayout()
 
     if (stackedWidget) {
         stackedWidget->setGeometry(0, h_unit * 3, w, h - h_unit * 3);
-        
+
         // 현재 페이지에 따라 레이아웃 업데이트
         QWidget* currentPage = stackedWidget->currentWidget();
         if (currentPage == cameraPage) {
@@ -385,7 +348,7 @@ void MainWindow::updateLayout()
                 child->update();
             }
         }
-        
+
         // 현재 페이지 강제 업데이트
         if (currentPage) {
             currentPage->updateGeometry();
@@ -397,11 +360,11 @@ void MainWindow::updateLayout()
 
 void MainWindow::updateCameraPageLayout()
 {
-    if (!cameraTitle || !notifTitleLabel || !videoLabel || !notificationPanel) return;
+    if (!cameraTitle || !notifTitleLabel || !videoWidget || !notificationPanel) return;
 
     int w = stackedWidget->width();
     int h = stackedWidget->height();
-    
+
     qDebug() << "카메라 페이지 레이아웃 업데이트 - 스택 위젯 크기:" << w << "x" << h;
 
     double w_unit = w / 24.0;
@@ -417,13 +380,13 @@ void MainWindow::updateCameraPageLayout()
     // 각 위젯의 geometry 설정 및 강제 업데이트
     cameraTitle->setGeometry(cctv_x, h_unit * 0, cctv_w, h_unit);
     cameraTitle->update();
-    
+
     notifTitleLabel->setGeometry(notif_x, h_unit * 0, notif_w, h_unit);
     notifTitleLabel->update();
 
-    videoLabel->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
-    videoLabel->update();
-    
+    videoWidget->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
+    videoWidget->update();
+
     // 알림 패널을 영상처리 박스 아래까지 확장 (h_unit * 19까지)
     double notifHeight = h_unit * 19;
     notificationPanel->setGeometry(notif_x, h_unit * 1, notif_w, notifHeight);
@@ -467,31 +430,31 @@ void MainWindow::updateCameraPageLayout()
 void MainWindow::forceLayoutUpdate()
 {
     qDebug() << "🔄 강제 레이아웃 업데이트 실행";
-    
+
     // 현재 윈도우 상태 확인
     if (!isVisible() || isMinimized()) {
         qDebug() << "윈도우가 보이지 않거나 최소화됨 - 레이아웃 업데이트 건너뜀";
         return;
     }
-    
+
     updateLayout();
-    
+
     // 모든 자식 위젯들의 geometry 강제 업데이트
     if (stackedWidget && stackedWidget->currentWidget()) {
         QWidget* currentPage = stackedWidget->currentWidget();
-        
+
         // 현재 페이지의 모든 자식 위젯들 업데이트
         QList<QWidget*> allChildren = currentPage->findChildren<QWidget*>();
         for (QWidget* child : allChildren) {
             child->updateGeometry();
             child->update();
         }
-        
+
         currentPage->updateGeometry();
         currentPage->update();
         currentPage->repaint();
     }
-    
+
     // 전체 윈도우 repaint
     update();
     repaint();

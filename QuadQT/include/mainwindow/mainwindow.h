@@ -11,7 +11,7 @@
 #include "mainwindow/procsettingbox.h"
 #include "mainwindow/historyview.h"
 #include "mainwindow/mqttmanager.h"
-#include "mainwindow/rtspplayer.h"
+#include "mainwindow/rtspplayer_gst.h"
 #include "login/networkmanager.h"
 
 class QLabel;
@@ -61,8 +61,9 @@ private:
     QLabel *notifTitleLabel;
 
     // RTSP 스트리밍
-    QLabel *videoLabel;
-    RtspPlayer* rtspPlayer;
+    //QLabel *videoLabel;
+    QWidget *videoWidget;
+    RtspPlayerGst *rtspPlayer;
 
     // 알림 패널 및 설정
     NotificationPanel *notificationPanel;

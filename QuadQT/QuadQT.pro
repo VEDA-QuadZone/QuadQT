@@ -12,6 +12,23 @@ INCLUDEPATH += \
     $$PWD/include/mainwindow \
     C:/opencv/prebuilt_mingw/include
 
+# GStreamer 헤더 경로
+INCLUDEPATH += "C:/Program Files/gstreamer/1.0/mingw_x86_64/include/gstreamer-1.0"
+INCLUDEPATH += "C:/Program Files/gstreamer/1.0/mingw_x86_64/include"
+
+# glib 관련 추가 경로
+INCLUDEPATH += "C:/Program Files/gstreamer/1.0/mingw_x86_64/include/glib-2.0"
+INCLUDEPATH += "C:/Program Files/gstreamer/1.0/mingw_x86_64/lib/glib-2.0/include"
+
+# GStreamer 라이브러리 링크 (경로는 반드시 따옴표)
+LIBS += -L"C:/Program Files/gstreamer/1.0/mingw_x86_64/lib" \
+        -lgstreamer-1.0 \
+        -lgstbase-1.0 \
+        -lgstvideo-1.0 \
+        -lgobject-2.0 \
+        -lglib-2.0
+
+
 # ====== SOURCES (.cpp) ======
 SOURCES += \
     main.cpp \
@@ -25,7 +42,7 @@ SOURCES += \
     src/mainwindow/notificationitem.cpp \
     src/mainwindow/notificationpanel.cpp \
     src/mainwindow/procsettingbox.cpp \
-    src/mainwindow/rtspplayer.cpp \
+    src/mainwindow/rtspplayer_gst.cpp \
     src/mainwindow/tcphistoryhandler.cpp \
     src/mainwindow/tcpimagehandler.cpp \
     src/mainwindow/topbarwidget.cpp
@@ -42,7 +59,7 @@ HEADERS += \
     include/mainwindow/notificationitem.h \
     include/mainwindow/notificationpanel.h \
     include/mainwindow/procsettingbox.h \
-    include/mainwindow/rtspplayer.h \
+    include/mainwindow/rtspplayer_gst.h \
     include/mainwindow/tcphistoryhandler.h \
     include/mainwindow/tcpimagehandler.h \
     include/mainwindow/topbarwidget.h
