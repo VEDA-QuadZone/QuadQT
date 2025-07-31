@@ -28,6 +28,7 @@
 #include <QPixmap>
 #include <QPainter>
 
+
 static constexpr int PAGE_SIZE = 16;
 
 HistoryView::HistoryView(QWidget *parent)
@@ -109,7 +110,7 @@ HistoryView::HistoryView(QWidget *parent)
 
     headerCheck = new QCheckBox(tableWidget->horizontalHeader());
     headerCheck->setChecked(false);
-    headerCheck->setStyleSheet("QCheckBox { background: transparent; }");
+    headerCheck->setStyleSheet("QCheckBox { background: transparent; } QCheckBox::indicator { width: 14px; height: 14px; }");
     connect(headerCheck, &QCheckBox::toggled, this, [this](bool on){
         for(int r=0; r<tableWidget->rowCount(); ++r){
             auto* cell = tableWidget->cellWidget(r,0);
@@ -167,7 +168,7 @@ HistoryView::HistoryView(QWidget *parent)
             requestPage();
         });
     };
-    addF("전체보기"); addF("주정차감지"); addF("어린이감지"); addF("과속감지");
+    addF("전체보기"); addF("주정차감지"); addF("보행자감지"); addF("과속감지");
     filterButton->setMenu(fm);
 
     downloadButton = new QPushButton(this);
@@ -210,16 +211,98 @@ HistoryView::HistoryView(QWidget *parent)
     calendarContainer = new QWidget(this);
     calendarContainer->setWindowFlags(Qt::Widget | Qt::FramelessWindowHint);
     calendarContainer->hide();
+    // 캘린더 컨테이너 스타일은 resizeEvent에서 동적으로 설정
+    
+    // 캘린더 위젯을 레이아웃으로 배치
     QVBoxLayout* calendarLayout = new QVBoxLayout(calendarContainer);
+    // 캘린더 마진은 resizeEvent에서 동적으로 설정
     calendarLayout->setSpacing(0);
+    
     calendarWidget = new QCalendarWidget();
+    
+    // 주차 번호(첫 번째 열) 숨기기
     calendarWidget->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
+    
     calendarLayout->addWidget(calendarWidget);
-    calendarWidget->setStyleSheet(R"( ... )"); // 기존 스타일시트 그대로
-
+    // 달력 스타일 설정
+    calendarWidget->setStyleSheet(R"(
+        QCalendarWidget {
+            background-color: transparent;
+            border: none;
+            outline: none;
+        }
+        QCalendarWidget * {
+            border: none;
+            outline: none;
+        }
+        QCalendarWidget QToolButton {
+            background-color: transparent;
+            color: black;
+            border: none;
+            border-radius: 4px;
+            padding: 4px;
+            font-weight: bold;
+            min-width: 20px;
+            min-height: 20px;
+        }
+        QCalendarWidget QToolButton:hover {
+            background-color: #E8C4A0;
+        }
+        QCalendarWidget QToolButton::menu-indicator {
+            image: none;
+            width: 0px;
+            height: 0px;
+        }
+        QCalendarWidget QToolButton#qt_calendar_prevmonth {
+            qproperty-icon: url(:/images/left.png);
+            background-color: transparent;
+        }
+        QCalendarWidget QToolButton#qt_calendar_nextmonth {
+            qproperty-icon: url(:/images/right.png);
+            background-color: transparent;
+        }
+        QCalendarWidget QToolButton#qt_calendar_prevmonth:hover,
+        QCalendarWidget QToolButton#qt_calendar_nextmonth:hover {
+            background-color: #E8C4A0;
+            border-radius: 4px;
+        }
+        QCalendarWidget QMenu {
+            background-color: white;
+            border: 1px solid #F5D5B8;
+        }
+        QCalendarWidget QSpinBox {
+            background-color: white;
+            border: 1px solid #F5D5B8;
+            color: black;
+            font-weight: bold;
+        }
+        QCalendarWidget QSpinBox::down-button,
+        QCalendarWidget QSpinBox::up-button {
+            width: 0px;
+            height: 0px;
+            border: none;
+        }
+        QCalendarWidget QAbstractItemView {
+            background-color: white;
+            selection-background-color: #F5D5B8;
+            color: black;
+        }
+        QCalendarWidget QAbstractItemView:enabled {
+            color: black;
+        }
+        QCalendarWidget QWidget#qt_calendar_navigationbar {
+            background-color: #F5D5B8;
+            border-radius: 0px;
+        }
+    )");
+    
     connect(calendarWidget, &QCalendarWidget::activated,
             this, &HistoryView::dateSelected);
+    
+    // 달력 크기는 resizeEvent에서 동적으로 설정
     calendarContainer->setAttribute(Qt::WA_StyledBackground, true);
+    
+    // 달력 밖 클릭 시 숨기기 위한 이벤트 필터 설치
     this->installEventFilter(this);
 
     tcpHandler_      = new TcpHistoryHandler(this);
@@ -276,6 +359,18 @@ QString HistoryView::parseTimestampFromPath(const QString& path) {
 
 void HistoryView::onImageCellClicked(int row, int col) {
     if (col != 5 && col != 8 && col != 9) return;
+
+    // 기존 창들 닫기 (한번에 하나만 뜨게 하기)
+    if (currentImageView_) {
+        currentImageView_->close();
+        currentImageView_->deleteLater();
+        currentImageView_ = nullptr;
+    }
+    if (currentCompareView_) {
+        currentCompareView_->close();
+        currentCompareView_->deleteLater();
+        currentCompareView_ = nullptr;
+    }
 
     // 정차 시작 이미지(8번) 또는 1분 경과 이미지(9번) 클릭 시 비교 창 표시
     if (col == 8 || col == 9) {
@@ -418,15 +513,18 @@ void HistoryView::onImageDataReady(const QString& path, const QByteArray& data) 
             
             // 첫 번째 이미지를 받았으면 두 번째 이미지 요청
             if (!pendingEndImagePath_.isEmpty() && endImageData_.isEmpty()) {
-                QString configPath = findConfigFile();
-                if (!configPath.isEmpty()) {
-                    QSettings settings(configPath, QSettings::IniFormat);
-                    QString tcpHost = settings.value("tcp/ip").toString();
-                    int tcpPort = settings.value("tcp/port").toInt();
-                    if (tcpImageHandler_) {
-                        tcpImageHandler_->connectToServerThenRequestImage(tcpHost, tcpPort, pendingEndImagePath_);
+                // 잠시 대기 후 두 번째 이미지 요청 (연결이 완전히 끝나도록)
+                QTimer::singleShot(1, this, [this]() {
+                    QString configPath = findConfigFile();
+                    if (!configPath.isEmpty()) {
+                        QSettings settings(configPath, QSettings::IniFormat);
+                        QString tcpHost = settings.value("tcp/ip").toString();
+                        int tcpPort = settings.value("tcp/port").toInt();
+                        if (tcpImageHandler_) {
+                            tcpImageHandler_->connectToServerThenRequestImage(tcpHost, tcpPort, pendingEndImagePath_);
+                        }
                     }
-                }
+                });
             }
         } else if (path == pendingEndImagePath_) {
             endImageData_ = data;
@@ -445,7 +543,7 @@ void HistoryView::exportCsv() {
         "날짜","유형","이미지","번호판","속도","정차 시작 이미지","1분 경과 이미지"
     };
     file.write(headers.join(',').toUtf8() + "\r\n");
-    static const QStringList typeNames = {"주정차감지","과속감지","어린이감지"};
+    static const QStringList typeNames = {"주정차감지","과속감지","보행자감지"};
     for (int id : selectedRecordIds) {
         auto obj = recordDataMap.value(id);
         if (obj.isEmpty()) continue;
@@ -476,7 +574,7 @@ void HistoryView::requestPage()
 
     int offset = currentPage * PAGE_SIZE;
     static const QMap<QString,int> filterMap = {
-        {"주정차감지",0},{"과속감지",1},{"어린이감지",2}
+        {"주정차감지",0},{"과속감지",1},{"보행자감지",2}
     };
 
     if (currentFilter.isEmpty() || currentFilter == "전체보기") {
@@ -501,7 +599,7 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
     int count = arr.size();
     tableWidget->setRowCount(count);
 
-    static const QStringList typeNames = {"주정차감지","과속감지","어린이감지"};
+    static const QStringList typeNames = {"주정차감지","과속감지","보행자감지"};
     for (int i = 0; i < count; ++i) {
         auto obj = arr.at(i).toObject();
         int id = obj.value("id").toInt();
@@ -732,8 +830,8 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
     }
 
     // 페이징 업데이트
-    prevButton->setEnabled(currentPage > 0);
-    nextButton->setEnabled(count == PAGE_SIZE);
+    prevButton->setVisible(currentPage > 0);  // 1페이지일 때 숨김
+    nextButton->setVisible(count == PAGE_SIZE);  // 마지막 페이지일 때 숨김
     pageLabel->setText(QString::number(currentPage + 1));
 
     // 헤더 체크박스 리셋 & 동기화
@@ -844,7 +942,7 @@ void HistoryView::setupPaginationUI()
     pageLabel = new QLabel("1", this);
     pageLabel->setAlignment(Qt::AlignCenter);
 
-    prevButton->setEnabled(false);
+    prevButton->setVisible(false);  // 초기에는 1페이지이므로 숨김
     connect(prevButton, &QPushButton::clicked, this, &HistoryView::prevPage);
     connect(nextButton, &QPushButton::clicked, this, &HistoryView::nextPage);
 }
@@ -872,7 +970,7 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     tableWidget->setGeometry(wu*1, hu*4 - yOffset, wu*22, tableH);
 
     // 각 열 너비, 행 높이 고정 (2번, 4번 인덱스에 투명 패딩 열 추가)
-    static constexpr double cw[10] = {2,3,0.5,2,0.5,2,3,3,2,2};
+    static constexpr double cw[10] = {1.5,3,0.5,2,0.5,2,3,3,2,2};
     for (int c = 0; c < 10; ++c)
         tableWidget->setColumnWidth(c, int(cw[c] * uW));
     tableWidget->verticalHeader()->setDefaultSectionSize(uH);
@@ -890,7 +988,7 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     int x0 = hh->sectionPosition(0);
     int w0 = hh->sectionSize(0);
     int hh_h = hh->height();
-    int cbSize = qMin(hh_h - 4, 20); // 체크박스 크기 제한
+    int cbSize = qMin(hh_h - 4, 24); // 체크박스 크기 제한
     
     // 체크박스를 헤더 영역에 직접 배치
     headerCheck->setParent(this); // 부모를 this로 변경
@@ -987,7 +1085,7 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     
     // 메뉴 크기를 버튼 크기에 맞게 설정
     if (filterButton->menu()) {
-        filterButton->menu()->setMinimumWidth(filterButtonWidth);
+        filterButton->menu()->setFixedWidth(filterButtonWidth);  // 정확히 버튼 너비와 맞춤
         filterButton->menu()->setStyleSheet(QString(R"(
             QMenu{
                 background:#F5D5B8;
@@ -1020,8 +1118,8 @@ void HistoryView::resizeEvent(QResizeEvent *event)
     calendarContainer->setStyleSheet(QString(R"(
         QWidget {
             background-color: white;
-            border: %1px solid #FF6B35;
-            border-radius: 0px;
+            border: %1px solid #F5D5B8;
+            border-radius: 8px;
         }
     )").arg(int(hu*0.1)));
 
@@ -1093,7 +1191,7 @@ void HistoryView::openStartDatePicker()
     int calendarH = int(hu * 5);
     calendarWidget->setFixedSize(calendarW, calendarH);
     calendarContainer->setFixedSize(calendarW + int(hu*0.3), calendarH + int(hu*0.3));
-
+    
     // 캘린더 마진 설정
     QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(calendarContainer->layout());
     if (layout) {
@@ -1101,7 +1199,8 @@ void HistoryView::openStartDatePicker()
     }
 
     // 버튼 바로 아래에 달력 컨테이너 위치 설정
-    int x = startDateButton->x();
+    double wu = width() / 24.0;
+    int x = int(wu*14.0); // 시작일 버튼과 동일한 x 위치 사용
     int y = startDateButton->y() + startDateButton->height() + int(hu*0.2);
 
     // 화면 경계 체크
@@ -1111,7 +1210,7 @@ void HistoryView::openStartDatePicker()
     if (y + calendarContainer->height() > this->height()) {
         y = startDateButton->y() - calendarContainer->height() - int(hu*0.2);
     }
-
+    
     calendarContainer->move(x, y);
     calendarContainer->show();
     calendarContainer->raise();
@@ -1134,7 +1233,7 @@ void HistoryView::openEndDatePicker()
     int calendarH = int(hu * 5);
     calendarWidget->setFixedSize(calendarW, calendarH);
     calendarContainer->setFixedSize(calendarW + int(hu*0.3), calendarH + int(hu*0.3));
-
+    
     // 캘린더 마진 설정
     QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(calendarContainer->layout());
     if (layout) {
@@ -1142,7 +1241,8 @@ void HistoryView::openEndDatePicker()
     }
 
     // 버튼 바로 아래에 달력 컨테이너 위치 설정
-    int x = endDateButton->x();
+    double wu = width() / 24.0;
+    int x = int(wu*17.7); // 종료일 버튼과 동일한 x 위치 사용
     int y = endDateButton->y() + endDateButton->height() + int(hu*0.2);
 
     // 화면 경계 체크
@@ -1372,7 +1472,7 @@ QJsonObject HistoryView::createDummyHistoryResponse()
         "96저0587", "123가456", "789나012", "345다678", "901라234"
     };
 
-    QStringList eventTypeNames = {"주정차감지", "과속감지", "어린이감지"};
+    QStringList eventTypeNames = {"주정차감지", "과속감지", "보행자감지"};
 
     for (int i = 0; i < 30; ++i) {
         QJsonObject item;
@@ -1380,7 +1480,7 @@ QJsonObject HistoryView::createDummyHistoryResponse()
         // ID (역순으로 최신이 위에 오도록)
         item["id"] = 1000 + (29 - i);
 
-        // 이벤트 타입 (0: 주정차, 1: 과속, 2: 어린이)
+        // 이벤트 타입 (0: 주정차, 1: 과속, 2: 보행자)
         int eventType = i % 3;
         item["event_type"] = eventType;
 
