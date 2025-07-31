@@ -1,36 +1,15 @@
 #include "login/custommessagebox.h"
-#include <QPixmap>
-#include <QFont>
 #include <QGraphicsDropShadowEffect>
 #include <QApplication>
 
 CustomMessageBox::CustomMessageBox(const QString &title,
                                    const QString &message,
-                                   const QString &iconKey,
                                    QWidget *parent)
     : QDialog(parent)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
     setAttribute(Qt::WA_TranslucentBackground);
     setModal(true);
-
-    QString iconPath;
-    if (iconKey == "info")
-        iconPath = ":/images/info.png";
-    else if (iconKey == "warning")
-        iconPath = ":/images/caution.png";
-    else if (iconKey == "error")
-        iconPath = ":/images/prohibition.png";
-
-    // 아이콘
-    m_iconLabel = new QLabel();
-    if (!iconPath.isEmpty()) {
-        QPixmap icon(iconPath);
-        m_iconLabel->setPixmap(icon.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    } else {
-        m_iconLabel->hide();
-    }
-    m_iconLabel->setStyleSheet("background: transparent; border: none;");
 
     // 제목
     m_titleLabel = new QLabel(title);
@@ -48,7 +27,7 @@ CustomMessageBox::CustomMessageBox(const QString &title,
         "background: transparent; border: none; padding: 0; margin: 0;"
         );
 
-    // 기본 OK 버튼
+    // OK 버튼
     m_okButton = new QPushButton("확인");
     m_okButton->setStyleSheet(
         "QPushButton {"
@@ -63,11 +42,11 @@ CustomMessageBox::CustomMessageBox(const QString &title,
         );
     connect(m_okButton, &QPushButton::clicked, this, &CustomMessageBox::accept);
 
-    // [아이콘 + 제목] 수평 정렬
+    // 제목 수평 정렬
     QHBoxLayout *topLayout = new QHBoxLayout();
-    topLayout->addWidget(m_iconLabel);
-    topLayout->addSpacing(8);
+    topLayout->addStretch();
     topLayout->addWidget(m_titleLabel);
+    topLayout->addStretch();
     topLayout->setAlignment(Qt::AlignHCenter);
 
     // 콘텐츠 박스
@@ -103,25 +82,20 @@ CustomMessageBox::CustomMessageBox(const QString &title,
 // ✔ 정보/오류 메시지용 단순 팝업
 void CustomMessageBox::showMessage(QWidget *parent,
                                    const QString &title,
-                                   const QString &message,
-                                   const QString &iconKey)
+                                   const QString &message)
 {
-    CustomMessageBox box(title, message, iconKey, parent);
+    CustomMessageBox box(title, message, parent);
     box.exec();
 }
 
 // ✔ 예/아니오 팝업
 bool CustomMessageBox::showConfirm(QWidget *parent,
                                    const QString &title,
-                                   const QString &message,
-                                   const QString &iconKey)
+                                   const QString &message)
 {
-    CustomMessageBox box(title, message, iconKey, parent);
-
-    // 기존 OK 버튼 숨김
+    CustomMessageBox box(title, message, parent);
     box.m_okButton->hide();
 
-    // 새 버튼 생성
     QPushButton *yesButton = new QPushButton("예");
     QPushButton *noButton  = new QPushButton("아니오");
 
@@ -143,7 +117,6 @@ bool CustomMessageBox::showConfirm(QWidget *parent,
     QObject::connect(yesButton, &QPushButton::clicked, &box, &CustomMessageBox::accept);
     QObject::connect(noButton,  &QPushButton::clicked, &box, &CustomMessageBox::reject);
 
-    // 버튼 박스 (하얀 contentWidget 안에 넣기 위해 새로 생성)
     QHBoxLayout *btnLayout = new QHBoxLayout();
     btnLayout->addStretch();
     btnLayout->addWidget(yesButton);
@@ -151,7 +124,6 @@ bool CustomMessageBox::showConfirm(QWidget *parent,
     btnLayout->addWidget(noButton);
     btnLayout->addStretch();
 
-    // ✅ 버튼 박스를 contentWidget 내부에 추가 (하얀 박스 안에 포함)
     QVBoxLayout *contentLayout = qobject_cast<QVBoxLayout *>(box.m_mainLayout->itemAt(0)->widget()->layout());
     if (contentLayout) {
         contentLayout->addSpacing(8);
@@ -160,4 +132,3 @@ bool CustomMessageBox::showConfirm(QWidget *parent,
 
     return box.exec() == QDialog::Accepted;
 }
-

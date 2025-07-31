@@ -382,7 +382,7 @@ void LoginPage::showMessage(const QString &title, const QString &message, QMessa
         break;
     }
 
-    CustomMessageBox::showMessage(this, title, message, iconKey);
+    CustomMessageBox::showMessage(this, title, message);
 }
 
 
