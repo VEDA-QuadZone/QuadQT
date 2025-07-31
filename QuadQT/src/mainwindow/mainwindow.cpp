@@ -6,6 +6,7 @@
 #include "mainwindow/mqttmanager.h"
 #include "mainwindow/rtspplayer.h"
 #include "login/networkmanager.h"
+#include "login/custommessagebox.h"
 
 #include <QResizeEvent>
 #include <QLabel>
@@ -27,23 +28,30 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
     topBar(nullptr),
     stackedWidget(nullptr),
+    player(nullptr),
+    videoWidget(nullptr),
     cameraPage(nullptr),
     documentPage(nullptr),
     settingsPage(nullptr),
+    cameraTitle(nullptr),
+    notifTitleLabel(nullptr),
     videoSettingTitle(nullptr),
     displayTitle(nullptr),
     procTitle(nullptr),
+    videoSettingLine(nullptr),
+    notificationPanel(nullptr),
     displayBox(nullptr),
     procBox(nullptr),
     videoSettingLine(nullptr),
     cameraTitle(nullptr),
     notifTitleLabel(nullptr),
     videoLabel(nullptr),
-    mqttManager(nullptr),
-    networkManager(nullptr),
     notificationPanel(nullptr),
     rtspPlayer(nullptr),
-    m_isLogout(false)
+    mqttManager(nullptr),
+    networkManager(nullptr),
+    m_isLogout(false),
+    historyView(nullptr)
 {
     qDebug() << "🏠 MainWindow 생성자 시작";
 
@@ -62,7 +70,6 @@ MainWindow::MainWindow(QWidget *parent)
     setMinimumSize(1600, 900);
     showMaximized();
 
-    // ✅ 네트워크 메니저 초기화 및 TCP 연결 시도
     networkManager = new NetworkManager(this);
     networkManager->connectToServer();
 
@@ -70,7 +77,7 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug() << "[TCP] 서버 연결 성공!";
     });
     connect(networkManager, &NetworkManager::disconnected, this, []() {
-        qDebug() << "[TCP] 서버 연결 끊기면!";
+        qDebug() << "[TCP] 서버 연결 끊김!";
     });
     connect(networkManager, &NetworkManager::networkError, this, [](const QString &msg) {
         qDebug() << "[TCP] 오류:" << msg;
@@ -80,8 +87,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupFonts();
     setupPages();
     showPage(PageType::Camera);
-    
-    // 초기 레이아웃 설정을 위한 타이머
+
     QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
     // RTSP 생성
@@ -309,6 +315,23 @@ void MainWindow::showEvent(QShowEvent *event)
     QTimer::singleShot(50, this, &MainWindow::forceLayoutUpdate);
 }
 
+
+void MainWindow::onCameraClicked()   { showPage(PageType::Camera); }
+void MainWindow::onDocumentClicked() { showPage(PageType::Document); }
+void MainWindow::onSettingsClicked() { showPage(PageType::Settings); }
+
+void MainWindow::onLogoutRequested()
+{
+    bool confirmed = CustomMessageBox::showConfirm(this, "로그아웃 확인", "정말 로그아웃 하시겠습니까?", "info");
+    qDebug() << "[MainWindow] 로그아웃 확인 여부:" << confirmed;
+
+    if (confirmed) {
+        if (topBar) topBar->clearUserData();
+        m_isLogout = true;
+        close();  // 여기서 창을 닫음 (→ main.cpp에서 result != 1 → 로그인 페이지로 복귀)
+    }
+}
+
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (m_isLogout)
@@ -319,15 +342,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-void MainWindow::onCameraClicked()   { showPage(PageType::Camera); }
-void MainWindow::onDocumentClicked() { showPage(PageType::Document); }
-void MainWindow::onSettingsClicked() { showPage(PageType::Settings); }
-
-void MainWindow::onLogoutRequested()
-{
-    if (topBar) topBar->clearUserData();
-    m_isLogout = true;
-    QApplication::quit();
+bool MainWindow::wasLogout() const {
+    return m_isLogout;
 }
 
 void MainWindow::showPage(PageType pageType)
