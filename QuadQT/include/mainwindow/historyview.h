@@ -15,6 +15,7 @@
 #include <QMap>
 #include <QJsonObject>
 #include "getimageview.h"
+#include "compareimageview.h"
 #include "tcpimagehandler.h"
 #include <QByteArray>
 class HistoryView : public QWidget {
@@ -58,6 +59,7 @@ private:
     QAction*         actionSpeed;
     QPushButton*     downloadButton;
     QPushButton*     refreshButton;
+    QWidget*         separatorLine;
     QWidget*         calendarContainer;
     QCalendarWidget* calendarWidget;
     bool             calendarForStart;
@@ -85,6 +87,11 @@ private:
     // ...기존 변수들...
     TcpImageHandler*   tcpImageHandler_;
     GetImageView*      currentImageView_;
+    CompareImageView*  currentCompareView_;
+    QString            pendingStartImagePath_;
+    QString            pendingEndImagePath_;
+    QByteArray         startImageData_;
+    QByteArray         endImageData_;
 private:
     QString parseTimestampFromPath(const QString& path);
     QString findConfigFile();

@@ -84,9 +84,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
-    // ----- RTSP Player 스레드 분리 -----
     QSettings settings("config.ini", QSettings::IniFormat);
     QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
+
+    rtspThread = new RtspThread(rtspUrl, this);
+
+    connect(rtspThread, &RtspThread::frameReady, this, [this](const QImage &img) {
+        if (rtspLabel)
+            rtspLabel->setPixmap(QPixmap::fromImage(img).scaled(rtspLabel->size(), Qt::KeepAspectRatio));
+    });
+
+    rtspThread->start();
 
     rtspThread = new QThread(this);
     rtspPlayer = new RtspPlayer();  // UI 의존성 제거
@@ -141,16 +149,13 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << "MainWindow 생성 완료";
 }
 
-MainWindow::~MainWindow() {
-    if (rtspPlayer) {
-        QMetaObject::invokeMethod(rtspPlayer, "stop", Qt::BlockingQueuedConnection);
-    }
+MainWindow::~MainWindow()
+{
     if (rtspThread) {
-        rtspThread->quit();
+        rtspThread->stop();
         rtspThread->wait();
     }
 }
-
 
 void MainWindow::setUserEmail(const QString &email)
 {
@@ -248,15 +253,16 @@ QWidget* MainWindow::createCameraPage()
 
     cameraTitle = new QLabel("역삼 초등학교 앞 CCTV", page);
     cameraTitle->setFont(titleFont);
-    cameraTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+    cameraTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     notifTitleLabel = new QLabel("실시간 알림", page);
     notifTitleLabel->setFont(titleFont);
-    notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+    notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
-    videoLabel = new QLabel(page);
-    videoLabel->setAlignment(Qt::AlignCenter);
-    videoLabel->setStyleSheet("background-color: black; border: 1px solid #ccc;");
+    rtspLabel = new QLabel(page);
+    rtspLabel->setStyleSheet("background-color: black; border: 1px solid #ccc;");
+    rtspLabel->setAlignment(Qt::AlignCenter);
+    rtspLabel->setMinimumSize(640, 480);
 
     notificationPanel = new NotificationPanel(page);
     notificationPanel->setStyleSheet("background-color: #FFFFFF; border-left: 1px solid #ccc;");
@@ -349,7 +355,7 @@ void MainWindow::onSettingsClicked() { showPage(PageType::Settings); }
 
 void MainWindow::onLogoutRequested()
 {
-    bool confirmed = CustomMessageBox::showConfirm(this, "로그아웃 확인", "정말 로그아웃 하시겠습니까?", "info");
+    bool confirmed = CustomMessageBox::showConfirm(this, "로그아웃 확인", "정말 로그아웃 하시겠습니까?");
     qDebug() << "[MainWindow] 로그아웃 확인 여부:" << confirmed;
 
     if (confirmed) {
@@ -440,7 +446,7 @@ void MainWindow::updateLayout()
 
 void MainWindow::updateCameraPageLayout()
 {
-    if (!cameraTitle || !notifTitleLabel || !videoLabel || !notificationPanel) return;
+    if (!cameraTitle || !notifTitleLabel || !rtspLabel || !notificationPanel) return;
 
     int w = stackedWidget->width();
     int h = stackedWidget->height();
@@ -464,8 +470,10 @@ void MainWindow::updateCameraPageLayout()
     notifTitleLabel->setGeometry(notif_x, h_unit * 0, notif_w, h_unit);
     notifTitleLabel->update();
 
-    videoLabel->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
-    videoLabel->update();
+    if (rtspLabel) {
+        rtspLabel->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
+        rtspLabel->update();
+    }
     
     // 알림 패널을 영상처리 박스 아래까지 확장 (h_unit * 19까지)
     double notifHeight = h_unit * 19;
