@@ -31,6 +31,10 @@ private slots:
     void downloadEndImage();
     void printToPdf();
 
+protected:
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+
 private:
     QLabel* startImageLabel_;
     QLabel* endImageLabel_;
@@ -43,6 +47,11 @@ private:
     
     QString startFilename_;
     QString endFilename_;
+    QString eventType_;       // 이벤트 타입 저장
     QByteArray startImageData_;
     QByteArray endImageData_;
+    
+    // 창 드래그를 위한 변수
+    QPoint dragPosition_;
+    bool dragging_;
 };

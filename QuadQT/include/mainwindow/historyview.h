@@ -63,6 +63,9 @@ private:
     QWidget*         calendarContainer;
     QCalendarWidget* calendarWidget;
     bool             calendarForStart;
+    QLabel*          monthYearLabel;
+    QPushButton*     prevMonthButton;
+    QPushButton*     nextMonthButton;
     QString          currentFilter;
     QPushButton    *prevButton;
     QLabel         *pageLabel;
