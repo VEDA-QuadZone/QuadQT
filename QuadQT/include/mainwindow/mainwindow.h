@@ -14,6 +14,7 @@
 #include "mainwindow/mqttmanager.h"
 #include "mainwindow/rtspplayer.h"
 #include "login/networkmanager.h"
+#include "mainwindow/rtspthread.h"
 
 class QLabel;
 class DisplaySettingBox;
@@ -69,9 +70,8 @@ private:
     QWidget *videoSettingLine;
 
     // RTSP 스트리밍
-    QLabel *videoLabel;
-    RtspPlayer* rtspPlayer;
-    QThread *rtspThread;
+    QLabel *rtspLabel;
+    RtspThread *rtspThread;
 
     // 알림 패널 및 설정
     NotificationPanel *notificationPanel;

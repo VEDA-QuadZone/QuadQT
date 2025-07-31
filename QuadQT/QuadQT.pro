@@ -10,7 +10,15 @@ INCLUDEPATH += \
     $$PWD/include \
     $$PWD/include/login \
     $$PWD/include/mainwindow \
-    C:/opencv/prebuilt_mingw/include
+    C:/opencv/prebuilt_mingw/include \
+    C:/opencv/OpenCV-MinGW-Build/include
+
+LIBS += -LC:/opencv/OpenCV-MinGW-Build/x64/mingw/lib \
+    -lopencv_core455 \
+    -lopencv_videoio455 \
+    -lopencv_imgcodecs455 \
+    -lopencv_imgproc455 \
+    -lopencv_highgui455
 
 # ====== SOURCES (.cpp) ======
 SOURCES += \
@@ -19,6 +27,7 @@ SOURCES += \
     src/login/loginpage.cpp \
     src/login/networkmanager.cpp \
     src/mainwindow/displaysettingbox.cpp \
+    src/mainwindow/compareimageview.cpp \
     src/mainwindow/getimageview.cpp \
     src/mainwindow/historyview.cpp \
     src/mainwindow/mainwindow.cpp \
@@ -26,7 +35,7 @@ SOURCES += \
     src/mainwindow/notificationitem.cpp \
     src/mainwindow/notificationpanel.cpp \
     src/mainwindow/procsettingbox.cpp \
-    src/mainwindow/rtspplayer.cpp \
+    src/mainwindow/rtspthread.cpp \
     src/mainwindow/tcphistoryhandler.cpp \
     src/mainwindow/tcpimagehandler.cpp \
     src/mainwindow/topbarwidget.cpp
@@ -36,6 +45,7 @@ HEADERS += \
     include/login/custommessagebox.h \
     include/login/loginpage.h \
     include/login/networkmanager.h \
+    include/mainwindow/compareimageview.h \
     include/mainwindow/displaysettingbox.h \
     include/mainwindow/getimageview.h \
     include/mainwindow/historyview.h \
@@ -44,7 +54,7 @@ HEADERS += \
     include/mainwindow/notificationitem.h \
     include/mainwindow/notificationpanel.h \
     include/mainwindow/procsettingbox.h \
-    include/mainwindow/rtspplayer.h \
+    include/mainwindow/rtspthread.h \
     include/mainwindow/tcphistoryhandler.h \
     include/mainwindow/tcpimagehandler.h \
     include/mainwindow/topbarwidget.h
