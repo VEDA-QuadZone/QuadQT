@@ -19,7 +19,7 @@ python mqtt_test.py --event 0
 # 과속감지 알림  
 python mqtt_test.py --event 1
 
-# 어린이감지 알림
+# 보행자감지 알림
 python mqtt_test.py --event 2
 ```
 
@@ -62,7 +62,7 @@ python mqtt_test.py --host localhost --port 1883 --event 0
 |------|-------------|------|
 | 0    | 주정차감지  | 불법 주정차 감지 |
 | 1    | 과속감지    | 속도 위반 감지 |
-| 2    | 어린이감지  | 어린이 보호구역 감지 |
+| 2    | 보행자감지  | 보행자 보호구역 감지 |
 
 ## 메시지 형식
 

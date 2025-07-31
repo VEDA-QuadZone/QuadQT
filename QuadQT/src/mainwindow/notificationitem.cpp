@@ -42,7 +42,7 @@ NotificationItem::NotificationItem(int eventType, const QString &date, QWidget *
     case 2:
         bgColor = "rgba(2, 68, 207, 0.1)";    // 연한 파랑
         lineColor = "#0244CF";
-        message = "어린이 인식";
+        message = "보행자 인식";
         iconPath = ":/images/info.png";
         break;
     }

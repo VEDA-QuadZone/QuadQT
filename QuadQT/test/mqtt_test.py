@@ -21,7 +21,7 @@ MQTT_TOPIC = "alert"
 EVENT_TYPES = {
     0: "주정차감지",
     1: "과속감지", 
-    2: "어린이감지"
+    2: "보행자감지"
 }
 
 class MQTTTester:
@@ -138,7 +138,7 @@ def main():
     parser = argparse.ArgumentParser(description='MQTT 알림 테스트 도구')
     parser.add_argument('--host', default=MQTT_BROKER, help='MQTT 브로커 호스트')
     parser.add_argument('--port', type=int, default=MQTT_PORT, help='MQTT 브로커 포트')
-    parser.add_argument('--event', type=int, choices=[0, 1, 2], help='이벤트 타입 (0:주정차, 1:과속, 2:어린이)')
+    parser.add_argument('--event', type=int, choices=[0, 1, 2], help='이벤트 타입 (0:주정차, 1:과속, 2:보행자)')
     parser.add_argument('--random', type=int, metavar='COUNT', help='랜덤 알림 개수')
     parser.add_argument('--interval', type=float, default=2.0, help='랜덤 알림 간격(초)')
     parser.add_argument('--test', action='store_true', help='테스트 시퀀스 실행')

@@ -208,7 +208,7 @@ QWidget* MainWindow::createCameraPage()
     QFont titleFont(hanwhaFont, 15);
     titleFont.setBold(true);
 
-    cameraTitle = new QLabel("역삼 초등학교 앞 CCTV", page);
+    cameraTitle = new QLabel("상계 초등학교 앞 CCTV", page);
     cameraTitle->setFont(titleFont);
     cameraTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
