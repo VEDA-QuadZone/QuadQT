@@ -422,7 +422,9 @@ void TopBarWidget::showUserMenu()
     
     // 로그아웃 액션 추가
     QAction *logoutAction = menu->addAction("로그아웃");
-    connect(logoutAction, &QAction::triggered, this, &TopBarWidget::logoutRequested);
+    connect(logoutAction, &QAction::triggered, this, [this]() {
+        emit logoutRequested();
+    });
     
     // 메뉴 크기를 미리 계산하기 위해 임시로 표시
     menu->adjustSize();
