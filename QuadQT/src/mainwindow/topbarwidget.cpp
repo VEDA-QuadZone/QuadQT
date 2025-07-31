@@ -60,7 +60,6 @@ TopBarWidget::TopBarWidget(QWidget *parent)
     // 아이콘들을 이미지로 설정
     cameraIcon = new QLabel(this);
     docIcon = new QLabel(this);
-    settingIcon = new QLabel(this);
     loginStatus = new QLabel(this);
 
     setupIcons();
@@ -80,7 +79,6 @@ void TopBarWidget::setupIcons()
     qDebug() << "리소스 경로 테스트 (true = 실패, false = 성공):";
     qDebug() << "  - 카메라:" << QPixmap(":/images/camera.png").isNull();
     qDebug() << "  - 문서:" << QPixmap(":/images/Document.png").isNull();
-    qDebug() << "  - 설정:" << QPixmap(":/images/Settings.png").isNull();
     qDebug() << "  - 프로필:" << QPixmap(":/images/Profile.png").isNull();
     
     // 다양한 절대 경로 테스트
@@ -180,35 +178,7 @@ void TopBarWidget::updateButtonStates()
         docIcon->setStyleSheet("border-radius: 8px;");
     }
     
-    // 설정 버튼
-    QPixmap settingsPixmap;
-    if (m_activeButton == TopBarButton::Settings) {
-        settingsPixmap = QPixmap(":/images/settings_orange.png");
-        if (settingsPixmap.isNull()) settingsPixmap = QPixmap("resources/images/settings_orange.png");
-    } else {
-        settingsPixmap = QPixmap(":/images/Settings.png");
-        if (settingsPixmap.isNull()) settingsPixmap = QPixmap("resources/images/Settings.png");
-    }
-    
-    if (settingsPixmap.isNull()) {
-        settingIcon->clear();
-        settingIcon->setText("SET");
-        settingIcon->setStyleSheet(m_activeButton == TopBarButton::Settings ? 
-            "background-color: #F37321; color: white; font-weight: bold; border-radius: 8px;" : 
-            "background-color: #FFFFFF; color: black; font-weight: bold; border-radius: 8px; border: 1px solid #ccc;");
-        settingIcon->setAlignment(Qt::AlignCenter);
-    } else {
-        // 버튼 크기에 비례한 아이콘 크기 계산 (버튼 크기의 100%)
-        double w_unit = m_parentWidth / 24.0;
-        double h_unit = m_parentHeight / 24.0;
-        int iconPixelSize = qMin(w_unit * 1.4 * 1.0, h_unit * 1.4 * 1.0);
-        
-        QPixmap scaledPixmap = settingsPixmap.scaled(iconPixelSize, iconPixelSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        settingIcon->setPixmap(scaledPixmap);
-        settingIcon->setScaledContents(false);
-        settingIcon->setAlignment(Qt::AlignCenter);
-        settingIcon->setStyleSheet("border-radius: 8px;");
-    }
+
     
     // 프로필 버튼
     QPixmap profilePixmap = QPixmap(":/images/Profile.png");
@@ -253,22 +223,21 @@ void TopBarWidget::updateLayout(int w, int h)
 
     topLine->setGeometry(w_unit * 1, h_unit * 3 - 1, w_unit * 22, 1);
 
-    // 3개 버튼을 화면 가운데로 배치 (QuadZone 로고와 같은 행에 맞춤)
+    // 2개 버튼을 화면 가운데로 배치 (QuadZone 로고와 같은 행에 맞춤)
     double iconSize = w_unit * 1.4;  // 아이콘 크기 (1.2 → 1.4로 증가)
     double iconHeight = h_unit * 1.4;  // 아이콘 높이 (1.2 → 1.4로 증가)
-    double iconGap = w_unit * 0.4;  // 아이콘 간격 축소 (0.6 → 0.4)
-    double totalButtonWidth = iconSize * 3 + iconGap * 2;  // 3개 버튼 + 2개 간격
+    double iconGap = w_unit * 0.8;  // 아이콘 간격 증가 (0.4 → 0.8)
+    double totalButtonWidth = iconSize * 2 + iconGap;  // 2개 버튼 + 1개 간격
     double startX = (w - totalButtonWidth) / 2;  // 화면 가운데 시작점
     double iconY = h_unit * 1.4;  // QuadZone 로고와 같은 행에 맞춤 (로고 중앙 높이)
     
     cameraIcon->setGeometry(startX, iconY, iconSize, iconHeight);
     docIcon->setGeometry(startX + iconSize + iconGap, iconY, iconSize, iconHeight);
-    settingIcon->setGeometry(startX + (iconSize + iconGap) * 2, iconY, iconSize, iconHeight);
     
     // 프로필 아이콘은 오른쪽 끝에 (같은 높이로 맞춤)
     loginStatus->setGeometry(w_unit * 21.3, h_unit * 1.4, w_unit * 1.4, h_unit * 1.4);
     
-    qDebug() << "버튼 위치 - 시작X:" << startX << "아이콘 크기:" << iconSize;
+    qDebug() << "버튼 위치 - 시작X:" << startX << "아이콘 크기:" << iconSize << "총 버튼 너비:" << totalButtonWidth;
     
     // 레이아웃 업데이트 후 버튼 상태 다시 업데이트 (이미지 크기 재계산)
     updateButtonStates();
@@ -290,11 +259,6 @@ void TopBarWidget::mousePressEvent(QMouseEvent *event)
         setActiveButton(TopBarButton::Document);
         emit documentClicked();
     }
-    else if (getSettingsRect().contains(pos)) {
-        qDebug() << "설정 버튼 클릭됨";
-        setActiveButton(TopBarButton::Settings);
-        emit settingsClicked();
-    }
     else if (getUserRect().contains(pos)) {
         qDebug() << "사용자 버튼 클릭됨";
         onUserButtonClicked();
@@ -309,8 +273,8 @@ QRect TopBarWidget::getCameraRect() const
     double h_unit = m_parentHeight / 24.0;
     double iconSize = w_unit * 1.4;  // 크기 업데이트
     double iconHeight = h_unit * 1.4;  // 높이 업데이트
-    double iconGap = w_unit * 0.4;  // 간격 축소
-    double totalButtonWidth = iconSize * 3 + iconGap * 2;
+    double iconGap = w_unit * 0.8;  // 간격 증가
+    double totalButtonWidth = iconSize * 2 + iconGap;
     double startX = (m_parentWidth - totalButtonWidth) / 2;
     double iconY = h_unit * 1.4;
     
@@ -323,27 +287,15 @@ QRect TopBarWidget::getDocumentRect() const
     double h_unit = m_parentHeight / 24.0;
     double iconSize = w_unit * 1.4;  // 크기 업데이트
     double iconHeight = h_unit * 1.4;  // 높이 업데이트
-    double iconGap = w_unit * 0.4;  // 간격 축소
-    double totalButtonWidth = iconSize * 3 + iconGap * 2;
+    double iconGap = w_unit * 0.8;  // 간격 증가
+    double totalButtonWidth = iconSize * 2 + iconGap;
     double startX = (m_parentWidth - totalButtonWidth) / 2;
     double iconY = h_unit * 1.4;
     
     return QRect(startX + iconSize + iconGap, iconY, iconSize, iconHeight);
 }
 
-QRect TopBarWidget::getSettingsRect() const
-{
-    double w_unit = m_parentWidth / 24.0;
-    double h_unit = m_parentHeight / 24.0;
-    double iconSize = w_unit * 1.4;  // 크기 업데이트
-    double iconHeight = h_unit * 1.4;  // 높이 업데이트
-    double iconGap = w_unit * 0.4;  // 간격 축소
-    double totalButtonWidth = iconSize * 3 + iconGap * 2;
-    double startX = (m_parentWidth - totalButtonWidth) / 2;
-    double iconY = h_unit * 1.4;
-    
-    return QRect(startX + (iconSize + iconGap) * 2, iconY, iconSize, iconHeight);
-}
+
 
 QRect TopBarWidget::getUserRect() const
 {

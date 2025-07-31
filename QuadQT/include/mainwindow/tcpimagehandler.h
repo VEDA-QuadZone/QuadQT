@@ -26,6 +26,7 @@ private slots:
 
 private:
     void sendGetImageRequest();
+    QString findCertificateFile(const QString &filename);
 
     QSslSocket* socket_;
     QByteArray buffer_;

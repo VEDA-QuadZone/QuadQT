@@ -20,8 +20,7 @@ class DisplaySettingBox;
 
 enum class PageType {
     Camera,
-    Document,
-    Settings
+    Document
 };
 
 class MainWindow : public QMainWindow
@@ -52,7 +51,6 @@ private:
 
     QWidget* createCameraPage();
     QWidget* createDocumentPage();
-    QWidget* createSettingsPage();
 
     // 공통 UI 요소
     TopBarWidget *topBar;
@@ -83,7 +81,6 @@ private:
     // 페이지들
     QWidget *cameraPage;
     QWidget *documentPage;
-    QWidget *settingsPage;
 
     // 네트워크 매니저
     NetworkManager *networkManager;
@@ -97,7 +94,6 @@ private:
 private slots:
     void onCameraClicked();
     void onDocumentClicked();
-    void onSettingsClicked();
     void onLogoutRequested();
 };
 

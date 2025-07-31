@@ -80,128 +80,101 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
     
     containerLayout->addWidget(titleBar);
 
-    // --- 1. 정보 테이블 부분 (QLabel로 구현) ---
+    // --- 1. 정보 테이블 부분 (QTableWidget으로 구현) ---
     QHBoxLayout* tableLayout = new QHBoxLayout;
     tableLayout->setSpacing(40); // 테이블 간격을 화살표와 맞춤
     
+    QFont labelBoldFont;
+    labelBoldFont.setBold(true);
+
     // 왼쪽 테이블 (정차 시작)
-    QWidget* leftTableWidget = new QWidget(this);
-    leftTableWidget->setFixedSize(IMAGE_WIDTH, 96); // 3행 * 32px
-    leftTableWidget->setStyleSheet("border: none; background: #fff;");
-    
-    QVBoxLayout* leftTableLayout = new QVBoxLayout(leftTableWidget);
-    leftTableLayout->setSpacing(0);
-    leftTableLayout->setContentsMargins(0, 0, 0, 0);
-    
-    // 헤더 (주황색)
-    QLabel* leftHeader = new QLabel("정차 시작", leftTableWidget);
+    QWidget* leftTableContainer = new QWidget(this);
+    leftTableContainer->setFixedSize(IMAGE_WIDTH, 96);
+    QVBoxLayout* leftVLayout = new QVBoxLayout(leftTableContainer);
+    leftVLayout->setSpacing(0);
+    leftVLayout->setContentsMargins(0,0,0,0);
+
+    QLabel* leftHeader = new QLabel("   정차 시작", this);
     leftHeader->setFixedHeight(32);
     leftHeader->setAlignment(Qt::AlignCenter);
-    leftHeader->setStyleSheet("background: #FBB584; border-bottom: 1px solid #888; font-weight: normal;");
-    leftTableLayout->addWidget(leftHeader);
-    
-    // 번호판 행
-    QWidget* leftPlateRow = new QWidget(leftTableWidget);
-    leftPlateRow->setFixedHeight(32);
-    leftPlateRow->setStyleSheet("background: #fff; border-bottom: 1px solid #888;");
-    QHBoxLayout* leftPlateLayout = new QHBoxLayout(leftPlateRow);
-    leftPlateLayout->setContentsMargins(0, 0, 0, 0);
-    leftPlateLayout->setSpacing(0);
-    
-    QLabel* leftPlateLabel = new QLabel("번호판", leftPlateRow);
-    leftPlateLabel->setFixedWidth(80);
-    leftPlateLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    leftPlateLabel->setStyleSheet("border: none; background: transparent; padding-left: 8px;");
-    
-    QLabel* leftPlateVal = new QLabel(plate, leftPlateRow);
-    leftPlateVal->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
-    leftPlateVal->setStyleSheet("border: none; background: transparent; padding-left: 8px;");
-    
-    leftPlateLayout->addWidget(leftPlateLabel);
-    leftPlateLayout->addWidget(leftPlateVal);
-    leftTableLayout->addWidget(leftPlateRow);
-    
-    // 일시 행
-    QWidget* leftTimeRow = new QWidget(leftTableWidget);
-    leftTimeRow->setFixedHeight(32);
-    leftTimeRow->setStyleSheet("background: #fff;");
-    QHBoxLayout* leftTimeLayout = new QHBoxLayout(leftTimeRow);
-    leftTimeLayout->setContentsMargins(0, 0, 0, 0);
-    leftTimeLayout->setSpacing(0);
-    
-    QLabel* leftTimeLabel = new QLabel("일시", leftTimeRow);
-    leftTimeLabel->setFixedWidth(80);
-    leftTimeLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    leftTimeLabel->setStyleSheet("border: none; background: transparent; padding-left: 8px;");
-    
-    QLabel* leftTimeVal = new QLabel(datetime, leftTimeRow);
-    leftTimeVal->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
-    leftTimeVal->setStyleSheet("font-weight: bold; border: none; background: transparent; padding-left: 8px;");
-    
-    leftTimeLayout->addWidget(leftTimeLabel);
-    leftTimeLayout->addWidget(leftTimeVal);
-    leftTableLayout->addWidget(leftTimeRow);
+    leftHeader->setStyleSheet("background: #FBB584; border-bottom: 1px solid #888; font-weight:bold;");
+    leftVLayout->addWidget(leftHeader);
+
+    QTableWidget* leftTableWidget = new QTableWidget(2, 2, this);
+    leftTableWidget->setFixedHeight(64);
+    leftTableWidget->setFixedWidth(IMAGE_WIDTH);
+    leftTableWidget->setColumnWidth(0, 45 );
+    leftTableWidget->setColumnWidth(1, IMAGE_WIDTH - 45 - 2 ); // 오른쪽 빈 공간 제거
+    leftTableWidget->horizontalHeader()->hide();
+    leftTableWidget->verticalHeader()->hide();
+    leftTableWidget->setShowGrid(false);
+    leftTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    leftTableWidget->setSelectionMode(QAbstractItemView::NoSelection);
+    leftTableWidget->setStyleSheet(
+        "QTableWidget, QHeaderView::section { background: #fff; border: none; }"
+        "QTableWidget::item { border-bottom: 1px solid #888; border-left: none; border-right: none; border-top: none; }"
+    );
+
+    auto* leftPlateItem = new QTableWidgetItem("번호판");
+    leftPlateItem->setFont(labelBoldFont);
+    auto* leftPlateValItem = new QTableWidgetItem(plate);
+    leftPlateValItem->setTextAlignment(Qt::AlignCenter);
+    leftTableWidget->setItem(0, 0, leftPlateItem);
+    leftTableWidget->setItem(0, 1, leftPlateValItem);
+
+    auto* leftTimeItem = new QTableWidgetItem("일시");
+    leftTimeItem->setFont(labelBoldFont);
+    auto* leftTimeValItem = new QTableWidgetItem(datetime);
+    leftTimeValItem->setTextAlignment(Qt::AlignCenter);
+    leftTableWidget->setItem(1, 0, leftTimeItem);
+    leftTableWidget->setItem(1, 1, leftTimeValItem);
+    leftVLayout->addWidget(leftTableWidget);
     
     // 오른쪽 테이블 (정차 후 1분 경과)
-    QWidget* rightTableWidget = new QWidget(this);
-    rightTableWidget->setFixedSize(IMAGE_WIDTH, 96); // 3행 * 32px
-    rightTableWidget->setStyleSheet("border: none; background: #fff;");
-    
-    QVBoxLayout* rightTableLayout = new QVBoxLayout(rightTableWidget);
-    rightTableLayout->setSpacing(0);
-    rightTableLayout->setContentsMargins(0, 0, 0, 0);
-    
-    // 헤더 (주황색)
-    QLabel* rightHeader = new QLabel("정차 후 1분 경과", rightTableWidget);
+    QWidget* rightTableContainer = new QWidget(this);
+    rightTableContainer->setFixedSize(IMAGE_WIDTH, 96);
+    QVBoxLayout* rightVLayout = new QVBoxLayout(rightTableContainer);
+    rightVLayout->setSpacing(0);
+    rightVLayout->setContentsMargins(0,0,0,0);
+
+    QLabel* rightHeader = new QLabel("   정차 후 1분 경과", this);
     rightHeader->setFixedHeight(32);
     rightHeader->setAlignment(Qt::AlignCenter);
-    rightHeader->setStyleSheet("background: #FBB584; border-bottom: 1px solid #888; font-weight: normal;");
-    rightTableLayout->addWidget(rightHeader);
-    
-    // 번호판 행
-    QWidget* rightPlateRow = new QWidget(rightTableWidget);
-    rightPlateRow->setFixedHeight(32);
-    rightPlateRow->setStyleSheet("background: #fff; border-bottom: 1px solid #888;");
-    QHBoxLayout* rightPlateLayout = new QHBoxLayout(rightPlateRow);
-    rightPlateLayout->setContentsMargins(0, 0, 0, 0);
-    rightPlateLayout->setSpacing(0);
-    
-    QLabel* rightPlateLabel = new QLabel("번호판", rightPlateRow);
-    rightPlateLabel->setFixedWidth(80);
-    rightPlateLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    rightPlateLabel->setStyleSheet("border: none; background: transparent; padding-left: 8px;");
-    
-    QLabel* rightPlateVal = new QLabel(plate, rightPlateRow);
-    rightPlateVal->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
-    rightPlateVal->setStyleSheet("border: none; background: transparent; padding-left: 8px;");
-    
-    rightPlateLayout->addWidget(rightPlateLabel);
-    rightPlateLayout->addWidget(rightPlateVal);
-    rightTableLayout->addWidget(rightPlateRow);
-    
-    // 일시 행
-    QWidget* rightTimeRow = new QWidget(rightTableWidget);
-    rightTimeRow->setFixedHeight(32);
-    rightTimeRow->setStyleSheet("background: #fff;");
-    QHBoxLayout* rightTimeLayout = new QHBoxLayout(rightTimeRow);
-    rightTimeLayout->setContentsMargins(0, 0, 0, 0);
-    rightTimeLayout->setSpacing(0);
-    
-    QLabel* rightTimeLabel = new QLabel("일시", rightTimeRow);
-    rightTimeLabel->setFixedWidth(80);
-    rightTimeLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    rightTimeLabel->setStyleSheet("border: none; background: transparent; padding-left: 8px;");
-    
-    QLabel* rightTimeVal = new QLabel(datetime, rightTimeRow);
-    rightTimeVal->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
-    rightTimeVal->setStyleSheet("font-weight: bold; border: none; background: transparent; padding-left: 8px;");
-    
-    rightTimeLayout->addWidget(rightTimeLabel);
-    rightTimeLayout->addWidget(rightTimeVal);
-    rightTableLayout->addWidget(rightTimeRow);
+    rightHeader->setStyleSheet("background: #FBB584; border-bottom: 1px solid #888; font-weight: bold;");
+    rightVLayout->addWidget(rightHeader);
 
-    tableLayout->addWidget(leftTableWidget);
-    tableLayout->addWidget(rightTableWidget);
+    QTableWidget* rightTableWidget = new QTableWidget(2, 2, this);
+    rightTableWidget->setFixedHeight(64);
+    rightTableWidget->setFixedWidth(IMAGE_WIDTH);
+    rightTableWidget->setColumnWidth(0, 45);
+    rightTableWidget->setColumnWidth(1, IMAGE_WIDTH - 45 - 2); // 오른쪽 빈 공간 제거
+    rightTableWidget->horizontalHeader()->hide();
+    rightTableWidget->verticalHeader()->hide();
+    rightTableWidget->setShowGrid(false);
+    rightTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    rightTableWidget->setSelectionMode(QAbstractItemView::NoSelection);
+    rightTableWidget->setStyleSheet(
+        "QTableWidget, QHeaderView::section { background: #fff; border: none; }"
+        "QTableWidget::item { border-bottom: 1px solid #888; border-left: none; border-right: none; border-top: none; }"
+    );
+
+    auto* rightPlateItem = new QTableWidgetItem("번호판");
+    rightPlateItem->setFont(labelBoldFont);
+    auto* rightPlateValItem = new QTableWidgetItem(plate);
+    rightPlateValItem->setTextAlignment(Qt::AlignCenter);
+    rightTableWidget->setItem(0, 0, rightPlateItem);
+    rightTableWidget->setItem(0, 1, rightPlateValItem);
+
+    auto* rightTimeItem = new QTableWidgetItem("일시");
+    rightTimeItem->setFont(labelBoldFont);
+    auto* rightTimeValItem = new QTableWidgetItem(datetime);
+    rightTimeValItem->setTextAlignment(Qt::AlignCenter);
+    rightTableWidget->setItem(1, 0, rightTimeItem);
+    rightTableWidget->setItem(1, 1, rightTimeValItem);
+    rightVLayout->addWidget(rightTableWidget);
+
+    tableLayout->addWidget(leftTableContainer);
+    tableLayout->addWidget(rightTableContainer);
     
     containerLayout->addLayout(tableLayout);
 
@@ -242,19 +215,20 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
     
     QLabel* leftFileKey = new QLabel("파일 이름", this);
     leftFileKey->setMinimumWidth(64);
-    leftFileKey->setStyleSheet("border:none; background:transparent; font-size:15px; color:#222;");
+    leftFileKey->setStyleSheet("border:none; background:transparent; font-size:12px; color:#222; font-weight:bold;");
     leftFileRow->addWidget(leftFileKey);
     
     QString displayStartFilename = convertFilename(startFilename, event);
     startFilenameLabel_ = new QLabel(
-        QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;\">%1</a>").arg(displayStartFilename), this);
+        QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;font-weight:bold;\">%1</a>").arg(displayStartFilename), this);
     startFilenameLabel_->setTextInteractionFlags(Qt::TextBrowserInteraction);
     startFilenameLabel_->setOpenExternalLinks(false);
-    startFilenameLabel_->setStyleSheet("border:none; background:transparent; color:#1976D2; font-size:15px;");
+    startFilenameLabel_->setAlignment(Qt::AlignCenter);
+    startFilenameLabel_->setStyleSheet("border:none; background:transparent; color:#1976D2; font-size:12px; font-weight:bold; text-align:center;");
     connect(startFilenameLabel_, &QLabel::linkActivated, [=](const QString&) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(startFilename));
     });
-    leftFileRow->addWidget(startFilenameLabel_);
+    leftFileRow->addWidget(startFilenameLabel_, 1, Qt::AlignCenter);
     leftFileRow->addStretch();
     
     downloadButton1_ = new QPushButton(this);
@@ -269,19 +243,20 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
     
     QLabel* rightFileKey = new QLabel("파일 이름", this);
     rightFileKey->setMinimumWidth(64);
-    rightFileKey->setStyleSheet("border:none; background:transparent; font-size:15px; color:#222;");
+    rightFileKey->setStyleSheet("border:none; background:transparent; font-size:12px; color:#222; font-weight:bold;");
     rightFileRow->addWidget(rightFileKey);
     
     QString displayEndFilename = convertFilename(endFilename, event);
     endFilenameLabel_ = new QLabel(
-        QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;\">%1</a>").arg(displayEndFilename), this);
+        QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;font-weight:bold;\">%1</a>").arg(displayEndFilename), this);
     endFilenameLabel_->setTextInteractionFlags(Qt::TextBrowserInteraction);
     endFilenameLabel_->setOpenExternalLinks(false);
-    endFilenameLabel_->setStyleSheet("border:none; background:transparent; color:#1976D2; font-size:15px;");
+    endFilenameLabel_->setAlignment(Qt::AlignCenter);
+    endFilenameLabel_->setStyleSheet("border:none; background:transparent; color:#1976D2; font-size:12px; font-weight:bold; text-align:center;");
     connect(endFilenameLabel_, &QLabel::linkActivated, [=](const QString&) {
         QDesktopServices::openUrl(QUrl::fromLocalFile(endFilename));
     });
-    rightFileRow->addWidget(endFilenameLabel_);
+    rightFileRow->addWidget(endFilenameLabel_, 1, Qt::AlignCenter);
     rightFileRow->addStretch();
     
     downloadButton2_ = new QPushButton(this);
@@ -319,7 +294,7 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
     btnLayout->addStretch();
     printButton_ = new QPushButton("인쇄", this);
     printButton_->setFixedSize(72, 24);
-    printButton_->setStyleSheet("background:#F37321; color:black; font-weight:bold; border:none;");
+    printButton_->setStyleSheet("background:#F37321; color:black; border:none;");
     closeButton_ = new QPushButton("닫기", this);
     closeButton_->setFixedSize(72, 24);
     closeButton_->setStyleSheet("background:#FBB584; color:black; border:none;");

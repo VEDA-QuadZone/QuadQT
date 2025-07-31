@@ -29,7 +29,6 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget(nullptr),
     cameraPage(nullptr),
     documentPage(nullptr),
-    settingsPage(nullptr),
     cameraTitle(nullptr),
     notifTitleLabel(nullptr),
     videoSettingTitle(nullptr),
@@ -140,7 +139,6 @@ void MainWindow::setupUI()
     topBar->setPalette(topBarPalette);
     connect(topBar, &TopBarWidget::cameraClicked, this, &MainWindow::onCameraClicked);
     connect(topBar, &TopBarWidget::documentClicked, this, &MainWindow::onDocumentClicked);
-    connect(topBar, &TopBarWidget::settingsClicked, this, &MainWindow::onSettingsClicked);
     connect(topBar, &TopBarWidget::logoutRequested, this, &MainWindow::onLogoutRequested);
 
     stackedWidget = new QStackedWidget(parent);
@@ -183,11 +181,9 @@ void MainWindow::setupPages()
 {
     cameraPage = createCameraPage();
     documentPage = createDocumentPage();
-    settingsPage = createSettingsPage();
 
     stackedWidget->addWidget(cameraPage);
     stackedWidget->addWidget(documentPage);
-    stackedWidget->addWidget(settingsPage);
 }
 
 QWidget* MainWindow::createCameraPage()
@@ -276,26 +272,7 @@ QWidget* MainWindow::createDocumentPage()
     page->setLayout(layout);
     return page;
 }
-QWidget* MainWindow::createSettingsPage()
-{
-    QWidget *page = new QWidget();
-    page->setStyleSheet("background-color: #FFFFFF;");
 
-    QFont titleFont("HanwhaGothicR", 24); titleFont.setBold(true);
-    QFont contentFont("HanwhaGothicR", 16);
-
-    QLabel *titleLabel = new QLabel("설정 페이지", page);
-    titleLabel->setFont(titleFont);
-    titleLabel->setAlignment(Qt::AlignCenter);
-    titleLabel->setGeometry(0, 100, 800, 50);
-
-    QLabel *contentLabel = new QLabel("설정 관련 기능이 여기에 표시됩니다.", page);
-    contentLabel->setFont(contentFont);
-    contentLabel->setAlignment(Qt::AlignCenter);
-    contentLabel->setGeometry(0, 200, 800, 30);
-
-    return page;
-}
 
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
@@ -314,7 +291,6 @@ void MainWindow::showEvent(QShowEvent *event)
 
 void MainWindow::onCameraClicked()   { showPage(PageType::Camera); }
 void MainWindow::onDocumentClicked() { showPage(PageType::Document); }
-void MainWindow::onSettingsClicked() { showPage(PageType::Settings); }
 
 void MainWindow::onLogoutRequested()
 {
@@ -349,7 +325,6 @@ void MainWindow::showPage(PageType pageType)
     switch (pageType) {
     case PageType::Camera:   stackedWidget->setCurrentWidget(cameraPage); break;
     case PageType::Document: stackedWidget->setCurrentWidget(documentPage); break;
-    case PageType::Settings: stackedWidget->setCurrentWidget(settingsPage); break;
     }
     
     // 페이지 전환 후 레이아웃 강제 업데이트
@@ -372,7 +347,6 @@ void MainWindow::updateLayout()
     
     qDebug() << "현재 윈도우 크기:" << w << "x" << h;
 
-    double w_unit = w / 24.0;
     double h_unit = h / 24.0;
 
     if (topBar) {
@@ -391,11 +365,6 @@ void MainWindow::updateLayout()
             // 문서 페이지 레이아웃 업데이트
             historyView->setGeometry(0, 0, stackedWidget->width(), stackedWidget->height());
             historyView->update();
-        } else if (currentPage == settingsPage) {
-            // 설정 페이지의 모든 자식 위젯들 업데이트
-            for (QWidget* child : settingsPage->findChildren<QWidget*>()) {
-                child->update();
-            }
         }
         
         // 현재 페이지 강제 업데이트
