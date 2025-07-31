@@ -15,6 +15,7 @@ INCLUDEPATH += \
 # ====== SOURCES (.cpp) ======
 SOURCES += \
     main.cpp \
+    src/login/custommessagebox.cpp \
     src/login/loginpage.cpp \
     src/login/networkmanager.cpp \
     src/mainwindow/displaysettingbox.cpp \
@@ -32,6 +33,7 @@ SOURCES += \
 
 # ====== HEADERS (.h) ======
 HEADERS += \
+    include/login/custommessagebox.h \
     include/login/loginpage.h \
     include/login/networkmanager.h \
     include/mainwindow/displaysettingbox.h \
