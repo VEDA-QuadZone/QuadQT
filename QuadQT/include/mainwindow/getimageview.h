@@ -5,6 +5,13 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPixmap>
+#include <QDateTime>
+#include <QMessageBox>
+#include <QFile>
+#include <QIODevice>
+#include <QPdfWriter>
+#include <QPageSize>
+#include <QPainter>
 
 class GetImageView : public QDialog {
     Q_OBJECT
@@ -18,6 +25,10 @@ signals:
     void downloadRequested();
     void printRequested();
 
+private slots:
+    void downloadImage();
+    void printToPdf();
+
 private:
     QLabel* eventLabel_;
     QLabel* plateLabel_;
@@ -27,4 +38,5 @@ private:
     QPushButton* downloadButton_;
     QPushButton* printButton_;
     QPushButton* closeButton_;
+    QByteArray imageData_;    // 이미지 데이터 저장
 };
