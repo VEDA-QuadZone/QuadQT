@@ -1,4 +1,5 @@
 #include "mainwindow/getimageview.h"
+#include "mainwindow/filenameutils.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFileInfo>
@@ -16,25 +17,68 @@
 #include <QLabel>
 #include <QFrame>
 #include <QGridLayout>
+#include <QMouseEvent>
+#include <QIcon>
+#include <QRegularExpression>
 constexpr int IMAGE_WIDTH = 427;
 constexpr int IMAGE_HEIGHT = 240;
 
 GetImageView::GetImageView(const QString& event, const QString& plate,
                            const QString& datetime, const QString& filename, QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), dragging_(false)
 {
-    setWindowTitle("상세정보");
-    setStyleSheet("background:#fff;");
+    // 이벤트 타입을 멤버 변수로 저장
+    eventType_ = event;
+    setStyleSheet("QDialog { background:#fff; border: 1px solid #ccc; }");
+    
+    // 프레임리스 창으로 설정하고 커스텀 타이틀바 생성
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
 
-    // --- 전체 테두리 Frame ---
-    QFrame* border = new QFrame(this);
-    border->setFrameShape(QFrame::Box);
-    border->setLineWidth(1);
-    border->setStyleSheet("QFrame { border: 1px solid #222; border-radius: 3px; background:#fff; }");
-    border->setFixedWidth(IMAGE_WIDTH);
-    QVBoxLayout* borderLayout = new QVBoxLayout(border);
-    borderLayout->setSpacing(0);
-    borderLayout->setContentsMargins(0,0,0,0);
+    // --- 메인 레이아웃 ---
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(8, 8, 8, 8); // 상하좌우 패딩 추가
+    mainLayout->setSpacing(0);
+
+    // --- 내용 컨테이너 (테두리 적용) ---
+    QWidget* container = new QWidget(this);
+    container->setObjectName("mainContainer");
+    container->setFixedWidth(IMAGE_WIDTH);
+    container->setStyleSheet("#mainContainer { background:#fff; border: none; }");
+    QVBoxLayout* containerLayout = new QVBoxLayout(container);
+    containerLayout->setSpacing(0);
+    containerLayout->setContentsMargins(4,4,4,4); // 컨테이너 내부 패딩 추가
+
+    mainLayout->addWidget(container);
+
+    // 커스텀 타이틀바 생성
+    QWidget* titleBar = new QWidget(this);
+    titleBar->setFixedHeight(35);
+    titleBar->setStyleSheet("background:#fff; border:none;");
+    QHBoxLayout* titleLayout = new QHBoxLayout(titleBar);
+    titleLayout->setContentsMargins(8, 2, 8, 2);
+    
+    // 아이콘 (선택사항)
+    QLabel* iconLabel = new QLabel(this);
+    iconLabel->setPixmap(QIcon(":/images/hanwha_icon.png").pixmap(20, 20));
+    titleLayout->addWidget(iconLabel);
+    
+    // 왼쪽 스페이서 (아이콘과 닫기 버튼 크기 차이를 보정)
+    titleLayout->addSpacing(20);
+    
+    // 제목 라벨 (가운데 정렬)
+    QLabel* titleLabel = new QLabel("이미지 상세정보", this);
+    titleLabel->setAlignment(Qt::AlignCenter);
+    titleLabel->setStyleSheet("font-size:16px; color:#333; font-weight:bold;");
+    titleLayout->addWidget(titleLabel, 1);
+    
+    // 닫기 버튼
+    QPushButton* closeBtn = new QPushButton("×", this);
+    closeBtn->setFixedSize(30, 30);
+    closeBtn->setStyleSheet("QPushButton { border:none; background:transparent; font-size:18px; color:#666; } QPushButton:hover { background:#f0f0f0; }");
+    connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
+    titleLayout->addWidget(closeBtn);
+    
+    containerLayout->addWidget(titleBar);
 
     // --- 1. 정보 테이블 부분 ---
     int rowCount = (plate != "-" && !plate.trimmed().isEmpty()) ? 3 : 2;
@@ -45,12 +89,12 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     table->setColumnWidth(1, IMAGE_WIDTH - 120 - 2);
     table->horizontalHeader()->hide();
     table->verticalHeader()->hide();
-    table->setShowGrid(true);
+    table->setShowGrid(false);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->setSelectionMode(QAbstractItemView::NoSelection);
     table->setStyleSheet(
         "QTableWidget, QHeaderView::section { background: #fff; border: none; }"
-        "QTableWidget::item { border-bottom: 1px solid #888; }"
+        "QTableWidget::item { border-bottom: 1px solid #888; border-left: none; border-right: none; border-top: none; }"
         );
 
     // 이벤트 유형
@@ -80,7 +124,7 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     table->setItem(curRow, 0, timeItem);
     table->setItem(curRow, 1, timeVal);
 
-    borderLayout->addWidget(table);
+    containerLayout->addWidget(table);
 
     // --- 2. 이미지 영역 ---
     imageLabel_ = new QLabel(this);
@@ -88,21 +132,22 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     imageLabel_->setAlignment(Qt::AlignCenter);
     imageLabel_->setStyleSheet("background:#ccc; border:none; color:#888; font-size:18px;");
     imageLabel_->setText("이미지");
-    borderLayout->addWidget(imageLabel_);
+    containerLayout->addWidget(imageLabel_);
 
     // --- 3. 파일이름 행 ---
     QHBoxLayout* fileRow = new QHBoxLayout;
     fileRow->setContentsMargins(8, 0, 8, 0);
 
-    // "파일 이름" 라벨 (border, background 제거)
+    // "파일 이름" 라벨
     QLabel* fileKey = new QLabel("파일 이름", this);
     fileKey->setMinimumWidth(64);
     fileKey->setStyleSheet("border:none; background:transparent; font-size:15px; color:#222;");
     fileRow->addWidget(fileKey);
 
-    // 파일명(하이퍼링크처럼)
+    // 파일명(하이퍼링크처럼) - 변환된 파일명 사용 (이벤트 타입 전달)
+    QString displayFilename = convertFilename(filename, event);
     filenameLabel_ = new QLabel(
-        QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;\">%1</a>").arg(filename), this);
+        QString("<a href=\"#\" style=\"color:#1976D2;text-decoration:underline;\">%1</a>").arg(displayFilename), this);
     filenameLabel_->setTextInteractionFlags(Qt::TextBrowserInteraction);
     filenameLabel_->setOpenExternalLinks(false);
     filenameLabel_->setStyleSheet("border:none; background:transparent; color:#1976D2; font-size:15px;");
@@ -114,36 +159,33 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     // Stretch for right-align download button
     fileRow->addStretch();
 
-    // 다운로드 버튼 (border, background 제거)
-    downloadButton_ = new QPushButton("⬇", this);
-    downloadButton_->setFixedWidth(28);
-    downloadButton_->setStyleSheet("border:none; background:transparent; font-size:15px; padding:0 2px;");
+    // 다운로드 버튼 - 리소스 이미지 사용
+    downloadButton_ = new QPushButton(this);
+    downloadButton_->setIcon(QIcon(":/images/download.png"));
+    downloadButton_->setFixedSize(24, 24);
+    downloadButton_->setStyleSheet("border:none; background:transparent; padding:0;");
     fileRow->addWidget(downloadButton_);
 
-    borderLayout->addLayout(fileRow);
-
-    // --- 전체를 수직으로 정렬 ---
-    QVBoxLayout* vLayout = new QVBoxLayout(this);
-    vLayout->addWidget(border, 1);
+    containerLayout->addLayout(fileRow);
 
     // --- 4. 인쇄/닫기 버튼 (중앙정렬) ---
     QHBoxLayout* btnLayout = new QHBoxLayout;
     btnLayout->addStretch();
     printButton_ = new QPushButton("인쇄", this);
-    printButton_->setFixedWidth(72);
-    printButton_->setStyleSheet("background:#F37321; color:white; font-weight:bold;");
+    printButton_->setFixedSize(72, 24);
+    printButton_->setStyleSheet("background:#F37321; color:black; font-weight:bold; border:none;");
     closeButton_ = new QPushButton("닫기", this);
-    closeButton_->setFixedWidth(72);
-    closeButton_->setStyleSheet("background:#FBB584; color:#333;");
+    closeButton_->setFixedSize(72, 24);
+    closeButton_->setStyleSheet("background:#FBB584; color:black; border:none;");
     btnLayout->addWidget(printButton_);
     btnLayout->addSpacing(20);
     btnLayout->addWidget(closeButton_);
     btnLayout->addStretch();
-    vLayout->addSpacing(8);
-    vLayout->addLayout(btnLayout);
+    
+    containerLayout->addSpacing(8);
+    containerLayout->addLayout(btnLayout);
 
-    setFixedWidth(IMAGE_WIDTH + 32); // 좌우 마진 여유 포함
-    setLayout(vLayout);
+    setFixedWidth(IMAGE_WIDTH + 18); // 패딩과 테두리 여백 포함 (8*2 + 2)
 
     // 버튼 연결
     connect(closeButton_, &QPushButton::clicked, this, &QDialog::accept);
@@ -174,9 +216,14 @@ void GetImageView::downloadImage() {
         return;
     }
     
+    // 변환된 파일명을 기본 파일명으로 사용
+    QString displayFilename = filenameLabel_->text();
+    // HTML 태그 제거
+    displayFilename = displayFilename.remove(QRegularExpression("<[^>]*>"));
+    
     QString fileName = QFileDialog::getSaveFileName(this, 
         "이미지 저장", 
-        QString("image_%1.jpg").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
+        QString("%1.jpg").arg(displayFilename),
         "JPEG Files (*.jpg);;PNG Files (*.png);;All Files (*)");
     
     if (!fileName.isEmpty()) {
@@ -219,5 +266,20 @@ void GetImageView::printToPdf() {
         painter.end();
         
         QMessageBox::information(this, "완료", "PDF가 저장되었습니다.");
+    }
+}
+
+void GetImageView::mousePressEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton) {
+        dragPosition_ = event->globalPosition().toPoint() - frameGeometry().topLeft();
+        dragging_ = true;
+        event->accept();
+    }
+}
+
+void GetImageView::mouseMoveEvent(QMouseEvent* event) {
+    if (event->buttons() & Qt::LeftButton && dragging_) {
+        move(event->globalPosition().toPoint() - dragPosition_);
+        event->accept();
     }
 }
