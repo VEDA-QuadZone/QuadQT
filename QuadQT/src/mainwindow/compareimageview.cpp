@@ -168,7 +168,14 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
 
     auto* rightTimeItem = new QTableWidgetItem("일시");
     rightTimeItem->setFont(labelBoldFont);
-    auto* rightTimeValItem = new QTableWidgetItem(datetime);
+    
+    // endFilename에서 시간 파싱
+    QString endDatetime = parseEndFilenameTimestamp(endFilename);
+    if (endDatetime.isEmpty()) {
+        endDatetime = datetime; // fallback to original datetime
+    }
+    
+    auto* rightTimeValItem = new QTableWidgetItem(endDatetime);
     rightTimeValItem->setTextAlignment(Qt::AlignCenter);
     rightTableWidget->setItem(1, 0, rightTimeItem);
     rightTableWidget->setItem(1, 1, rightTimeValItem);
@@ -476,4 +483,24 @@ void CompareImageView::hideEvent(QHideEvent* event) {
     }
     
     QDialog::hideEvent(event);
+}
+
+QString CompareImageView::parseEndFilenameTimestamp(const QString& filename) {
+    // endshot 파일명에서 시간 파싱 (YYYYMMDD_HHMMSS 형식)
+    QRegularExpression re(R"((\d{8})_(\d{6}))");
+    QRegularExpressionMatch match = re.match(filename);
+    if (!match.hasMatch()) return "";
+    
+    QString dateStr = match.captured(1); // YYYYMMDD
+    QString timeStr = match.captured(2); // HHMMSS
+    
+    if (dateStr.length() != 8 || timeStr.length() != 6) return "";
+    
+    return QString("%1-%2-%3 %4:%5:%6")
+        .arg(dateStr.mid(0, 4))  // year
+        .arg(dateStr.mid(4, 2))  // month
+        .arg(dateStr.mid(6, 2))  // day
+        .arg(timeStr.mid(0, 2))  // hour
+        .arg(timeStr.mid(2, 2))  // minute
+        .arg(timeStr.mid(4, 2)); // second
 }

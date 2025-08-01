@@ -14,6 +14,7 @@
 #include <QSet>
 #include <QMap>
 #include <QJsonObject>
+#include <QJsonArray>
 #include "getimageview.h"
 #include "compareimageview.h"
 #include "tcpimagehandler.h"
@@ -80,6 +81,9 @@ private:
     QString   endDate     = "";
     int       currentPage = 0;
     static constexpr int PAGE_SIZE = 16;
+    
+    // 클라이언트 사이드 필터링을 위한 전체 데이터 저장
+    QJsonArray allHistoryData;
 
     void requestPage();
     void setupPaginationUI();
@@ -96,10 +100,16 @@ private:
     QByteArray         startImageData_;
     QByteArray         endImageData_;
 private:
-    QString parseTimestampFromPath(const QString& path);
+    QString parseTimestampFromPath(const QString& path, const QString& eventType = "");
     QString findConfigFile();
     void loadDummyData(); // 더미 데이터 로드 함수
     QJsonObject createDummyHistoryResponse(); // 더미 히스토리 응답 생성
+    
+    // 파일명에서 날짜 추출하는 함수
+    QDate extractDateFromFilename(const QString& filename);
+    
+    // 클라이언트 사이드 날짜 필터링 함수
+    bool isDateInRange(const QDate& date, const QString& startDateStr, const QString& endDateStr);
 };
 
 #endif // HISTORYVIEW_H

@@ -83,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent)
     QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
     QSettings settings("config.ini", QSettings::IniFormat);
-    QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.0.10:8555/test").toString();
+    QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.219.68:8555/test").toString();
 
     rtspThread = new RtspThread(rtspUrl, this);
 

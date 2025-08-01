@@ -65,8 +65,8 @@ HEADERS += \
 
 # ====== FORMS (.ui) ======
 FORMS += \
-    loginpage.ui \
-    mainwindow.ui
+    ui/loginpage.ui \
+    ui/mainwindow.ui
 
 # ====== RESOURCES (.qrc) ======
 RESOURCES += \
