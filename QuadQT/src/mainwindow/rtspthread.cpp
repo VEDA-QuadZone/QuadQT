@@ -26,6 +26,16 @@ void RtspThread::run()
     while (m_running) {
         // RTSP 지연 최소화 설정
         cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+        
+        // RTSPS (RTSP over SSL)를 위한 SSL 인증서 경로 설정
+        if (m_url.startsWith("rtsps://")) {
+            qDebug() << "RTSPS 연결을 위한 SSL 환경 변수 설정";
+            qputenv("SSL_CERT_FILE", "ca.cert.pem");
+            qputenv("SSL_CERT_DIR", ".");
+            // 클라이언트 인증서도 설정 (상호 인증이 필요한 경우)
+            qputenv("SSL_CLIENT_CERT_FILE", "client.cert.pem");
+            qputenv("SSL_CLIENT_KEY_FILE", "client.key.pem");
+        }
 
         if (!cap.open(m_url.toStdString(), cv::CAP_FFMPEG)) {
             qWarning() << "❌ RTSP 스트림 열기 실패:" << m_url;

@@ -9,14 +9,32 @@ QString convertFilename(const QString& originalPath, const QString& eventType) {
         filename = filename.mid(7); // "images/" 제거
     }
     
-    // 파일명에서 타임스탬프 추출 (YYYYMMDD_HHMMSS 형식)
-    QRegularExpression timestampRegex("(\\d{8})_(\\d{6})");
-    QRegularExpressionMatch timestampMatch = timestampRegex.match(filename);
     QString timeStr = "";
-    if (timestampMatch.hasMatch()) {
-        QString dateStr = timestampMatch.captured(1); // YYYYMMDD
-        QString timeOnlyStr = timestampMatch.captured(2); // HHMMSS
-        timeStr = QString("%1_%2").arg(dateStr, timeOnlyStr);
+    
+    // 과속감지일 경우 뒷쪽 타임스탬프 우선 시도 (YYYY-MM-DD_HH-MM-SS 형식)
+    if (eventType == "과속감지") {
+        QRegularExpression backTimestampRegex("(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})-(\\d{2})-(\\d{2})");
+        QRegularExpressionMatch backMatch = backTimestampRegex.match(filename);
+        if (backMatch.hasMatch()) {
+            QString year = backMatch.captured(1);
+            QString month = backMatch.captured(2);
+            QString day = backMatch.captured(3);
+            QString hour = backMatch.captured(4);
+            QString minute = backMatch.captured(5);
+            QString second = backMatch.captured(6);
+            timeStr = QString("%1%2%3_%4%5%6").arg(year, month, day, hour, minute, second);
+        }
+    }
+    
+    // 뒷쪽 시간이 없거나 과속감지가 아닌 경우 앞쪽 타임스탬프 사용 (YYYYMMDD_HHMMSS 형식)
+    if (timeStr.isEmpty()) {
+        QRegularExpression frontTimestampRegex("(\\d{8})_(\\d{6})");
+        QRegularExpressionMatch frontMatch = frontTimestampRegex.match(filename);
+        if (frontMatch.hasMatch()) {
+            QString dateStr = frontMatch.captured(1); // YYYYMMDD
+            QString timeOnlyStr = frontMatch.captured(2); // HHMMSS
+            timeStr = QString("%1_%2").arg(dateStr, timeOnlyStr);
+        }
     }
     
     // person으로 시작하는 경우

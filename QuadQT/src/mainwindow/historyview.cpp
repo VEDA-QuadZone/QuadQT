@@ -159,6 +159,7 @@ HistoryView::HistoryView(QWidget *parent)
     auto addF=[&](auto txt){
         QAction* a=fm->addAction(txt);
         connect(a,&QAction::triggered,this,[this,txt](){
+            qDebug() << "필터 선택됨:" << txt;
             currentFilter=txt;
             // "전체보기" 선택 시 버튼 텍스트는 "유형"으로 표시
             if (txt == "전체보기") {
@@ -167,6 +168,7 @@ HistoryView::HistoryView(QWidget *parent)
                 filterButton->setText(txt);
             }
             currentPage=0;
+            qDebug() << "필터 적용 후 requestPage 호출, currentFilter:" << currentFilter;
             requestPage();
         });
     };
@@ -191,6 +193,7 @@ HistoryView::HistoryView(QWidget *parent)
         endDate.clear();
         startDateButton->setText("시작일 선택하기");
         endDateButton->setText("종료일 선택하기");
+        qDebug() << "새로고침 - 날짜 초기화 완료. startDate:" << startDate << "endDate:" << endDate;
         
         // 체크된 항목들 모두 해제
         selectedRecordIds.clear();
@@ -382,21 +385,40 @@ HistoryView::HistoryView(QWidget *parent)
     });
 }
 
-QString HistoryView::parseTimestampFromPath(const QString& path) {
-    QRegularExpression re(R"(20\d{6}_\d{6})");
+QString HistoryView::parseTimestampFromPath(const QString& path, const QString& eventType) {
+    // 과속감지일 경우 뒷쪽 타임스탬프 우선 시도 (YYYY-MM-DD_HH-MM-SS 형식)
+    if (eventType == "과속감지") {
+        QRegularExpression backRe(R"((\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2}))");
+        QRegularExpressionMatch backMatch = backRe.match(path);
+        if (backMatch.hasMatch()) {
+            return QString("%1-%2-%3 %4:%5:%6")
+                .arg(backMatch.captured(1))  // year
+                .arg(backMatch.captured(2))  // month
+                .arg(backMatch.captured(3))  // day
+                .arg(backMatch.captured(4))  // hour
+                .arg(backMatch.captured(5))  // minute
+                .arg(backMatch.captured(6)); // second
+        }
+        // 뒷쪽 시간이 없으면 앞쪽 시간으로 fallback (과속감지도 앞쪽 시간 사용)
+    }
+    
+    // 앞쪽 타임스탬프 사용 (YYYYMMDD_HHMMSS 형식)
+    QRegularExpression re(R"((\d{8})_(\d{6}))");
     QRegularExpressionMatch match = re.match(path);
     if (!match.hasMatch()) return "";
-    QString raw = match.captured();
-    if (raw.length() != 15) return "";
-    QString date = raw.mid(0, 8);
-    QString time = raw.mid(9, 6);
+    
+    QString dateStr = match.captured(1); // YYYYMMDD
+    QString timeStr = match.captured(2); // HHMMSS
+    
+    if (dateStr.length() != 8 || timeStr.length() != 6) return "";
+    
     return QString("%1-%2-%3 %4:%5:%6")
-        .arg(date.mid(0, 4))
-        .arg(date.mid(4, 2))
-        .arg(date.mid(6, 2))
-        .arg(time.mid(0, 2))
-        .arg(time.mid(2, 2))
-        .arg(time.mid(4, 2));
+        .arg(dateStr.mid(0, 4))  // year
+        .arg(dateStr.mid(4, 2))  // month
+        .arg(dateStr.mid(6, 2))  // day
+        .arg(timeStr.mid(0, 2))  // hour
+        .arg(timeStr.mid(2, 2))  // minute
+        .arg(timeStr.mid(4, 2)); // second
 }
 
 void HistoryView::onImageCellClicked(int row, int col) {
@@ -444,8 +466,6 @@ void HistoryView::onImageCellClicked(int row, int col) {
 
         // 두 이미지 경로가 모두 있는 경우에만 비교 창 표시
         if (!startPath.isEmpty() && !endPath.isEmpty() && startPath != "-" && endPath != "-") {
-            QString timestamp = parseTimestampFromPath(startPath);
-
             // 유형 정보 가져오기 (3번 열에서)
             QString eventType = "";
             QWidget* typeCell = tableWidget->cellWidget(row, 3);
@@ -455,6 +475,8 @@ void HistoryView::onImageCellClicked(int row, int col) {
                     eventType = typeLabel->text();
                 }
             }
+            
+            QString timestamp = parseTimestampFromPath(startPath, eventType);
 
             // 번호판 정보 가져오기 (6번 열에서)
             QString plate = "";
@@ -504,8 +526,6 @@ void HistoryView::onImageCellClicked(int row, int col) {
     }
     if (path.isEmpty()) path = "-";
 
-    QString timestamp = parseTimestampFromPath(path);
-
     // 유형 정보 가져오기 (3번 열에서)
     QString eventType = "";
     QWidget* typeCell = tableWidget->cellWidget(row, 3);
@@ -515,6 +535,8 @@ void HistoryView::onImageCellClicked(int row, int col) {
             eventType = typeLabel->text();
         }
     }
+
+    QString timestamp = parseTimestampFromPath(path, eventType);
 
     // 번호판 정보 가져오기 (6번 열에서)
     QString plate = "";
@@ -614,23 +636,24 @@ void HistoryView::requestPage()
         return;
     }
 
-    int offset = currentPage * PAGE_SIZE;
+    // int offset = currentPage * PAGE_SIZE; // 클라이언트 사이드 필터링으로 인해 사용하지 않음
     static const QMap<QString,int> filterMap = {
         {"주정차감지",0},{"과속감지",1},{"보행자감지",2}
     };
 
+    qDebug() << "requestPage 호출 - 현재 필터:" << currentFilter << "시작일:" << startDate << "종료일:" << endDate;
+
+    // 클라이언트 사이드 필터링을 위해 더 많은 데이터를 요청 (페이지 크기를 크게 설정)
+    int largePageSize = 1000; // 충분히 큰 페이지 크기로 설정
+    
     if (currentFilter.isEmpty() || currentFilter == "전체보기") {
-        if (!startDate.isEmpty() && !endDate.isEmpty())
-            tcpHandler_->getHistoryByDateRange(currentEmail,startDate,endDate,PAGE_SIZE,offset);
-        else
-            tcpHandler_->getHistory(currentEmail,PAGE_SIZE,offset);
+        qDebug() << "전체 히스토리 요청 (클라이언트 사이드 필터링)";
+        tcpHandler_->getHistory(currentEmail, largePageSize, 0);
     } else {
         int et = filterMap.value(currentFilter,-1);
         if (et<0) return;
-        if (!startDate.isEmpty() && !endDate.isEmpty())
-            tcpHandler_->getHistoryByEventTypeAndDateRange(currentEmail,et,startDate,endDate,PAGE_SIZE,offset);
-        else
-            tcpHandler_->getHistoryByEventType(currentEmail,et,PAGE_SIZE,offset);
+        qDebug() << "이벤트 타입으로 히스토리 요청 (클라이언트 사이드 필터링):" << currentFilter;
+        tcpHandler_->getHistoryByEventType(currentEmail, et, largePageSize, 0);
     }
 }
 
@@ -638,12 +661,69 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
 {
     tableWidget->clearContents();
     QJsonArray arr = resp.value("data").toArray();
-    int count = arr.size();
+    
+    // 새로운 데이터를 받은 경우에만 전체 데이터 업데이트
+    if (currentPage == 0) {
+        allHistoryData = arr;
+        qDebug() << "전체 히스토리 데이터 업데이트:" << allHistoryData.size() << "개";
+    }
+    
+    // 저장된 전체 데이터에서 클라이언트 사이드 필터링 (유형 + 날짜)
+    QJsonArray filteredArr;
+    qDebug() << "필터링 시작 - 유형:" << currentFilter << "날짜 범위:" << startDate << "~" << endDate;
+    
+    // 유형 필터 매핑
+    static const QMap<QString,int> filterMap = {
+        {"주정차감지",0},{"과속감지",1},{"보행자감지",2}
+    };
+    
+    for (int i = 0; i < allHistoryData.size(); ++i) {
+        auto obj = allHistoryData.at(i).toObject();
+        QString imagePath = obj.value("image_path").toString();
+        int eventType = obj.value("event_type").toInt();
+        
+        // 처음 5개만 상세 로그 출력
+        if (i < 5) {
+            qDebug() << "샘플" << i << ":" << imagePath << "유형:" << eventType;
+        }
+        
+        // 유형 필터링 체크
+        bool typeMatches = true;
+        if (!currentFilter.isEmpty() && currentFilter != "전체보기") {
+            int expectedType = filterMap.value(currentFilter, -1);
+            if (expectedType >= 0 && eventType != expectedType) {
+                typeMatches = false;
+            }
+        }
+        
+        // 날짜 필터링 체크
+        QDate fileDate = extractDateFromFilename(imagePath);
+        bool dateMatches = isDateInRange(fileDate, startDate, endDate);
+        
+        // 두 조건 모두 만족하는 경우만 추가
+        if (typeMatches && dateMatches) {
+            filteredArr.append(obj);
+        }
+    }
+    
+    // 페이지네이션 적용
+    int totalFiltered = filteredArr.size();
+    int startIndex = currentPage * PAGE_SIZE;
+    int endIndex = qMin(startIndex + PAGE_SIZE, totalFiltered);
+    
+    QJsonArray pageArr;
+    for (int i = startIndex; i < endIndex; ++i) {
+        pageArr.append(filteredArr.at(i));
+    }
+    
+    int count = pageArr.size();
     tableWidget->setRowCount(count);
+    
+    qDebug() << "필터링 결과: 전체" << allHistoryData.size() << "개 중" << totalFiltered << "개 필터링됨, 현재 페이지:" << count << "개 표시";
 
     static const QStringList typeNames = {"주정차감지","과속감지","보행자감지"};
     for (int i = 0; i < count; ++i) {
-        auto obj = arr.at(i).toObject();
+        auto obj = pageArr.at(i).toObject();
         int id = obj.value("id").toInt();
         recordDataMap[id] = obj;
 
@@ -680,9 +760,13 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             updateTypeColumnBackground();
         });
 
+        // 유형 정보 먼저 가져오기
+        int et = obj.value("event_type").toInt();
+        QString eventTypeStr = (et>=0&&et<typeNames.size()?typeNames[et]:QString::number(et));
+
         // 날짜 (ID 저장) - 커스텀 위젯으로 변경
         QString imagePath = obj.value("image_path").toString();
-        QString parsedTime = parseTimestampFromPath(imagePath);
+        QString parsedTime = parseTimestampFromPath(imagePath, eventTypeStr);
         QString dateText = parsedTime.isEmpty() ? obj.value("date").toString() : parsedTime;
 
         QWidget* dateCell = new QWidget(this);
@@ -707,10 +791,8 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
         tableWidget->setCellWidget(i, 2, paddingCell2);
 
         // 유형
-        int et = obj.value("event_type").toInt();
-        QString ts = (et>=0&&et<typeNames.size()?typeNames[et]:QString::number(et));
         QWidget* tc = new QWidget(this);
-        QLabel* lb = new QLabel(ts,tc);
+        QLabel* lb = new QLabel(eventTypeStr,tc);
         lb->setStyleSheet("background-color:#E0E0E0;border-radius:8px;padding:2px 6px;");
         lb->setAlignment(Qt::AlignCenter);
         auto* tl = new QHBoxLayout(tc);
@@ -792,9 +874,11 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
 
         tableWidget->setCellWidget(i, 7, speedCell);
 
-        // 정차 시작 이미지 열 (8번) - 아이콘 또는 "-" 표시
+        // 정차 시작 이미지 열 (8번) - 주정차감지일 때만 빈 값도 아이콘 표시
         QString startSnapshot = obj.value("start_snapshot").toString();
-        if (!startSnapshot.isEmpty()) {
+        
+        // 주정차감지(event_type == 0)일 때는 빈 값이어도 아이콘 표시, 다른 유형은 빈 값일 때 "-" 표시
+        if (!startSnapshot.isEmpty() || et == 0) {
             // 커스텀 위젯으로 아이콘을 중앙에 배치
             QWidget* startCell = new QWidget(this);
             QLabel* startLabel = new QLabel(startCell);
@@ -813,9 +897,9 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             tableWidget->setCellWidget(i, 8, startCell);
 
             // 빈 아이템도 설정 (클릭 이벤트를 위해)
-            QTableWidgetItem* emptyItem = new QTableWidgetItem();
-            emptyItem->setData(Qt::UserRole, startSnapshot);
-            tableWidget->setItem(i, 8, emptyItem);
+            QTableWidgetItem* startEmptyItem = new QTableWidgetItem();
+            startEmptyItem->setData(Qt::UserRole, startSnapshot);
+            tableWidget->setItem(i, 8, startEmptyItem);
         } else {
             // "-" 텍스트도 커스텀 위젯으로 변경
             QWidget* startCell = new QWidget(this);
@@ -831,9 +915,11 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             tableWidget->setCellWidget(i, 8, startCell);
         }
 
-        // 1분 경과 이미지 열 (9번) - 아이콘 또는 "-" 표시
+        // 1분 경과 이미지 열 (9번) - 주정차감지일 때만 빈 값도 아이콘 표시
         QString endSnapshot = obj.value("end_snapshot").toString();
-        if (!endSnapshot.isEmpty()) {
+        
+        // 주정차감지(event_type == 0)일 때는 빈 값이어도 아이콘 표시, 다른 유형은 빈 값일 때 "-" 표시
+        if (!endSnapshot.isEmpty() || et == 0) {
             // 커스텀 위젯으로 아이콘을 중앙에 배치
             QWidget* endCell = new QWidget(this);
             QLabel* endLabel = new QLabel(endCell);
@@ -852,9 +938,9 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
             tableWidget->setCellWidget(i, 9, endCell);
 
             // 빈 아이템도 설정 (클릭 이벤트를 위해)
-            QTableWidgetItem* emptyItem = new QTableWidgetItem();
-            emptyItem->setData(Qt::UserRole, endSnapshot);
-            tableWidget->setItem(i, 9, emptyItem);
+            QTableWidgetItem* endEmptyItem = new QTableWidgetItem();
+            endEmptyItem->setData(Qt::UserRole, endSnapshot);
+            tableWidget->setItem(i, 9, endEmptyItem);
         } else {
             // "-" 텍스트도 커스텀 위젯으로 변경
             QWidget* endCell = new QWidget(this);
@@ -871,9 +957,10 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
         }
     }
 
-    // 페이징 업데이트
+    // 페이징 업데이트 (필터링된 전체 데이터 기준)
     prevButton->setVisible(currentPage > 0);  // 1페이지일 때 숨김
-    nextButton->setVisible(count == PAGE_SIZE);  // 마지막 페이지일 때 숨김
+    bool hasNextPage = (startIndex + PAGE_SIZE) < totalFiltered;
+    nextButton->setVisible(hasNextPage);  // 다음 페이지가 있을 때만 표시
     pageLabel->setText(QString::number(currentPage + 1));
 
     // 헤더 체크박스 리셋 & 동기화
@@ -963,12 +1050,22 @@ void HistoryView::updateTypeColumnBackground()
 
 void HistoryView::prevPage()
 {
-    if (currentPage > 0) { --currentPage; requestPage(); }
+    if (currentPage > 0) { 
+        --currentPage; 
+        // 저장된 데이터로 페이지 업데이트 (서버 요청 없이)
+        QJsonObject dummyResp;
+        dummyResp["data"] = allHistoryData;
+        onHistoryData(dummyResp);
+    }
 }
 
 void HistoryView::nextPage()
 {
-    ++currentPage; requestPage();
+    ++currentPage; 
+    // 저장된 데이터로 페이지 업데이트 (서버 요청 없이)
+    QJsonObject dummyResp;
+    dummyResp["data"] = allHistoryData;
+    onHistoryData(dummyResp);
 }
 
 void HistoryView::setupPaginationUI()
@@ -1422,13 +1519,28 @@ void HistoryView::dateSelected()
 
     calendarContainer->hide();
 
-    // 두 날짜가 모두 선택되었는지 확인
-    if (!startDateButton->text().isEmpty() && !endDateButton->text().isEmpty() &&
-        startDateButton->text() != "시작일 선택하기" && endDateButton->text() != "종료일 선택하기") {
-
-        // 날짜 문자열을 QDate로 변환하여 비교
-        QDate startDateObj = QDate::fromString(startDateButton->text(), "yyyy-MM-dd");
-        QDate endDateObj = QDate::fromString(endDateButton->text(), "yyyy-MM-dd");
+    // 날짜 설정 및 필터링 실행
+    QString currentStartText = startDateButton->text();
+    QString currentEndText = endDateButton->text();
+    
+    // 시작일 설정
+    if (currentStartText != "시작일 선택하기") {
+        startDate = currentStartText;
+    } else {
+        startDate = "";
+    }
+    
+    // 종료일 설정
+    if (currentEndText != "종료일 선택하기") {
+        endDate = currentEndText;
+    } else {
+        endDate = "";
+    }
+    
+    // 두 날짜가 모두 설정된 경우 유효성 검사
+    if (!startDate.isEmpty() && !endDate.isEmpty()) {
+        QDate startDateObj = QDate::fromString(startDate, "yyyy-MM-dd");
+        QDate endDateObj = QDate::fromString(endDate, "yyyy-MM-dd");
 
         // 시작날짜가 종료날짜보다 늦은지 확인
         if (startDateObj > endDateObj) {
@@ -1436,17 +1548,24 @@ void HistoryView::dateSelected()
                                  QString("시작날짜가 종료날짜보다 늦을 수 없습니다.\n\n"
                                          "현재 선택된 날짜:\n"
                                          "시작날짜: %1\n"
-                                         "종료날짜: %2\n\n"
+                                         "종료일: %2\n\n"
                                          "올바른 날짜 범위를 선택해주세요.")
-                                     .arg(startDateButton->text())
-                                     .arg(endDateButton->text()));
+                                     .arg(startDate)
+                                     .arg(endDate));
             return;
         }
+    }
 
-        // 날짜가 유효하면 검색 실행
-        startDate = startDateButton->text();
-        endDate   = endDateButton->text();
-        currentPage = 0;
+    // 하나라도 날짜가 설정되면 필터링 실행
+    qDebug() << "날짜 필터 설정 - 시작일:" << startDate << "종료일:" << endDate;
+    currentPage = 0;
+    
+    // 저장된 데이터가 있으면 바로 필터링, 없으면 서버에서 데이터 요청
+    if (!allHistoryData.isEmpty()) {
+        QJsonObject dummyResp;
+        dummyResp["data"] = allHistoryData;
+        onHistoryData(dummyResp);
+    } else {
         requestPage();
     }
 }
@@ -1610,3 +1729,77 @@ QJsonObject HistoryView::createDummyHistoryResponse()
 }
 
 
+QDate HistoryView::extractDateFromFilename(const QString& filename) {
+    // 과속감지일 경우 뒷쪽 날짜 우선 시도 (YYYY-MM-DD 형식)
+    QRegularExpression backDateRegex(R"((\d{4})-(\d{2})-(\d{2}))");
+    QRegularExpressionMatch backMatch = backDateRegex.match(filename);
+    if (backMatch.hasMatch()) {
+        int year = backMatch.captured(1).toInt();
+        int month = backMatch.captured(2).toInt();
+        int day = backMatch.captured(3).toInt();
+        QDate result = QDate(year, month, day);
+        qDebug() << "뒷쪽 날짜 파싱:" << filename << "→" << result.toString("yyyy-MM-dd");
+        return result;
+    }
+    
+    // 앞쪽 날짜 시도 (YYYYMMDD 형식)
+    QRegularExpression frontDateRegex(R"((\d{8}))");
+    QRegularExpressionMatch frontMatch = frontDateRegex.match(filename);
+    if (frontMatch.hasMatch()) {
+        QString dateStr = frontMatch.captured(1);
+        if (dateStr.length() == 8) {
+            int year = dateStr.mid(0, 4).toInt();
+            int month = dateStr.mid(4, 2).toInt();
+            int day = dateStr.mid(6, 2).toInt();
+            QDate result = QDate(year, month, day);
+            qDebug() << "앞쪽 날짜 파싱:" << filename << "→" << result.toString("yyyy-MM-dd");
+            return result;
+        }
+    }
+    
+    qDebug() << "날짜 파싱 실패:" << filename;
+    return QDate(); // 유효하지 않은 날짜 반환
+}
+
+bool HistoryView::isDateInRange(const QDate& date, const QString& startDateStr, const QString& endDateStr) {
+    if (!date.isValid()) {
+        return false;
+    }
+    
+    // 날짜 범위가 전혀 설정되지 않은 경우 모든 날짜 허용
+    if (startDateStr.isEmpty() && endDateStr.isEmpty()) {
+        return true;
+    }
+    
+    QDate startDate = QDate::fromString(startDateStr, "yyyy-MM-dd");
+    QDate endDate = QDate::fromString(endDateStr, "yyyy-MM-dd");
+    
+    // 시작일만 설정된 경우
+    if (!startDateStr.isEmpty() && endDateStr.isEmpty()) {
+        if (startDate.isValid()) {
+            bool result = date >= startDate;
+            qDebug() << "시작일만 설정 - 날짜:" << date.toString("yyyy-MM-dd") << "시작일:" << startDateStr << "결과:" << result;
+            return result;
+        }
+        return true;
+    }
+    
+    // 종료일만 설정된 경우
+    if (startDateStr.isEmpty() && !endDateStr.isEmpty()) {
+        if (endDate.isValid()) {
+            bool result = date <= endDate;
+            qDebug() << "종료일만 설정 - 날짜:" << date.toString("yyyy-MM-dd") << "종료일:" << endDateStr << "결과:" << result;
+            return result;
+        }
+        return true;
+    }
+    
+    // 시작일과 종료일이 모두 설정된 경우
+    if (startDate.isValid() && endDate.isValid()) {
+        bool result = date >= startDate && date <= endDate;
+        qDebug() << "시작일+종료일 설정 - 날짜:" << date.toString("yyyy-MM-dd") << "범위:" << startDateStr << "~" << endDateStr << "결과:" << result;
+        return result;
+    }
+    
+    return true;
+}

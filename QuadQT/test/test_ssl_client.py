@@ -18,7 +18,7 @@ def test_ssl_connection():
     
     try:
         # 클라이언트 인증서 로드 (상호 인증용)
-        context.load_cert_chain("../client.cert.pem", "../client.key.pem")
+        context.load_cert_chain("../resources/certs/client.cert.pem", "../resources/certs/client.key.pem")
         print("클라이언트 인증서 로드 완료")
     except Exception as e:
         print(f"클라이언트 인증서 로드 실패: {e}")
@@ -26,7 +26,7 @@ def test_ssl_connection():
     
     try:
         # CA 인증서 로드
-        context.load_verify_locations("../ca.cert.pem")
+        context.load_verify_locations("../resources/certs/ca.cert.pem")
         print("CA 인증서 로드 완료")
     except Exception as e:
         print(f"CA 인증서 로드 실패: {e}")

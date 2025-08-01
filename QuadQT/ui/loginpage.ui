@@ -150,7 +150,7 @@ background-color: #FFFFFF;</string>
         <number>25</number>
        </property>
        <property name="topMargin">
-        <number>15</number>
+        <number>25</number>
        </property>
        <property name="rightMargin">
         <number>25</number>
@@ -171,7 +171,7 @@ background-color: #FFFFFF;</string>
           <string notr="true">color: #333333;</string>
          </property>
          <property name="text">
-          <string>Email</string>
+          <string>이메일</string>
          </property>
         </widget>
        </item>
@@ -226,7 +226,7 @@ QLineEdit:focus {
           <string notr="true">color: #333333;</string>
          </property>
          <property name="text">
-          <string>Password</string>
+          <string>비밀번호</string>
          </property>
         </widget>
        </item>
@@ -322,7 +322,7 @@ QPushButton:pressed {
 }</string>
          </property>
          <property name="text">
-          <string>Sign In</string>
+          <string>로그인</string>
          </property>
         </widget>
        </item>
@@ -362,7 +362,7 @@ QPushButton:hover {
 }</string>
            </property>
            <property name="text">
-            <string>Forgot password?</string>
+            <string>비밀번호 찾기</string>
            </property>
           </widget>
          </item>
@@ -412,7 +412,7 @@ QPushButton:hover {
 }</string>
            </property>
            <property name="text">
-            <string>Register</string>
+            <string>회원가입</string>
            </property>
           </widget>
          </item>
@@ -454,7 +454,7 @@ QPushButton:hover {
         <number>25</number>
        </property>
        <property name="topMargin">
-        <number>15</number>
+        <number>25</number>
        </property>
        <property name="rightMargin">
         <number>25</number>
@@ -475,7 +475,7 @@ QPushButton:hover {
           <string notr="true">color: #333333;</string>
          </property>
          <property name="text">
-          <string>Email</string>
+          <string>이메일</string>
          </property>
         </widget>
        </item>
@@ -530,7 +530,7 @@ QLineEdit:focus {
           <string notr="true">color: #333333;</string>
          </property>
          <property name="text">
-          <string>Password</string>
+          <string>비밀번호</string>
          </property>
         </widget>
        </item>
@@ -626,7 +626,7 @@ QPushButton:pressed {
 }</string>
          </property>
          <property name="text">
-          <string>Register</string>
+          <string>회원가입</string>
          </property>
         </widget>
        </item>
@@ -663,7 +663,7 @@ QPushButton:hover {
 }</string>
          </property>
          <property name="text">
-          <string>Back to Sign In</string>
+          <string>로그인으로 돌아가기</string>
          </property>
         </widget>
        </item>
@@ -703,7 +703,7 @@ QPushButton:hover {
         <number>25</number>
        </property>
        <property name="topMargin">
-        <number>15</number>
+        <number>25</number>
        </property>
        <property name="rightMargin">
         <number>25</number>
@@ -724,7 +724,7 @@ QPushButton:hover {
           <string notr="true">color: #333333;</string>
          </property>
          <property name="text">
-          <string>Email</string>
+          <string>이메일</string>
          </property>
         </widget>
        </item>
@@ -779,7 +779,7 @@ QLineEdit:focus {
           <string notr="true">color: #333333;</string>
          </property>
          <property name="text">
-          <string>New Password</string>
+          <string>새 비밀번호</string>
          </property>
         </widget>
        </item>
@@ -878,7 +878,7 @@ QPushButton:pressed {
 }</string>
            </property>
            <property name="text">
-            <string>Cancel</string>
+            <string>취소</string>
            </property>
           </widget>
          </item>
@@ -920,7 +920,7 @@ QPushButton:pressed {
 }</string>
            </property>
            <property name="text">
-            <string>Reset Password</string>
+            <string>비밀번호 재설정</string>
            </property>
           </widget>
          </item>

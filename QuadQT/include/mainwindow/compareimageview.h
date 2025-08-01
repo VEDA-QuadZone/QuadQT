@@ -61,4 +61,7 @@ private:
     
     // 오버레이 효과
     OverlayWidget* overlay_;
+    
+    // 파일명에서 시간 파싱하는 함수
+    QString parseEndFilenameTimestamp(const QString& filename);
 };

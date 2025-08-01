@@ -19,9 +19,9 @@ class SSLLoginServer:
         self.socket = None
         
         # SSL 인증서 파일 경로 (서버용)
-        self.ca_cert_file = "../ca.cert.pem"
-        self.server_cert_file = "../client.cert.pem"  # 임시로 클라이언트 인증서 사용
-        self.server_key_file = "../client.key.pem"   # 임시로 클라이언트 개인키 사용
+        self.ca_cert_file = "../resources/certs/ca.cert.pem"
+        self.server_cert_file = "../resources/certs/client.cert.pem"  # 임시로 클라이언트 인증서 사용
+        self.server_key_file = "../resources/certs/client.key.pem"   # 임시로 클라이언트 개인키 사용
         
     def start(self):
         # SSL 컨텍스트 생성
