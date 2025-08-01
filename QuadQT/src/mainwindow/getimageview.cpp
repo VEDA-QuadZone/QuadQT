@@ -1,5 +1,6 @@
 #include "mainwindow/getimageview.h"
 #include "mainwindow/filenameutils.h"
+#include "mainwindow/overlaywidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFileInfo>
@@ -25,7 +26,7 @@ constexpr int IMAGE_HEIGHT = 240;
 
 GetImageView::GetImageView(const QString& event, const QString& plate,
                            const QString& datetime, const QString& filename, QWidget* parent)
-    : QDialog(parent), dragging_(false)
+    : QDialog(parent), dragging_(false), overlay_(nullptr)
 {
     // 이벤트 타입을 멤버 변수로 저장
     eventType_ = event;
@@ -36,17 +37,17 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
 
     // --- 메인 레이아웃 ---
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(8, 8, 8, 8); // 상하좌우 패딩 추가
+    mainLayout->setContentsMargins(24, 8, 8, 12); // 좌측 패딩을 24px로, 하단 패딩을 12px로 증가
     mainLayout->setSpacing(0);
 
-    // --- 내용 컨테이너 (테두리 적용) ---
+    // --- 내용 컨테이너 (테두리 제거) ---
     QWidget* container = new QWidget(this);
     container->setObjectName("mainContainer");
     container->setFixedWidth(IMAGE_WIDTH);
     container->setStyleSheet("#mainContainer { background:#fff; border: none; }");
     QVBoxLayout* containerLayout = new QVBoxLayout(container);
     containerLayout->setSpacing(0);
-    containerLayout->setContentsMargins(4,4,4,4); // 컨테이너 내부 패딩 추가
+    containerLayout->setContentsMargins(4,4,4,4); // 컨테이너 내부 패딩 유지
 
     mainLayout->addWidget(container);
 
@@ -92,6 +93,9 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     table->setShowGrid(false);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table->setSelectionMode(QAbstractItemView::NoSelection);
+    table->setFocusPolicy(Qt::NoFocus);
+    table->setAttribute(Qt::WA_TransparentForMouseEvents, false);
+    table->setEnabled(true);
     table->setStyleSheet(
         "QTableWidget, QHeaderView::section { background: #fff; border: none; }"
         "QTableWidget::item { border-bottom: 1px solid #888; border-left: none; border-right: none; border-top: none; }"
@@ -102,8 +106,10 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     QFont labelBoldFont = typeItem->font();
     labelBoldFont.setBold(true);
     typeItem->setFont(labelBoldFont);
+    typeItem->setFlags(typeItem->flags() & ~Qt::ItemIsSelectable);
     auto* typeVal  = new QTableWidgetItem(event);
     typeVal->setTextAlignment(Qt::AlignCenter);
+    typeVal->setFlags(typeVal->flags() & ~Qt::ItemIsSelectable);
     table->setItem(0, 0, typeItem);
     table->setItem(0, 1, typeVal);
 
@@ -112,8 +118,10 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     if (plate != "-" && !plate.trimmed().isEmpty()) {
         auto* plateItem = new QTableWidgetItem("번호판");
         plateItem->setFont(labelBoldFont);
+        plateItem->setFlags(plateItem->flags() & ~Qt::ItemIsSelectable);
         auto* plateVal  = new QTableWidgetItem(plate);
         plateVal->setTextAlignment(Qt::AlignCenter);
+        plateVal->setFlags(plateVal->flags() & ~Qt::ItemIsSelectable);
         table->setItem(curRow, 0, plateItem);
         table->setItem(curRow, 1, plateVal);
         ++curRow;
@@ -121,8 +129,10 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     // 일시 (레이블만 bold)
     auto* timeItem = new QTableWidgetItem("일시");
     timeItem->setFont(labelBoldFont);
+    timeItem->setFlags(timeItem->flags() & ~Qt::ItemIsSelectable);
     auto* timeVal  = new QTableWidgetItem(datetime);
     timeVal->setTextAlignment(Qt::AlignCenter);
+    timeVal->setFlags(timeVal->flags() & ~Qt::ItemIsSelectable);
     table->setItem(curRow, 0, timeItem);
     table->setItem(curRow, 1, timeVal);
 
@@ -130,7 +140,7 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
 
     // --- 2. 이미지 영역 ---
     imageLabel_ = new QLabel(this);
-    imageLabel_->setFixedSize(IMAGE_WIDTH, IMAGE_HEIGHT);
+    imageLabel_->setFixedSize(IMAGE_WIDTH - 27, IMAGE_HEIGHT); // 컨테이너 패딩과 여백을 더 고려
     imageLabel_->setAlignment(Qt::AlignCenter);
     imageLabel_->setStyleSheet("background:#ccc; border:none; color:#888; font-size:18px;");
     imageLabel_->setText("이미지");
@@ -176,7 +186,7 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     btnLayout->addStretch();
     printButton_ = new QPushButton("인쇄", this);
     printButton_->setFixedSize(72, 24);
-    printButton_->setStyleSheet("background:#F37321; color:black; border:none;");
+    printButton_->setStyleSheet("background:rgba(243, 115, 33, 0.8); color:black; border:none;");
     closeButton_ = new QPushButton("닫기", this);
     closeButton_->setFixedSize(72, 24);
     closeButton_->setStyleSheet("background:#FBB584; color:black; border:none;");
@@ -188,7 +198,7 @@ GetImageView::GetImageView(const QString& event, const QString& plate,
     containerLayout->addSpacing(8);
     containerLayout->addLayout(btnLayout);
 
-    setFixedWidth(IMAGE_WIDTH + 18); // 패딩과 테두리 여백 포함 (8*2 + 2)
+    setFixedWidth(IMAGE_WIDTH + 34); // 패딩과 테두리 여백 포함 (24+8+2)
 
     // 버튼 연결
     connect(closeButton_, &QPushButton::clicked, this, &QDialog::accept);
@@ -207,8 +217,8 @@ void GetImageView::setImageData(const QByteArray& data) {
         imageLabel_->setText("이미지 오류");
         return;
     }
-    // 427x240에 원본 비율 유지하며 최대 크기로 맞춤
-    QPixmap scaledPix = pix.scaled(IMAGE_WIDTH, IMAGE_HEIGHT, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    // 컨테이너 패딩을 고려한 크기로 원본 비율 유지하며 최대 크기로 맞춤
+    QPixmap scaledPix = pix.scaled(IMAGE_WIDTH - 20, IMAGE_HEIGHT, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     imageLabel_->setPixmap(scaledPix);
     imageLabel_->setAlignment(Qt::AlignCenter);
 }
@@ -244,7 +254,7 @@ void GetImageView::downloadImage() {
 void GetImageView::printToPdf() {
     QString fileName = QFileDialog::getSaveFileName(this, 
         "PDF로 저장", 
-        QString("report_%1.pdf").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
+        QString("불법주정차_report_%1.pdf").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
         "PDF Files (*.pdf)");
     
     if (!fileName.isEmpty()) {
@@ -285,4 +295,33 @@ void GetImageView::mouseMoveEvent(QMouseEvent* event) {
         move(event->globalPosition().toPoint() - dragPosition_);
         event->accept();
     }
+}
+
+void GetImageView::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    
+    // 최상위 윈도우를 찾아서 오버레이 생성
+    QWidget* topLevelWidget = this;
+    while (topLevelWidget->parentWidget()) {
+        topLevelWidget = topLevelWidget->parentWidget();
+    }
+    
+    if (topLevelWidget && topLevelWidget != this) {
+        overlay_ = new OverlayWidget(topLevelWidget);
+        overlay_->resize(topLevelWidget->size());
+        overlay_->show();
+        
+        // 다이얼로그를 최상위로
+        raise();
+    }
+}
+
+void GetImageView::hideEvent(QHideEvent* event) {
+    // 오버레이 제거
+    if (overlay_) {
+        overlay_->deleteLater();
+        overlay_ = nullptr;
+    }
+    
+    QDialog::hideEvent(event);
 }

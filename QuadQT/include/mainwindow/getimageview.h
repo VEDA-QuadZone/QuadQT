@@ -13,6 +13,8 @@
 #include <QPageSize>
 #include <QPainter>
 
+class OverlayWidget;
+
 class GetImageView : public QDialog {
     Q_OBJECT
 public:
@@ -32,6 +34,8 @@ private slots:
 protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    void showEvent(QShowEvent* event) override;
+    void hideEvent(QHideEvent* event) override;
 
 private:
     QLabel* eventLabel_;
@@ -48,4 +52,7 @@ private:
     // 창 드래그를 위한 변수
     QPoint dragPosition_;
     bool dragging_;
+    
+    // 오버레이 효과
+    OverlayWidget* overlay_;
 };

@@ -7,6 +7,8 @@
 #include "login/networkmanager.h"
 #include "login/custommessagebox.h"
 
+class OverlayWidget;
+
 namespace Ui {
 class LoginPage;
 }
@@ -42,6 +44,10 @@ private slots:
     void onResetPasswordResponse(const QJsonObject &response);
     void onNetworkError(const QString &error);
 
+protected:
+    void showEvent(QShowEvent* event) override;
+    void hideEvent(QHideEvent* event) override;
+
 private:
     void setupConnections();
     void setupFonts();
@@ -53,6 +59,9 @@ private:
     Ui::LoginPage *ui;
     NetworkManager *m_networkManager;
     QString m_loggedInEmail;
+    
+    // 오버레이 효과
+    OverlayWidget* overlay_;
 };
 
 #endif // LOGINPAGE_H

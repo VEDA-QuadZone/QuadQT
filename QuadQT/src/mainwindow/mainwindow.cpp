@@ -8,6 +8,7 @@
 #include "login/custommessagebox.h"
 
 #include <QResizeEvent>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QWidget>
 #include <QFont>
@@ -15,6 +16,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QApplication>
+#include <QScreen>
 #include <QFile>
 #include <QSslConfiguration>
 #include <QSslCertificate>
@@ -279,6 +281,39 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     QMainWindow::resizeEvent(event);
     // 약간의 지연을 두고 레이아웃 업데이트 (리사이즈 완료 후)
     QTimer::singleShot(10, this, &MainWindow::forceLayoutUpdate);
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    // Ctrl+0 또는 Ctrl+Num0으로 1600x900 크기로 복원
+    if (event->modifiers() == Qt::ControlModifier && 
+        (event->key() == Qt::Key_0 || event->key() == Qt::Key_Equal)) {
+        
+        qDebug() << "🔄 윈도우 크기를 1600x900으로 복원합니다";
+        
+        // 최대화 상태 해제
+        if (isMaximized()) {
+            showNormal();
+        }
+        
+        // 크기를 1600x900으로 설정
+        resize(1600, 900);
+        
+        // 화면 중앙에 위치시키기
+        QRect screenGeometry = QApplication::primaryScreen()->geometry();
+        int x = (screenGeometry.width() - 1600) / 2;
+        int y = (screenGeometry.height() - 900) / 2;
+        move(x, y);
+        
+        // 레이아웃 업데이트
+        QTimer::singleShot(50, this, &MainWindow::forceLayoutUpdate);
+        
+        event->accept();
+        return;
+    }
+    
+    // 기본 키 이벤트 처리
+    QMainWindow::keyPressEvent(event);
 }
 
 void MainWindow::showEvent(QShowEvent *event)

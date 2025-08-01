@@ -360,7 +360,7 @@ HistoryView::HistoryView(QWidget *parent)
         requestPage();
     });
     connect(tcpHandler_, &TcpHistoryHandler::connectionFailed, this, [this]() {
-        loadDummyData();
+        loadDummyData(); // 더미데이터 활성화
     });
 
     QString configPath = findConfigFile();
@@ -370,15 +370,15 @@ HistoryView::HistoryView(QWidget *parent)
         int tcpPort = settings.value("tcp/port").toInt();
         tcpHandler_->connectToServer(tcpHost, tcpPort);
         QTimer::singleShot(5000, this, [this]() {
-            if (tableWidget->rowCount() == 0) loadDummyData();
+            if (tableWidget->rowCount() == 0) loadDummyData(); // 더미데이터 활성화
         });
     } else {
-        loadDummyData();
+        loadDummyData(); // 더미데이터 활성화
     }
     setupPaginationUI();
     QTimer::singleShot(100, this, [this]() {
         if (tableWidget->rowCount() == 0)
-            loadDummyData();
+            loadDummyData(); // 더미데이터 활성화
     });
 }
 
@@ -609,8 +609,8 @@ void HistoryView::requestPage()
 {
     // TCP 연결 상태 확인
     if (!tcpHandler_ || !tcpHandler_->isConnected()) {
-        qDebug() << "HistoryView: TCP 연결되지 않음, 더미 데이터 사용";
-        loadDummyData();
+        qDebug() << "HistoryView: TCP 연결되지 않음";
+        loadDummyData(); // 더미데이터 활성화
         return;
     }
 
