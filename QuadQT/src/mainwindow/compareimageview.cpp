@@ -1,5 +1,6 @@
 #include "mainwindow/compareimageview.h"
 #include "mainwindow/filenameutils.h"
+#include "mainwindow/overlaywidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFileInfo>
@@ -28,7 +29,7 @@ constexpr int TOTAL_WIDTH = IMAGE_WIDTH * 2 + 60; // 두 이미지 + 화살표 +
 CompareImageView::CompareImageView(const QString& event, const QString& plate,
                                    const QString& datetime, const QString& startFilename, 
                                    const QString& endFilename, QWidget* parent)
-    : QDialog(parent), startFilename_(startFilename), endFilename_(endFilename), dragging_(false)
+    : QDialog(parent), startFilename_(startFilename), endFilename_(endFilename), dragging_(false), overlay_(nullptr)
 {
     // 이벤트 타입을 멤버 변수로 저장
     eventType_ = event;
@@ -94,7 +95,7 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
     leftVLayout->setSpacing(0);
     leftVLayout->setContentsMargins(0,0,0,0);
 
-    QLabel* leftHeader = new QLabel("   정차 시작", this);
+    QLabel* leftHeader = new QLabel("         정차 시작", this);
     leftHeader->setFixedHeight(32);
     leftHeader->setAlignment(Qt::AlignCenter);
     leftHeader->setStyleSheet("background: #FBB584; border-bottom: 1px solid #888; font-weight:bold;");
@@ -137,7 +138,7 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
     rightVLayout->setSpacing(0);
     rightVLayout->setContentsMargins(0,0,0,0);
 
-    QLabel* rightHeader = new QLabel("   정차 후 1분 경과", this);
+    QLabel* rightHeader = new QLabel("         정차 후 1분 경과", this);
     rightHeader->setFixedHeight(32);
     rightHeader->setAlignment(Qt::AlignCenter);
     rightHeader->setStyleSheet("background: #FBB584; border-bottom: 1px solid #888; font-weight: bold;");
@@ -294,7 +295,7 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
     btnLayout->addStretch();
     printButton_ = new QPushButton("인쇄", this);
     printButton_->setFixedSize(72, 24);
-    printButton_->setStyleSheet("background:#F37321; color:black; border:none;");
+    printButton_->setStyleSheet("background:rgba(243, 115, 33, 0.8); color:black; border:none;");
     closeButton_ = new QPushButton("닫기", this);
     closeButton_->setFixedSize(72, 24);
     closeButton_->setStyleSheet("background:#FBB584; color:black; border:none;");
@@ -306,7 +307,7 @@ CompareImageView::CompareImageView(const QString& event, const QString& plate,
     containerLayout->addSpacing(8);
     containerLayout->addLayout(btnLayout);
 
-    setFixedWidth(TOTAL_WIDTH + 4); // 테두리 여백만 포함
+    setFixedWidth(TOTAL_WIDTH + 2); // 테두리 여백 최소화
 
     // 버튼 연결
     connect(closeButton_, &QPushButton::clicked, this, &QDialog::accept);
@@ -406,7 +407,7 @@ void CompareImageView::downloadEndImage() {
 void CompareImageView::printToPdf() {
     QString fileName = QFileDialog::getSaveFileName(this, 
         "PDF로 저장", 
-        QString("parking_violation_report_%1.pdf").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
+        QString("불법주정차_report_%1.pdf").arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss")),
         "PDF Files (*.pdf)");
     
     if (!fileName.isEmpty()) {
@@ -446,4 +447,33 @@ void CompareImageView::mouseMoveEvent(QMouseEvent* event) {
         move(event->globalPosition().toPoint() - dragPosition_);
         event->accept();
     }
+}
+
+void CompareImageView::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    
+    // 최상위 윈도우를 찾아서 오버레이 생성
+    QWidget* topLevelWidget = this;
+    while (topLevelWidget->parentWidget()) {
+        topLevelWidget = topLevelWidget->parentWidget();
+    }
+    
+    if (topLevelWidget && topLevelWidget != this) {
+        overlay_ = new OverlayWidget(topLevelWidget);
+        overlay_->resize(topLevelWidget->size());
+        overlay_->show();
+        
+        // 다이얼로그를 최상위로
+        raise();
+    }
+}
+
+void CompareImageView::hideEvent(QHideEvent* event) {
+    // 오버레이 제거
+    if (overlay_) {
+        overlay_->deleteLater();
+        overlay_ = nullptr;
+    }
+    
+    QDialog::hideEvent(event);
 }

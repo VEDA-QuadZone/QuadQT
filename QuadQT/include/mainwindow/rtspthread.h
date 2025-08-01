@@ -4,6 +4,7 @@
 #include <QImage>
 #include <QString>
 #include <QMutex>
+#include <QElapsedTimer>
 #include <atomic>
 
 class RtspThread : public QThread
@@ -26,4 +27,6 @@ private:
     QString m_url;
     std::atomic<bool> m_running;
     QMutex m_mutex;
+    QElapsedTimer m_refreshTimer;  // 5초마다 새로고침을 위한 타이머
+    static const int REFRESH_INTERVAL_MS = 5000;  // 5초
 };

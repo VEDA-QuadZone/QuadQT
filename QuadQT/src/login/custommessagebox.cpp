@@ -1,11 +1,12 @@
 #include "login/custommessagebox.h"
+#include "mainwindow/overlaywidget.h"
 #include <QGraphicsDropShadowEffect>
 #include <QApplication>
 
 CustomMessageBox::CustomMessageBox(const QString &title,
                                    const QString &message,
                                    QWidget *parent)
-    : QDialog(parent)
+    : QDialog(parent), overlay_(nullptr)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
     setAttribute(Qt::WA_TranslucentBackground);
@@ -131,4 +132,33 @@ bool CustomMessageBox::showConfirm(QWidget *parent,
     }
 
     return box.exec() == QDialog::Accepted;
+}
+
+void CustomMessageBox::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    
+    // 최상위 윈도우를 찾아서 오버레이 생성
+    QWidget* topLevelWidget = this;
+    while (topLevelWidget->parentWidget()) {
+        topLevelWidget = topLevelWidget->parentWidget();
+    }
+    
+    if (topLevelWidget && topLevelWidget != this) {
+        overlay_ = new OverlayWidget(topLevelWidget);
+        overlay_->resize(topLevelWidget->size());
+        overlay_->show();
+        
+        // 다이얼로그를 최상위로
+        raise();
+    }
+}
+
+void CustomMessageBox::hideEvent(QHideEvent* event) {
+    // 오버레이 제거
+    if (overlay_) {
+        overlay_->deleteLater();
+        overlay_ = nullptr;
+    }
+    
+    QDialog::hideEvent(event);
 }

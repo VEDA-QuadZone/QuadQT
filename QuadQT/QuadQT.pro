@@ -35,6 +35,7 @@ SOURCES += \
     src/mainwindow/mqttmanager.cpp \
     src/mainwindow/notificationitem.cpp \
     src/mainwindow/notificationpanel.cpp \
+    src/mainwindow/overlaywidget.cpp \
     src/mainwindow/procsettingbox.cpp \
     src/mainwindow/rtspthread.cpp \
     src/mainwindow/tcphistoryhandler.cpp \
@@ -55,6 +56,7 @@ HEADERS += \
     include/mainwindow/mqttmanager.h \
     include/mainwindow/notificationitem.h \
     include/mainwindow/notificationpanel.h \
+    include/mainwindow/overlaywidget.h \
     include/mainwindow/procsettingbox.h \
     include/mainwindow/rtspthread.h \
     include/mainwindow/tcphistoryhandler.h \

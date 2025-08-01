@@ -1,5 +1,6 @@
 #include "login/loginpage.h"
 #include "login/custommessagebox.h"
+#include "mainwindow/overlaywidget.h"
 #include "ui_loginpage.h"
 #include <QRegularExpression>
 #include <QDebug>
@@ -12,7 +13,8 @@
 LoginPage::LoginPage(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::LoginPage),
-    m_networkManager(new NetworkManager(this))
+    m_networkManager(new NetworkManager(this)),
+    overlay_(nullptr)
 {
     ui->setupUi(this);
 
@@ -410,4 +412,33 @@ void LoginPage::clearInputFields()
     // Reset Password 페이지
     ui->lineEdit_ResetEmail->clear();
     ui->lineEdit_NewPassword->clear();
+}
+
+void LoginPage::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    
+    // 최상위 윈도우를 찾아서 오버레이 생성
+    QWidget* topLevelWidget = this;
+    while (topLevelWidget->parentWidget()) {
+        topLevelWidget = topLevelWidget->parentWidget();
+    }
+    
+    if (topLevelWidget && topLevelWidget != this) {
+        overlay_ = new OverlayWidget(topLevelWidget);
+        overlay_->resize(topLevelWidget->size());
+        overlay_->show();
+        
+        // 다이얼로그를 최상위로
+        raise();
+    }
+}
+
+void LoginPage::hideEvent(QHideEvent* event) {
+    // 오버레이 제거
+    if (overlay_) {
+        overlay_->deleteLater();
+        overlay_ = nullptr;
+    }
+    
+    QDialog::hideEvent(event);
 }

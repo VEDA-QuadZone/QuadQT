@@ -35,6 +35,7 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 public:
     void setUserEmail(const QString &email);
