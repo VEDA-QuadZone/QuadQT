@@ -94,12 +94,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     mqttManager = new MqttManager(this);
 
-    connect(mqttManager, &MqttManager::connected, this, [this]() {
-        qDebug() << "[MQTT] Connected signal received!";
-        QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
-        qDebug() << "[MQTT] Publishing test message:" << testPayload;
-        mqttManager->publish(testPayload);
-    });
+    // connect(mqttManager, &MqttManager::connected, this, [this]() {
+    //     qDebug() << "[MQTT] Connected signal received!";
+    //    // QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
+    //  //   qDebug() << "[MQTT] Publishing test message:" << testPayload;
+    //    // mqttManager->publish(testPayload);
+    // });
 
     connect(mqttManager, &MqttManager::messageReceived,
             notificationPanel, &NotificationPanel::handleMqttMessage);
