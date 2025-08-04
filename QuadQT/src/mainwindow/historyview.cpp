@@ -40,12 +40,13 @@ HistoryView::HistoryView(QWidget *parent)
     currentImageView_(nullptr),
     currentCompareView_(nullptr)
 {
-    this->setStyleSheet("background-color: #FFFFFF;");  // 원하는 배경색으로 변경
-    // 1) 제목 - 이미지로 변경
+    this->setStyleSheet("background-color: #FFFFFF;");
+    
+    // 제목 라벨 생성 (한화 폰트로 "히스토리" 텍스트 렌더링)
     titleLabel = new QLabel(this);
     titleLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
     
-    // 한화 폰트로 "히스토리" 텍스트를 렌더링하여 픽셀맵으로 생성
+    // 한화 폰트 찾기
     QStringList allFamilies = QFontDatabase().families();
     QString hanwhaFont;
     
@@ -193,7 +194,6 @@ HistoryView::HistoryView(QWidget *parent)
         endDate.clear();
         startDateButton->setText("시작일 선택하기");
         endDateButton->setText("종료일 선택하기");
-        qDebug() << "새로고침 - 날짜 초기화 완료. startDate:" << startDate << "endDate:" << endDate;
         
         // 체크된 항목들 모두 해제
         selectedRecordIds.clear();
@@ -359,29 +359,36 @@ HistoryView::HistoryView(QWidget *parent)
     connect(tcpImageHandler_, &TcpImageHandler::errorOccurred,
             this, [this](const QString&){ });
 
+    // TCP 핸들러 연결 상태 처리
     connect(tcpHandler_, &TcpHistoryHandler::connected, this, [this]() {
         requestPage();
     });
     connect(tcpHandler_, &TcpHistoryHandler::connectionFailed, this, [this]() {
-        loadDummyData(); // 더미데이터 활성화
+        loadDummyData(); // 연결 실패 시 더미 데이터 로드
     });
 
+    // 설정 파일에서 TCP 서버 정보 로드 및 연결
     QString configPath = findConfigFile();
     if (!configPath.isEmpty()) {
         QSettings settings(configPath, QSettings::IniFormat);
         QString tcpHost = settings.value("tcp/ip").toString();
         int tcpPort = settings.value("tcp/port").toInt();
         tcpHandler_->connectToServer(tcpHost, tcpPort);
+        
+        // 5초 후에도 데이터가 없으면 더미 데이터 로드
         QTimer::singleShot(5000, this, [this]() {
-            if (tableWidget->rowCount() == 0) loadDummyData(); // 더미데이터 활성화
+            if (tableWidget->rowCount() == 0) loadDummyData();
         });
     } else {
-        loadDummyData(); // 더미데이터 활성화
+        loadDummyData(); // 설정 파일이 없으면 더미 데이터 로드
     }
+    
     setupPaginationUI();
+    
+    // 초기화 완료 후 더미 데이터 로드 (필요시)
     QTimer::singleShot(100, this, [this]() {
         if (tableWidget->rowCount() == 0)
-            loadDummyData(); // 더미데이터 활성화
+            loadDummyData();
     });
 }
 
@@ -631,28 +638,24 @@ void HistoryView::requestPage()
 {
     // TCP 연결 상태 확인
     if (!tcpHandler_ || !tcpHandler_->isConnected()) {
-        qDebug() << "HistoryView: TCP 연결되지 않음";
-        loadDummyData(); // 더미데이터 활성화
+        loadDummyData(); // 연결되지 않은 경우 더미 데이터 로드
         return;
     }
 
-    // int offset = currentPage * PAGE_SIZE; // 클라이언트 사이드 필터링으로 인해 사용하지 않음
     static const QMap<QString,int> filterMap = {
         {"주정차감지",0},{"과속감지",1},{"보행자감지",2}
     };
 
-    qDebug() << "requestPage 호출 - 현재 필터:" << currentFilter << "시작일:" << startDate << "종료일:" << endDate;
-
-    // 클라이언트 사이드 필터링을 위해 더 많은 데이터를 요청 (페이지 크기를 크게 설정)
-    int largePageSize = 1000; // 충분히 큰 페이지 크기로 설정
+    // 클라이언트 사이드 필터링을 위해 충분한 데이터 요청
+    int largePageSize = 1000;
     
     if (currentFilter.isEmpty() || currentFilter == "전체보기") {
-        qDebug() << "전체 히스토리 요청 (클라이언트 사이드 필터링)";
+        // 전체 히스토리 요청
         tcpHandler_->getHistory(currentEmail, largePageSize, 0);
     } else {
+        // 특정 이벤트 타입으로 히스토리 요청
         int et = filterMap.value(currentFilter,-1);
         if (et<0) return;
-        qDebug() << "이벤트 타입으로 히스토리 요청 (클라이언트 사이드 필터링):" << currentFilter;
         tcpHandler_->getHistoryByEventType(currentEmail, et, largePageSize, 0);
     }
 }
@@ -665,12 +668,10 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
     // 새로운 데이터를 받은 경우에만 전체 데이터 업데이트
     if (currentPage == 0) {
         allHistoryData = arr;
-        qDebug() << "전체 히스토리 데이터 업데이트:" << allHistoryData.size() << "개";
     }
     
     // 저장된 전체 데이터에서 클라이언트 사이드 필터링 (유형 + 날짜)
     QJsonArray filteredArr;
-    qDebug() << "필터링 시작 - 유형:" << currentFilter << "날짜 범위:" << startDate << "~" << endDate;
     
     // 유형 필터 매핑
     static const QMap<QString,int> filterMap = {
@@ -681,11 +682,6 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
         auto obj = allHistoryData.at(i).toObject();
         QString imagePath = obj.value("image_path").toString();
         int eventType = obj.value("event_type").toInt();
-        
-        // 처음 5개만 상세 로그 출력
-        if (i < 5) {
-            qDebug() << "샘플" << i << ":" << imagePath << "유형:" << eventType;
-        }
         
         // 유형 필터링 체크
         bool typeMatches = true;
@@ -718,8 +714,6 @@ void HistoryView::onHistoryData(const QJsonObject &resp)
     
     int count = pageArr.size();
     tableWidget->setRowCount(count);
-    
-    qDebug() << "필터링 결과: 전체" << allHistoryData.size() << "개 중" << totalFiltered << "개 필터링됨, 현재 페이지:" << count << "개 표시";
 
     static const QStringList typeNames = {"주정차감지","과속감지","보행자감지"};
     for (int i = 0; i < count; ++i) {
@@ -1603,7 +1597,7 @@ bool HistoryView::eventFilter(QObject *obj, QEvent *event)
 
 QString HistoryView::findConfigFile()
 {
-    // config.ini 파일을 여러 경로에서 찾아봅니다
+    // config.ini 파일을 여러 경로에서 찾기
     QStringList searchPaths = {
         "config.ini",                    // 현재 디렉토리
         "./config.ini",                  // 명시적 현재 디렉토리
@@ -1613,19 +1607,20 @@ QString HistoryView::findConfigFile()
         QDir::currentPath() + "/config.ini"  // 현재 작업 디렉토리
     };
 
+    qDebug() << "[History] config.ini 파일 검색 중...";
+    qDebug() << "[History] 현재 작업 디렉토리:" << QDir::currentPath();
+    qDebug() << "[History] 실행 파일 디렉토리:" << QCoreApplication::applicationDirPath();
+
     for (const QString &path : searchPaths) {
         QFile file(path);
+        qDebug() << "[History] 검색 경로:" << path << "존재:" << file.exists();
         if (file.exists()) {
-            qDebug() << "HistoryView 설정 파일 발견:" << path;
+            qDebug() << "[History] config.ini 파일 발견:" << path;
             return path;
         }
     }
 
-    qDebug() << "HistoryView: 다음 경로들에서 config.ini 파일을 찾을 수 없습니다:";
-    for (const QString &path : searchPaths) {
-        qDebug() << "  -" << path;
-    }
-
+    qDebug() << "[History] config.ini 파일을 찾을 수 없습니다";
     return QString(); // 빈 문자열 반환
 }
 
