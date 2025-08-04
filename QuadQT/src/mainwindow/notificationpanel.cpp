@@ -11,10 +11,10 @@
 NotificationPanel::NotificationPanel(QWidget *parent)
     : QWidget(parent)
 {
-    // 패널 자체 스타일 설정
+    // 패널 스타일 설정
     this->setStyleSheet("background-color: transparent; border: none;");
 
-    // 메인 레이아웃 (패널 전체)
+    // 메인 레이아웃
     QVBoxLayout *outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
     outerLayout->setSpacing(0);
@@ -76,8 +76,8 @@ void NotificationPanel::handleMqttMessage(const QByteArray &message)
     QJsonObject obj = doc.object();
     int eventType = obj.value("event").toInt(-1);
 
-    // test 메시지 등 특정 eventType 무시
-    if (eventType == -1)  // 99는 예시, 실제 테스트 메시지 event 번호 넣으세요
+    // 테스트 메시지 등 유효하지 않은 이벤트 타입 무시
+    if (eventType == -1)
         return;
 
     QString timestamp = obj.value("timestamp").toString();
@@ -88,16 +88,20 @@ void NotificationPanel::handleMqttMessage(const QByteArray &message)
 
     addNotification(eventType, formattedDate);
 }
+
 void NotificationPanel::addNotification(int eventType, const QString &date)
 {
+    // 빈 상태 라벨 숨기기
     if (emptyLabel) emptyLabel->hide();
 
+    // 새 알림 아이템 생성
     auto *item = new NotificationItem(eventType, date, container);
 
+    // 알림 제거 요청 시그널 연결
     connect(item, &NotificationItem::removeRequested,
             this, &NotificationPanel::removeNotification);
 
-    // 새 알림을 맨 위에 추가 (index 0에 삽입)
+    // 새 알림을 맨 위에 추가
     mainLayout->insertWidget(0, item);
     
     // 스크롤을 맨 위로 이동 (새 알림이 보이도록)
@@ -106,9 +110,11 @@ void NotificationPanel::addNotification(int eventType, const QString &date)
 
 void NotificationPanel::removeNotification(NotificationItem *item)
 {
+    // 레이아웃에서 아이템 제거
     mainLayout->removeWidget(item);
     item->deleteLater();
 
+    // 남은 알림 아이템이 있는지 확인
     bool hasItems = false;
     for (int i = 0; i < mainLayout->count(); ++i) {
         if (qobject_cast<NotificationItem*>(mainLayout->itemAt(i)->widget())) {
@@ -117,6 +123,7 @@ void NotificationPanel::removeNotification(NotificationItem *item)
         }
     }
 
+    // 알림이 없으면 빈 상태 라벨 표시
     if (!hasItems && emptyLabel) {
         emptyLabel->show();
     }
