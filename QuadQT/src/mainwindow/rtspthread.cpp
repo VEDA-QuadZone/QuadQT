@@ -1,6 +1,7 @@
 #include "mainwindow/rtspthread.h"
 #include <opencv2/opencv.hpp>
 #include <QDebug>
+#include <QElapsedTimer>
 
 RtspThread::RtspThread(const QString& url, QObject *parent)
     : QThread(parent), m_url(url), m_running(true)
@@ -26,13 +27,12 @@ void RtspThread::run()
     while (m_running) {
         // RTSP 지연 최소화 설정
         cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
-        
+
         // RTSPS (RTSP over SSL)를 위한 SSL 인증서 경로 설정
         if (m_url.startsWith("rtsps://")) {
             qDebug() << "RTSPS 연결을 위한 SSL 환경 변수 설정";
             qputenv("SSL_CERT_FILE", "ca.cert.pem");
             qputenv("SSL_CERT_DIR", ".");
-            // 클라이언트 인증서도 설정 (상호 인증이 필요한 경우)
             qputenv("SSL_CLIENT_CERT_FILE", "client.cert.pem");
             qputenv("SSL_CLIENT_KEY_FILE", "client.key.pem");
         }
@@ -44,29 +44,31 @@ void RtspThread::run()
         }
 
         qDebug() << "✅ RTSP 스트림 연결 성공:" << m_url;
-        m_refreshTimer.restart();  // 연결 성공 시 타이머 재시작
+        m_refreshTimer.restart();
 
         cv::Mat frame;
-        while (m_running) {
-            // 7초마다 스트림 새로고침
-            if (m_refreshTimer.elapsed() >= REFRESH_INTERVAL_MS) {
-                qDebug() << "🔄 RTSP 스트림 7초 새로고침";
-                cap.release();
-                break;  // 내부 루프 종료하여 재연결
-            }
+        int emptyFrameCount = 0;
 
+        while (m_running) {
             cap >> frame;
+
             if (frame.empty()) {
-                msleep(10);  // 다음 프레임 대기
+                emptyFrameCount++;
+                if (emptyFrameCount > 30) {  // 약 300ms 이상 연속 실패
+                    qWarning() << "⚠️ 연속 프레임 수신 실패, 스트림 재연결 시도";
+                    cap.release();
+                    break;
+                }
+                msleep(10);  // 프레임 없을 때만 쉬기
                 continue;
             }
+
+            emptyFrameCount = 0;  // 정상 프레임 수신 시 초기화
 
             // BGR → RGB → QImage 변환
             cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
             QImage image(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
             emit frameReady(image.copy());  // emit 전에 copy() 필수
-
-            msleep(10);  // 너무 빠른 루프 방지
         }
 
         cap.release();
