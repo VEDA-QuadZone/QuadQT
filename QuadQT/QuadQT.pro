@@ -1,3 +1,21 @@
+# ===================================
+#  빌드 출력 경로 설정 (가장 중요)
+# ===================================
+CONFIG(release, debug|release) {
+    # Release 모드일 때 적용될 설정
+    DESTDIR     = $$OUT_PWD/release
+    OBJECTS_DIR = $$OUT_PWD/release/.obj
+} else {
+    # Debug 모드일 때 적용될 설정
+    DESTDIR     = $$OUT_PWD/debug
+    OBJECTS_DIR = $$OUT_PWD/debug/.obj
+}
+
+# ====== INCLUDE PATHS ======
+# (이하 기존 내용)
+
+
+
 QT       += core gui network widgets mqtt multimedia multimediawidgets
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++17
@@ -82,3 +100,9 @@ DISTFILES += \
     client.cert.pem \
     client.key.pem \
     config.ini
+
+# ====== 빌드 후 설정 파일 자동 복사 (간단한 버전) ======
+win32 {
+    # config.ini 복사만 (안전한 방법)
+    QMAKE_POST_LINK += copy /Y $$shell_path($$PWD/config.ini) $$shell_path($$DESTDIR) $$escape_expand(\\n\\t)
+}

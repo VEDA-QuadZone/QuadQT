@@ -44,10 +44,10 @@ LoginPage::~LoginPage()
 
 void LoginPage::setupFonts()
 {
-    // 실제 로드된 한화 폰트 패밀리 찾기
+    // 한화 폰트 패밀리 찾기
     QStringList allFamilies = QFontDatabase().families();
-    QString hanwhaBFamily;      // HanwhaB 폰트용
-    QString hanwhaGothicFamily; // HanwhaGothicR 폰트용
+    QString hanwhaBFamily;      // HanwhaB 폰트용 (로고)
+    QString hanwhaGothicFamily; // HanwhaGothicR 폰트용 (일반 텍스트)
     
     // HanwhaB 폰트 찾기 (QuadZone 로고용)
     for (const QString &family : allFamilies) {
@@ -77,27 +77,22 @@ void LoginPage::setupFonts()
         }
     }
     
-    qDebug() << "LoginPage에서 사용할 폰트:";
-    qDebug() << "  QuadZone 로고용 (HanwhaB):" << hanwhaBFamily;
-    qDebug() << "  일반 텍스트용 (HanwhaGothic):" << hanwhaGothicFamily;
-    
-    // QuadZone 로고에 HanwhaB 폰트 적용 (크기 32로 증가)
+    // QuadZone 로고에 HanwhaB 폰트 적용
     QFont logoFont(hanwhaBFamily.isEmpty() ? "Arial" : hanwhaBFamily, 32);
     logoFont.setBold(true);
     ui->label_QuadZone->setFont(logoFont);
-    qDebug() << "QuadZone 로고 폰트 설정:" << logoFont.family() << "크기:" << logoFont.pointSize();
     
-    // 기본 폰트 설정 (일반 폰트)
-    QFont defaultFont(hanwhaGothicFamily.isEmpty() ? "Arial" : hanwhaGothicFamily, 12);
-    defaultFont.setBold(false);  // 일반 텍스트는 볼드 해제
+    // 기본 폰트 설정 (일반 텍스트)
+    QFont defaultFont(hanwhaGothicFamily.isEmpty() ? "Malgun Gothic" : hanwhaGothicFamily, 12);
+    defaultFont.setBold(false);
     
     // 버튼용 볼드 폰트 설정
-    QFont buttonFont(hanwhaGothicFamily.isEmpty() ? "Arial" : hanwhaGothicFamily, 12);
-    buttonFont.setBold(true);  // 주요 액션 버튼만 볼드 적용
+    QFont buttonFont(hanwhaGothicFamily.isEmpty() ? "Malgun Gothic" : hanwhaGothicFamily, 12);
+    buttonFont.setBold(true);
     
-    // 링크 버튼용 일반 폰트 설정 (밑줄 텍스트 링크용)
-    QFont linkFont(hanwhaGothicFamily.isEmpty() ? "Arial" : hanwhaGothicFamily, 12);
-    linkFont.setBold(false);  // 링크 버튼은 볼드 해제
+    // 링크 버튼용 일반 폰트 설정
+    QFont linkFont(hanwhaGothicFamily.isEmpty() ? "Malgun Gothic" : hanwhaGothicFamily, 12);
+    linkFont.setBold(false);
     
     // 모든 라벨에 일반 폰트 적용
     QList<QLabel*> labels = findChildren<QLabel*>();
@@ -113,14 +108,14 @@ void LoginPage::setupFonts()
         // 포커스 아웃라인 제거
         button->setFocusPolicy(Qt::NoFocus);
         
-        // 링크 버튼들 (밑줄 텍스트 링크)은 일반 폰트 적용
+        // 링크 버튼들은 일반 폰트 적용
         if (button == ui->pushButton_ForgotPassword ||
             button == ui->pushButton_GoToRegister ||
             button == ui->pushButton_BackToSignIn ||
             button == ui->pushButton_Cancel) {
             button->setFont(linkFont);
         } else {
-            // 주요 액션 버튼들 (Sign In, Register 등)은 볼드 폰트 적용
+            // 주요 액션 버튼들은 볼드 폰트 적용
             button->setFont(buttonFont);
         }
     }
@@ -130,8 +125,6 @@ void LoginPage::setupFonts()
     for (QLineEdit* lineEdit : lineEdits) {
         lineEdit->setFont(defaultFont);
     }
-    
-    qDebug() << "LoginPage 폰트 설정 완료 (버튼만 볼드 적용)";
 }
 
 void LoginPage::setupConnections()
@@ -179,24 +172,19 @@ void LoginPage::onSignInClicked()
     QString email = ui->lineEdit_SignInEmail->text().trimmed();
     QString password = ui->lineEdit_SignInPassword->text();
 
-    qDebug() << "로그인 시도 시작";
-    qDebug() << "이메일:" << email;
-    qDebug() << "비밀번호 길이:" << password.length();
-
+    // 입력 값 검증
     if (email.isEmpty() || password.isEmpty()) {
-        qDebug() << "로그인 실패: 이메일 또는 비밀번호가 비어있음";
         showMessage("입력 오류", "이메일과 비밀번호를 모두 입력해주세요.", QMessageBox::Warning);
         return;
     }
 
     if (!validateEmail(email)) {
-        qDebug() << "로그인 실패: 잘못된 이메일 형식";
         showMessage("입력 오류", "올바른 이메일 형식을 입력해주세요.", QMessageBox::Warning);
         return;
     }
 
+    // 서버 연결 상태 확인
     if (!m_networkManager->isConnected()) {
-        qDebug() << "로그인 실패: 서버에 연결되지 않음";
         showMessage("연결 오류", "서버에 연결되지 않았습니다. 잠시 후 다시 시도해주세요.", QMessageBox::Critical);
         m_networkManager->connectToServer();
         return;
@@ -205,7 +193,7 @@ void LoginPage::onSignInClicked()
     // 로그인 시도할 이메일 저장
     m_loggedInEmail = email;
     
-    qDebug() << "TCP를 통해 서버로 로그인 요청 전송 중...";
+    // 서버로 로그인 요청 전송
     m_networkManager->loginUser(email, password);
 }
 
@@ -259,13 +247,11 @@ void LoginPage::onResetPasswordClicked()
 
 void LoginPage::onNetworkConnected()
 {
-    qDebug() << "네트워크 연결됨";
-    // 연결 상태 UI 업데이트 (필요시)
+    // 네트워크 연결 성공 시 처리 (필요시 UI 업데이트)
 }
 
 void LoginPage::onNetworkDisconnected()
 {
-    qDebug() << "네트워크 연결 끊김";
     showMessage("연결 끊김", "서버와의 연결이 끊어졌습니다.", QMessageBox::Warning);
 }
 
@@ -275,31 +261,20 @@ void LoginPage::onLoginResponse(const QJsonObject &response)
     int code = response["code"].toInt();
     QString message = response["message"].toString();
 
-    // 🔍 TCP 응답 디버그 출력
-    qDebug() << "=== TCP 로그인 응답 ===";
-    qDebug() << "상태:" << status;
-    qDebug() << "코드:" << code;
-    qDebug() << "메시지:" << message;
-    qDebug() << "전체 응답:" << response;
-    qDebug() << "====================";
-
     if (status == "success" && code == 200) {
-        // 로그인 성공 디버그 메시지
-        qDebug() << "로그인 성공! TCP에서 'login success' 메시지 수신";
-        qDebug() << "사용자 인증 성공";
-        qDebug() << "메인 윈도우로 전환 중...";
+        // 로그인 성공
+        qDebug() << "[Login] 로그인 성공";
         
         showMessage("로그인 성공", "로그인에 성공했습니다!", QMessageBox::Information);
 
-        // ✅ 시그널-슬롯 연결 해제
+        // 시그널-슬롯 연결 해제
         disconnect(m_networkManager, nullptr, this, nullptr);
 
         emit loginSuccessful();
-        accept();  // 다이얼로그 닫기 (MainWindow에서는 exec() 상태 종료)
+        accept();  // 다이얼로그 닫기
     } else {
-        // 로그인 실패 디버그 메시지
-        qDebug() << "로그인 실패! TCP 응답이 실패를 나타냄";
-        qDebug() << "오류 코드:" << code << "오류 메시지:" << message;
+        // 로그인 실패
+        qDebug() << "[Login] 로그인 실패 - 코드:" << code;
         QString errorMsg;
         switch (code) {
         case 404: errorMsg = "사용자를 찾을 수 없습니다."; break;

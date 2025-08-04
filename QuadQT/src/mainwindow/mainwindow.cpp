@@ -45,12 +45,12 @@ MainWindow::MainWindow(QWidget *parent)
     m_isLogout(false),
     historyView(nullptr)
 {
-    qDebug() << "🏠 MainWindow 생성자 시작";
-
+    // SSL 기본 설정 (개발 환경용)
     QSslConfiguration sslConf = QSslConfiguration::defaultConfiguration();
     sslConf.setPeerVerifyMode(QSslSocket::VerifyNone);
     QSslConfiguration::setDefaultConfiguration(sslConf);
 
+    // 중앙 위젯 설정
     QWidget *centralW = new QWidget(this);
     centralW->setStyleSheet("background-color: #FFFFFF;");
     centralW->setAutoFillBackground(true);
@@ -59,34 +59,41 @@ MainWindow::MainWindow(QWidget *parent)
     this->setStyleSheet("MainWindow { background-color: #FFFFFF; }");
     this->setAutoFillBackground(true);
 
+    // 윈도우 크기 설정
     setMinimumSize(1600, 900);
     showMaximized();
 
+    // TCP 네트워크 매니저 초기화
     networkManager = new NetworkManager(this);
     networkManager->connectToServer();
 
+    // TCP 연결 상태 모니터링
     connect(networkManager, &NetworkManager::connected, this, []() {
-        qDebug() << "[TCP] 서버 연결 성공!";
+        qDebug() << "[TCP] 서버 연결 성공";
     });
     connect(networkManager, &NetworkManager::disconnected, this, []() {
-        qDebug() << "[TCP] 서버 연결 끊김!";
+        qDebug() << "[TCP] 서버 연결 해제";
     });
     connect(networkManager, &NetworkManager::networkError, this, [](const QString &msg) {
-        qDebug() << "[TCP] 오류:" << msg;
+        qDebug() << "[TCP] 네트워크 오류:" << msg;
     });
 
+    // UI 구성 요소 초기화
     setupUI();
     setupFonts();
     setupPages();
     showPage(PageType::Camera);
 
+    // 레이아웃 초기화
     QTimer::singleShot(100, this, &MainWindow::forceLayoutUpdate);
 
+    // RTSP 스트리밍 초기화
     QSettings settings("config.ini", QSettings::IniFormat);
     QString rtspUrl = settings.value("rtsp/url", "rtsps://192.168.219.68:8555/test").toString();
 
     rtspThread = new RtspThread(rtspUrl, this);
 
+    // RTSP 프레임 수신 처리
     connect(rtspThread, &RtspThread::frameReady, this, [this](const QImage &img) {
         if (rtspLabel)
             rtspLabel->setPixmap(QPixmap::fromImage(img).scaled(rtspLabel->size(), Qt::KeepAspectRatio));
@@ -94,23 +101,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     rtspThread->start();
 
+    // MQTT 매니저 초기화
     mqttManager = new MqttManager(this);
 
-    // connect(mqttManager, &MqttManager::connected, this, [this]() {
-    //     qDebug() << "[MQTT] Connected signal received!";
-    //    // QByteArray testPayload = "{\"event\":99,\"timestamp\":\"test-message\"}";
-    //  //   qDebug() << "[MQTT] Publishing test message:" << testPayload;
-    //    // mqttManager->publish(testPayload);
-    // });
-
+    // MQTT 메시지를 알림 패널로 전달
     connect(mqttManager, &MqttManager::messageReceived,
             notificationPanel, &NotificationPanel::handleMqttMessage);
 
+    // MQTT 브로커 연결
     QTimer::singleShot(0, this, [this]() {
         mqttManager->connectToBroker();
     });
-
-    qDebug() << "MainWindow 생성 완료";
 }
 
 MainWindow::~MainWindow()
@@ -165,18 +166,13 @@ void MainWindow::setupFonts()
     
     // 폰트가 없으면 시스템 기본 폰트 사용
     if (hanwhaFont.isEmpty()) {
-        hanwhaFont = "Arial"; // 또는 "Malgun Gothic" (한글 지원)
-        qDebug() << "한화 글꼴을 찾을 수 없어 기본 글꼴 사용:" << hanwhaFont;
-    } else {
-        qDebug() << "한화 글꼴 발견:" << hanwhaFont;
+        hanwhaFont = "Malgun Gothic"; // 한글 지원 기본 폰트
     }
     
     QFont defaultFont(hanwhaFont, 12);
     QFont titleFont(hanwhaFont, 15);
     titleFont.setBold(true);
     setFont(defaultFont);
-    
-    qDebug() << "기본 글꼴 설정 완료:" << defaultFont.family();
 }
 
 void MainWindow::setupPages()
@@ -206,52 +202,63 @@ QWidget* MainWindow::createCameraPage()
     
     if (hanwhaFont.isEmpty()) {
         hanwhaFont = "Malgun Gothic"; // 한글 지원 기본 폰트
-        qDebug() << "카메라 페이지: 한화 글꼴을 찾을 수 없어 기본 글꼴 사용:" << hanwhaFont;
     }
 
     QFont titleFont(hanwhaFont, 15);
     titleFont.setBold(true);
 
+    // CCTV 제목 라벨
     cameraTitle = new QLabel("상계 초등학교 앞 CCTV", page);
     cameraTitle->setFont(titleFont);
     cameraTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
+    // 실시간 알림 제목 라벨
     notifTitleLabel = new QLabel("실시간 알림", page);
     notifTitleLabel->setFont(titleFont);
     notifTitleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
+    // RTSP 영상 표시 라벨
     rtspLabel = new QLabel(page);
     rtspLabel->setStyleSheet("background-color: black; border: 1px solid #ccc;");
     rtspLabel->setAlignment(Qt::AlignCenter);
     rtspLabel->setMinimumSize(640, 480);
 
+    // 알림 패널
     notificationPanel = new NotificationPanel(page);
     notificationPanel->setStyleSheet("background-color: #FFFFFF; border-left: 1px solid #ccc;");
 
+    // 영상 설정 관련 폰트
     QFont settingTitleFont(hanwhaFont, 16); settingTitleFont.setBold(true);
     QFont subTitleFont(hanwhaFont, 13);     subTitleFont.setBold(true);
 
+    // 영상 설정 제목
     videoSettingTitle = new QLabel("영상 설정", page);
     videoSettingTitle->setFont(settingTitleFont);
     videoSettingTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
+    // 영상 설정 구분선
     videoSettingLine = new QWidget(page);
     videoSettingLine->setStyleSheet("background-color: #ccc;");
 
+    // 화면 표시 제목
     displayTitle = new QLabel("화면 표시", page);
     displayTitle->setFont(subTitleFont);
     displayTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
 
+    // 영상 처리 제목
     procTitle = new QLabel("영상 처리", page);
     procTitle->setFont(subTitleFont);
     procTitle->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
 
+    // 화면 표시 설정 박스
     displayBox = new DisplaySettingBox(page);
     displayBox->setStyleSheet("background-color: #FFFFFF; border: 1px solid #ccc;");
 
+    // 영상 처리 설정 박스
     procBox = new ProcSettingBox(page);
     procBox->setStyleSheet("background-color: #FFFFFF; border: 1px solid #ccc;");
-    // 여기서 NetworkManager 연결
+    
+    // 설정 박스들을 NetworkManager와 연결
     connect(displayBox, &DisplaySettingBox::requestCommand,networkManager, &NetworkManager::sendCommand);
     connect(procBox, &ProcSettingBox::requestCommand, networkManager, &NetworkManager::sendCommand);
 
@@ -263,10 +270,10 @@ QWidget* MainWindow::createDocumentPage()
     QWidget *page = new QWidget();
     page->setStyleSheet("background-color: #FFFFFF;");
 
-    // 1) HistoryView 인스턴스 생성 (멤버로 만들어 관리)
-    historyView = new HistoryView(page);  // parent 지정해도 되고 안 해도 됨
+    // 히스토리 뷰 생성
+    historyView = new HistoryView(page);
 
-    // 2) 레이아웃에 추가
+    // 레이아웃 설정
     QVBoxLayout *layout = new QVBoxLayout(page);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(historyView);
@@ -285,11 +292,9 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    // Ctrl+0 또는 Ctrl+Num0으로 1600x900 크기로 복원
+    // Ctrl+0으로 1600x900 크기로 복원
     if (event->modifiers() == Qt::ControlModifier && 
         (event->key() == Qt::Key_0 || event->key() == Qt::Key_Equal)) {
-        
-        qDebug() << "🔄 윈도우 크기를 1600x900으로 복원합니다";
         
         // 최대화 상태 해제
         if (isMaximized()) {
@@ -330,12 +335,11 @@ void MainWindow::onDocumentClicked() { showPage(PageType::Document); }
 void MainWindow::onLogoutRequested()
 {
     bool confirmed = CustomMessageBox::showConfirm(this, "로그아웃 확인", "정말 로그아웃 하시겠습니까?");
-    qDebug() << "[MainWindow] 로그아웃 확인 여부:" << confirmed;
 
     if (confirmed) {
         if (topBar) topBar->clearUserData();
         m_isLogout = true;
-        close();  // 여기서 창을 닫음 (→ main.cpp에서 result != 1 → 로그인 페이지로 복귀)
+        close();  // 창을 닫고 main.cpp에서 로그인 페이지로 복귀
     }
 }
 
@@ -375,20 +379,18 @@ void MainWindow::showPage(PageType pageType)
 
 void MainWindow::updateLayout()
 {
-    qDebug() << "📐 레이아웃 업데이트 시작";
-    
     int w = width();
     int h = height();
-    
-    qDebug() << "현재 윈도우 크기:" << w << "x" << h;
 
     double h_unit = h / 24.0;
 
+    // 상단 바 레이아웃 업데이트
     if (topBar) {
         topBar->setGeometry(0, 0, w, h_unit * 3);
         topBar->updateLayout(w, h);
     }
 
+    // 스택 위젯 레이아웃 업데이트
     if (stackedWidget) {
         stackedWidget->setGeometry(0, h_unit * 3, w, h - h_unit * 3);
         
@@ -417,12 +419,11 @@ void MainWindow::updateCameraPageLayout()
 
     int w = stackedWidget->width();
     int h = stackedWidget->height();
-    
-    qDebug() << "카메라 페이지 레이아웃 업데이트 - 스택 위젯 크기:" << w << "x" << h;
 
     double w_unit = w / 24.0;
     double h_unit = h / 21.0;
 
+    // 레이아웃 계산
     double cctv_w = w_unit * 16.5;
     double padding = w_unit * 1;
     double middle_pad = w_unit * 0.5;
@@ -430,19 +431,20 @@ void MainWindow::updateCameraPageLayout()
     double cctv_x = padding;
     double notif_x = cctv_x + cctv_w + middle_pad;
 
-    // 각 위젯의 geometry 설정 및 강제 업데이트
+    // 제목 라벨들 배치
     cameraTitle->setGeometry(cctv_x, h_unit * 0, cctv_w, h_unit);
     cameraTitle->update();
     
     notifTitleLabel->setGeometry(notif_x, h_unit * 0, notif_w, h_unit);
     notifTitleLabel->update();
 
+    // RTSP 영상 라벨 배치
     if (rtspLabel) {
         rtspLabel->setGeometry(cctv_x, h_unit * 1, cctv_w, h_unit * 13);
         rtspLabel->update();
     }
     
-    // 알림 패널을 영상처리 박스 아래까지 확장 (h_unit * 19까지)
+    // 알림 패널 배치 (영상처리 박스 아래까지 확장)
     double notifHeight = h_unit * 19;
     notificationPanel->setGeometry(notif_x, h_unit * 1, notif_w, notifHeight);
     notificationPanel->setMinimumHeight(notifHeight);
@@ -450,6 +452,7 @@ void MainWindow::updateCameraPageLayout()
     notificationPanel->updateGeometry();
     notificationPanel->update();
 
+    // 영상 설정 영역 배치
     double settingTop = h_unit * 14;
     double labelTop   = h_unit * 15;
     double boxTop     = h_unit * 16;
@@ -484,11 +487,8 @@ void MainWindow::updateCameraPageLayout()
 
 void MainWindow::forceLayoutUpdate()
 {
-    qDebug() << "🔄 강제 레이아웃 업데이트 실행";
-    
     // 현재 윈도우 상태 확인
     if (!isVisible() || isMinimized()) {
-        qDebug() << "윈도우가 보이지 않거나 최소화됨 - 레이아웃 업데이트 건너뜀";
         return;
     }
     

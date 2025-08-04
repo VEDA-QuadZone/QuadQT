@@ -25,20 +25,20 @@ NetworkManager::NetworkManager(QObject *parent)
     connect(m_socket, QOverload<const QList<QSslError> &>::of(&QSslSocket::sslErrors),
             this, &NetworkManager::onSslErrors);
     
-    // 타임아웃 타이머 설정
+    // 연결 타임아웃 타이머 설정
     m_timeoutTimer->setSingleShot(true);
     connect(m_timeoutTimer, &QTimer::timeout, this, &NetworkManager::onTimeout);
     
-    // SSL 지원 확인
+    // SSL 지원 여부 확인
     if (!QSslSocket::supportsSsl()) {
-        qDebug() << "경고: 이 시스템에서 SSL이 지원되지 않습니다.";
-        qDebug() << "SSL 라이브러리 버전:" << QSslSocket::sslLibraryVersionString();
+        qDebug() << "[SSL] 시스템에서 SSL이 지원되지 않습니다.";
+        qDebug() << "[SSL] 라이브러리 버전:" << QSslSocket::sslLibraryVersionString();
         m_sslEnabled = false;
     } else {
-        qDebug() << "SSL 지원 확인됨. 라이브러리 버전:" << QSslSocket::sslLibraryVersionString();
+        qDebug() << "[SSL] SSL 지원 확인됨. 버전:" << QSslSocket::sslLibraryVersionString();
     }
     
-    // 설정 로드 (SSL 지원 확인 후)
+    // 설정 파일 로드
     loadConfig();
     
     // SSL이 활성화되어 있고 지원되는 경우에만 SSL 설정 초기화
@@ -59,19 +59,19 @@ void NetworkManager::loadConfig()
     // config.ini 파일 경로 찾기
     QString configPath = findConfigFile();
     if (configPath.isEmpty()) {
-        qDebug() << "config.ini 파일을 찾을 수 없습니다. 기본 설정을 사용합니다.";
+        qDebug() << "[TCP] config.ini 파일을 찾을 수 없습니다. 기본 설정을 사용합니다.";
         return;
     }
     
     QSettings settings(configPath, QSettings::IniFormat);
-    qDebug() << "설정 파일 로드:" << configPath;
     
     // 설정 파일 상태 확인
     if (settings.status() != QSettings::NoError) {
-        qDebug() << "설정 파일 읽기 오류:" << settings.status();
+        qDebug() << "[TCP] 설정 파일 읽기 오류:" << settings.status();
         return;
     }
     
+    // TCP 연결 설정 로드
     m_serverIp = settings.value("tcp/ip", "192.168.0.10").toString();
     m_serverPort = settings.value("tcp/port", 8080).toInt();
     m_timeout = settings.value("tcp/timeout", 5000).toInt();
@@ -82,16 +82,8 @@ void NetworkManager::loadConfig()
     m_clientCertPath = settings.value("SSL/client_cert", "client.cert.pem").toString();
     m_clientKeyPath = settings.value("SSL/client_key", "client.key.pem").toString();
     
-
-    
-    qDebug() << "설정 로드됨 - IP:" << m_serverIp << "포트:" << m_serverPort << "타임아웃:" << m_timeout;
-    qDebug() << "SSL 활성화:" << m_sslEnabled << "CA 인증서:" << m_caCertPath;
-    
-    // 디버깅: 모든 키 출력
-    qDebug() << "설정 파일의 모든 키:";
-    for (const QString &key : settings.allKeys()) {
-        qDebug() << "  " << key << "=" << settings.value(key);
-    }
+    qDebug() << "[TCP] 서버 설정 로드 - IP:" << m_serverIp << "포트:" << m_serverPort;
+    qDebug() << "[SSL] SSL 활성화:" << m_sslEnabled;
 }
 
 void NetworkManager::connectToServer()
@@ -100,11 +92,10 @@ void NetworkManager::connectToServer()
         connectToServerSSL();
     } else {
         if (m_socket->state() != QAbstractSocket::UnconnectedState) {
-            qDebug() << "이미 연결되었거나 연결 중";
             return;
         }
         
-        qDebug() << "서버에 연결 중 (비암호화):" << m_serverIp << ":" << m_serverPort;
+        qDebug() << "[TCP] 서버 연결 시도 (비암호화):" << m_serverIp << ":" << m_serverPort;
         m_socket->connectToHost(m_serverIp, m_serverPort);
         
         // 연결 타임아웃 설정
@@ -115,7 +106,6 @@ void NetworkManager::connectToServer()
 void NetworkManager::connectToServerSSL()
 {
     if (m_socket->state() != QAbstractSocket::UnconnectedState) {
-        qDebug() << "Already connected or connecting";
         return;
     }
     
@@ -124,7 +114,7 @@ void NetworkManager::connectToServerSSL()
         return;
     }
     
-    qDebug() << "서버에 SSL 연결 중:" << m_serverIp << ":" << m_serverPort;
+    qDebug() << "[TCP] 서버 SSL 연결 시도:" << m_serverIp << ":" << m_serverPort;
     m_socket->setSslConfiguration(m_sslConfig);
     m_socket->connectToHostEncrypted(m_serverIp, m_serverPort);
     
@@ -164,7 +154,7 @@ void NetworkManager::registerUser(const QString &email, const QString &password)
 void NetworkManager::loginUser(const QString &email, const QString &password)
 {
     if (!isConnected()) {
-        qDebug() << "로그인 요청을 보낼 수 없음: 서버에 연결되지 않음";
+        qDebug() << "[TCP] 로그인 실패: 서버에 연결되지 않음";
         emit networkError("서버에 연결되지 않았습니다.");
         return;
     }
@@ -172,9 +162,7 @@ void NetworkManager::loginUser(const QString &email, const QString &password)
     QString command = QString("LOGIN %1 %2").arg(email, password);
     m_pendingCommand = "LOGIN";
     
-    qDebug() << "TCP를 통해 LOGIN 명령어 전송:" << command;
-    qDebug() << "서버 응답 대기 중...";
-    
+    qDebug() << "[TCP] 로그인 명령 전송:" << command;
     sendCommand(command);
 }
 
@@ -193,14 +181,14 @@ void NetworkManager::resetPassword(const QString &email, const QString &newPassw
 void NetworkManager::onConnected()
 {
     m_timeoutTimer->stop();
-    qDebug() << "Connected to server";
+    qDebug() << "[TCP] 서버 연결 성공";
     emit connected();
 }
 
 void NetworkManager::onDisconnected()
 {
     m_timeoutTimer->stop();
-    qDebug() << "Disconnected from server";
+    qDebug() << "[TCP] 서버 연결 해제";
     emit disconnected();
 }
 
@@ -209,12 +197,7 @@ void NetworkManager::onReadyRead()
     QByteArray data = m_socket->readAll();
     m_responseBuffer.append(QString::fromUtf8(data));
     
-    // TCP 데이터 수신 디버그
-    qDebug() << "TCP 데이터 수신:" << QString::fromUtf8(data);
-    qDebug() << "현재 버퍼:" << m_responseBuffer;
-    qDebug() << "대기 중인 명령어:" << m_pendingCommand;
-    
-    // JSON 응답이 완전한지 확인 (간단한 방법으로 } 로 끝나는지 확인)
+    // JSON 응답이 완전한지 확인 (} 로 끝나는지 확인)
     if (m_responseBuffer.contains('}')) {
         QJsonObject response = parseResponse(m_responseBuffer);
         
@@ -223,7 +206,7 @@ void NetworkManager::onReadyRead()
             if (m_pendingCommand == "REGISTER") {
                 emit registerResponse(response);
             } else if (m_pendingCommand == "LOGIN") {
-                qDebug() << "LOGIN 응답 처리 중, loginResponse 시그널 발생";
+                qDebug() << "[TCP] 로그인 응답 처리";
                 emit loginResponse(response);
             } else if (m_pendingCommand == "RESET_PASSWORD") {
                 emit resetPasswordResponse(response);
@@ -274,7 +257,7 @@ void NetworkManager::onError(QAbstractSocket::SocketError error)
         break;
     }
     
-    qDebug() << "Socket error:" << errorString;
+    qDebug() << "[TCP] 소켓 오류:" << errorString;
     emit networkError(errorString);
 }
 
@@ -289,7 +272,6 @@ void NetworkManager::onTimeout()
 void NetworkManager::sendCommand(const QString &command)
 {
     if (m_socket->state() == QAbstractSocket::ConnectedState) {
-        qDebug() << "Sending command:" << command;
         m_socket->write(command.toUtf8() + "\n");
         m_socket->flush();
     }
@@ -301,7 +283,7 @@ QJsonObject NetworkManager::parseResponse(const QString &response)
     QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8(), &error);
     
     if (error.error != QJsonParseError::NoError) {
-        qDebug() << "JSON parse error:" << error.errorString();
+        qDebug() << "[TCP] JSON 파싱 오류:" << error.errorString();
         return QJsonObject();
     }
     
@@ -410,20 +392,20 @@ void NetworkManager::getLog()
 bool NetworkManager::setupSSLConfiguration()
 {
     if (!QSslSocket::supportsSsl()) {
-        qDebug() << "SSL이 지원되지 않아 SSL 설정을 건너뜁니다.";
+        qDebug() << "[SSL] SSL이 지원되지 않아 설정을 건너뜁니다.";
         return false;
     }
     
-    // CA 인증서 로드 (여러 경로 시도)
+    // CA 인증서 로드
     QString caCertPath = findCertificateFile(m_caCertPath);
     if (caCertPath.isEmpty()) {
-        qDebug() << "CA 인증서 파일을 찾을 수 없습니다:" << m_caCertPath;
+        qDebug() << "[SSL] CA 인증서 파일을 찾을 수 없습니다:" << m_caCertPath;
         return false;
     }
     
     QFile caCertFile(caCertPath);
     if (!caCertFile.open(QIODevice::ReadOnly)) {
-        qDebug() << "CA 인증서 파일을 열 수 없습니다:" << caCertPath;
+        qDebug() << "[SSL] CA 인증서 파일을 열 수 없습니다:" << caCertPath;
         return false;
     }
     
@@ -431,20 +413,20 @@ bool NetworkManager::setupSSLConfiguration()
     caCertFile.close();
     
     if (caCert.isNull()) {
-        qDebug() << "CA 인증서가 유효하지 않습니다";
+        qDebug() << "[SSL] CA 인증서가 유효하지 않습니다";
         return false;
     }
     
     // 클라이언트 인증서 로드
     QString clientCertPath = findCertificateFile(m_clientCertPath);
     if (clientCertPath.isEmpty()) {
-        qDebug() << "클라이언트 인증서 파일을 찾을 수 없습니다:" << m_clientCertPath;
+        qDebug() << "[SSL] 클라이언트 인증서 파일을 찾을 수 없습니다:" << m_clientCertPath;
         return false;
     }
     
     QFile clientCertFile(clientCertPath);
     if (!clientCertFile.open(QIODevice::ReadOnly)) {
-        qDebug() << "클라이언트 인증서 파일을 열 수 없습니다:" << clientCertPath;
+        qDebug() << "[SSL] 클라이언트 인증서 파일을 열 수 없습니다:" << clientCertPath;
         return false;
     }
     
@@ -452,20 +434,20 @@ bool NetworkManager::setupSSLConfiguration()
     clientCertFile.close();
     
     if (clientCert.isNull()) {
-        qDebug() << "클라이언트 인증서가 유효하지 않습니다";
+        qDebug() << "[SSL] 클라이언트 인증서가 유효하지 않습니다";
         return false;
     }
     
     // 클라이언트 개인키 로드
     QString clientKeyPath = findCertificateFile(m_clientKeyPath);
     if (clientKeyPath.isEmpty()) {
-        qDebug() << "클라이언트 개인키 파일을 찾을 수 없습니다:" << m_clientKeyPath;
+        qDebug() << "[SSL] 클라이언트 개인키 파일을 찾을 수 없습니다:" << m_clientKeyPath;
         return false;
     }
     
     QFile clientKeyFile(clientKeyPath);
     if (!clientKeyFile.open(QIODevice::ReadOnly)) {
-        qDebug() << "클라이언트 개인키 파일을 열 수 없습니다:" << clientKeyPath;
+        qDebug() << "[SSL] 클라이언트 개인키 파일을 열 수 없습니다:" << clientKeyPath;
         return false;
     }
     
@@ -473,11 +455,11 @@ bool NetworkManager::setupSSLConfiguration()
     clientKeyFile.close();
     
     if (clientKey.isNull()) {
-        qDebug() << "클라이언트 개인키가 유효하지 않습니다";
+        qDebug() << "[SSL] 클라이언트 개인키가 유효하지 않습니다";
         return false;
     }
     
-    // SSL 설정 구성 (정상적인 SSL 검증)
+    // SSL 설정 구성
     m_sslConfig = QSslConfiguration::defaultConfiguration();
     m_sslConfig.setLocalCertificate(clientCert);
     m_sslConfig.setPrivateKey(clientKey);
@@ -487,21 +469,16 @@ bool NetworkManager::setupSSLConfiguration()
     // CA 인증서 설정
     m_sslConfig.setCaCertificates(QList<QSslCertificate>() << caCert);
     
-    qDebug() << "SSL 엄격 검증 활성화";
-    
-    qDebug() << "SSL 설정 완료";
-    qDebug() << "CA 인증서 주체:" << caCert.subjectInfo(QSslCertificate::CommonName);
-    qDebug() << "클라이언트 인증서 주체:" << clientCert.subjectInfo(QSslCertificate::CommonName);
+    qDebug() << "[SSL] SSL 설정 완료 - 엄격 검증 활성화";
     
     return true;
 }
 
 void NetworkManager::onSslErrors(const QList<QSslError> &errors)
 {
-    qDebug() << "SSL 오류 발생:";
+    qDebug() << "[SSL] SSL 오류 발생:";
     for (const QSslError &error : errors) {
-        qDebug() << "  -" << error.errorString();
-        qDebug() << "  - 오류 코드:" << error.error();
+        qDebug() << "[SSL]   -" << error.errorString();
     }
     
     // 호스트명 불일치 오류만 무시하고 다른 SSL 오류는 거부
@@ -511,72 +488,67 @@ void NetworkManager::onSslErrors(const QList<QSslError> &errors)
     for (const QSslError &error : errors) {
         if (error.error() == QSslError::HostNameMismatch) {
             ignorableErrors.append(error);
-            qDebug() << "호스트명 불일치 오류를 무시합니다:" << error.errorString();
         } else {
             hasOnlyHostnameError = false;
-            qDebug() << "심각한 SSL 오류 발견:" << error.errorString();
+            qDebug() << "[SSL] 심각한 SSL 오류:" << error.errorString();
         }
     }
     
     if (hasOnlyHostnameError && !ignorableErrors.isEmpty()) {
-        qDebug() << "호스트명 불일치 오류만 발생했으므로 연결을 허용합니다.";
+        qDebug() << "[SSL] 호스트명 불일치 오류만 발생 - 연결 허용";
         m_socket->ignoreSslErrors(ignorableErrors);
     } else {
-        qDebug() << "심각한 SSL 오류로 인해 연결을 거부합니다.";
+        qDebug() << "[SSL] 심각한 SSL 오류로 인해 연결 거부";
         emit networkError("SSL 인증 실패");
     }
 }
 
 void NetworkManager::onEncrypted()
 {
-    qDebug() << "SSL 연결이 암호화되었습니다";
+    qDebug() << "[SSL] SSL 연결 암호화 완료";
     
-    // SSL 세션 정보 출력 (안전한 방식)
+    // SSL 세션 정보 출력
     QSslCipher cipher = m_socket->sessionCipher();
     if (!cipher.isNull()) {
-        qDebug() << "사용된 암호화 방식:" << cipher.name();
-        qDebug() << "프로토콜:" << cipher.protocolString();
-    }
-    
-    // 서버 인증서 정보 출력
-    QSslCertificate cert = m_socket->peerCertificate();
-    if (!cert.isNull()) {
-        qDebug() << "서버 인증서 주체:" << cert.subjectInfo(QSslCertificate::CommonName);
+        qDebug() << "[SSL] 암호화 방식:" << cipher.name();
     }
 }
 
 QString NetworkManager::findCertificateFile(const QString &filename)
 {
-    // 여러 경로에서 인증서 파일을 찾아봅니다
+    // 여러 경로에서 인증서 파일 찾기
     QStringList searchPaths = {
         filename,                    // 원본 경로
         "./" + filename,            // 현재 디렉토리
         "../" + filename,           // 상위 디렉토리
         "../../" + filename,        // 상위의 상위 디렉토리
+        "../../../" + filename,     // 상위의 상위의 상위 디렉토리
         "resources/certs/" + QFileInfo(filename).fileName(),  // resources/certs 디렉토리
+        "../../../resources/certs/" + QFileInfo(filename).fileName(),  // 프로젝트 루트의 resources/certs
+        "../../../../resources/certs/" + QFileInfo(filename).fileName(),  // 더 상위의 resources/certs
         QCoreApplication::applicationDirPath() + "/" + filename,  // 실행 파일 디렉토리
         QDir::currentPath() + "/" + filename  // 현재 작업 디렉토리
     };
     
+    qDebug() << "[SSL] 인증서 파일 검색:" << filename;
+    qDebug() << "[SSL] 현재 작업 디렉토리:" << QDir::currentPath();
+    
     for (const QString &path : searchPaths) {
         QFile file(path);
+        qDebug() << "[SSL] 검색 경로:" << path << "존재:" << file.exists();
         if (file.exists()) {
-            qDebug() << "인증서 파일 발견:" << path;
+            qDebug() << "[SSL] 인증서 파일 발견:" << path;
             return path;
         }
     }
     
-    qDebug() << "다음 경로들에서 인증서 파일을 찾을 수 없습니다:";
-    for (const QString &path : searchPaths) {
-        qDebug() << "  -" << path;
-    }
-    
+    qDebug() << "[SSL] 인증서 파일을 찾을 수 없습니다:" << filename;
     return QString(); // 빈 문자열 반환
 }
 
 QString NetworkManager::findConfigFile()
 {
-    // config.ini 파일을 여러 경로에서 찾아봅니다
+    // config.ini 파일을 여러 경로에서 찾기
     QStringList searchPaths = {
         "config.ini",                    // 현재 디렉토리
         "./config.ini",                  // 명시적 현재 디렉토리
@@ -586,18 +558,19 @@ QString NetworkManager::findConfigFile()
         QDir::currentPath() + "/config.ini"  // 현재 작업 디렉토리
     };
     
+    qDebug() << "[TCP] config.ini 파일 검색 중...";
+    qDebug() << "[TCP] 현재 작업 디렉토리:" << QDir::currentPath();
+    qDebug() << "[TCP] 실행 파일 디렉토리:" << QCoreApplication::applicationDirPath();
+    
     for (const QString &path : searchPaths) {
         QFile file(path);
+        qDebug() << "[TCP] 검색 경로:" << path << "존재:" << file.exists();
         if (file.exists()) {
-            qDebug() << "설정 파일 발견:" << path;
+            qDebug() << "[TCP] config.ini 파일 발견:" << path;
             return path;
         }
     }
     
-    qDebug() << "다음 경로들에서 config.ini 파일을 찾을 수 없습니다:";
-    for (const QString &path : searchPaths) {
-        qDebug() << "  -" << path;
-    }
-    
+    qDebug() << "[TCP] config.ini 파일을 찾을 수 없습니다.";
     return QString(); // 빈 문자열 반환
 }
