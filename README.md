@@ -133,27 +133,29 @@ mingw32-make
 copy dlls\*.dll Desktop_Qt_6_9_1_MinGW_64_bit-Debug\debug\
 ```
 
-**포함된 DLL 파일들** (총 16개, 약 82MB):
+**포함된 DLL 파일들** (총 16개, 약 200MB):
 
-핵심 모듈:
-libopencv_core455.dll - OpenCV 핵심 기능 (행렬 연산, 메모리 관리)
-libopencv_imgproc455.dll - 이미지 처리 (필터링, 변환, 기하학적 변환)
-libopencv_imgcodecs455.dll - 이미지 코덱 (JPEG, PNG, BMP 등 읽기/쓰기)
-libopencv_videoio455.dll - 비디오 입출력 (카메라, 비디오 파일 처리)
-libopencv_highgui455.dll - GUI 기능 (윈도우 표시, 이벤트 처리)
-비디오 및 스트리밍:
-opencv_videoio_ffmpeg455_64.dll - FFmpeg 비디오 코덱 (다양한 비디오 포맷 지원)
-libopencv_video455.dll - 비디오 분석 (객체 추적, 배경 제거)
-고급 기능:
-libopencv_calib3d455.dll - 카메라 캘리브레이션 및 3D 재구성
-libopencv_features2d455.dll - 특징점 검출 및 매칭 (SIFT, ORB 등)
-libopencv_flann455.dll - 고속 근사 최근접 이웃 라이브러리
-libopencv_objdetect455.dll - 객체 검출 (얼굴, 보행자 검출)
-libopencv_photo455.dll - 사진 처리 (노이즈 제거, HDR)
-libopencv_ml455.dll - 머신러닝 알고리즘
-libopencv_dnn455.dll - 딥러닝 추론 엔진
-libopencv_stitching455.dll - 이미지 스티칭 (파노라마 생성)
-libopencv_gapi455.dll - Graph API (성능 최적화된 이미지 처리)
+#### 🔧 핵심 모듈
+- `libopencv_core455.dll` - OpenCV 핵심 기능 (행렬 연산, 메모리 관리)
+- `libopencv_imgproc455.dll` - 이미지 처리 (필터링, 변환, 기하학적 변환)
+- `libopencv_imgcodecs455.dll` - 이미지 코덱 (JPEG, PNG, BMP 등 읽기/쓰기)
+- `libopencv_videoio455.dll` - 비디오 입출력 (카메라, 비디오 파일 처리)
+- `libopencv_highgui455.dll` - GUI 기능 (윈도우 표시, 이벤트 처리)
+
+#### 🎬 비디오 및 스트리밍
+- `opencv_videoio_ffmpeg455_64.dll` - FFmpeg 비디오 코덱 (다양한 비디오 포맷 지원)
+- `libopencv_video455.dll` - 비디오 분석 (객체 추적, 배경 제거)
+
+#### 🤖 고급 기능
+- `libopencv_calib3d455.dll` - 카메라 캘리브레이션 및 3D 재구성
+- `libopencv_features2d455.dll` - 특징점 검출 및 매칭 (SIFT, ORB 등)
+- `libopencv_flann455.dll` - 고속 근사 최근접 이웃 라이브러리
+- `libopencv_objdetect455.dll` - 객체 검출 (얼굴, 보행자 검출)
+- `libopencv_photo455.dll` - 사진 처리 (노이즈 제거, HDR)
+- `libopencv_ml455.dll` - 머신러닝 알고리즘
+- `libopencv_dnn455.dll` - 딥러닝 추론 엔진
+- `libopencv_stitching455.dll` - 이미지 스티칭 (파노라마 생성)
+- `libopencv_gapi455.dll` - Graph API (성능 최적화된 이미지 처리)
 
 
 ## ⚙️ 설정
