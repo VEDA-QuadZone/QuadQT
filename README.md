@@ -18,8 +18,6 @@ QuadQT는 교통 및 주차 단속을 위한 실시간 영상 감시 시스템�
 
 ## 📥 다운로드
 
-<div align="center">
-
 ### 🚀 최신 릴리즈 v1.0.0
 
 [![Download QuadQT](https://img.shields.io/badge/📦_Download-QuadQT_v1.0.0-blue?style=for-the-badge&logo=download)](https://github.com/VEDA-QuadZone/QuadQT/releases/download/v1.0.0/QuadQT_v1.0.0.zip)
