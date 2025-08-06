@@ -1,0 +1,48 @@
+# QuadQT 설치 및 실행 매뉴얼
+
+## 1. 개발 환경 설정
+
+### Qt 설치
+- Qt 6.9.1 MinGW 13.1.0 64-bit 설치
+- Qt Creator 설치 시 Additional Libraries에서 다음 모듈 추가 설치:
+  - Qt Multimedia
+  - Qt Network Authorization
+
+### MQTT 라이브러리 설치
+- Qt MQTT 모듈을 ~Qt\6.9.1\mingw_64 경로에 설치
+- 다운로드: https://github.com/qt/qtmqtt/tree/6.9.1
+
+### OpenCV 설치
+- OpenCV-MinGW-Build를 C:\opencv 경로에 다운로드
+- 다운로드: https://github.com/huihut/OpenCV-MinGW-Build
+
+## 2. 프로젝트 빌드 및 실행
+
+### 빌드
+1. QuadQT.pro 파일을 Qt Creator에서 열기
+2. 프로젝트 빌드 후 실행
+
+### DLL 오류 해결
+- DLL 관련 오류 발생 시:
+  copy_files.bat 실행
+ < 실행이 안될경우 프로젝트의 dlls 폴더에 있는 모든 파일을 Desktop_Qt_6_9_1_MinGW_64_bit-Debug\debug 폴더에 복사>
+
+
+## 3. 설정 파일
+
+### config.ini
+- RTSP, MQTT, TCP, SSL 연결 설정
+- 서버 IP, 포트, 인증서 경로 등 설정
+
+### SSL 인증서
+- ca.cert.pem: CA 인증서
+- client.cert.pem: 클라이언트 인증서
+- client.key.pem: 클라이언트 개인키
+
+## 4. 테스트
+
+### SSL 서버 테스트
+```bash
+cd test
+python test_ssl_server.py
+```
