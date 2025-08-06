@@ -7,6 +7,15 @@
 
 > 실시간 영상 감시 및 모니터링을 위한 Qt 기반 데스크톱 애플리케이션
 
+
+[![Qt](https://img.shields.io/badge/Qt-6.9.1-green.svg)](https://www.qt.io/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.5.5-blue.svg)](https://opencv.org/)
+[![C++](https://img.shields.io/badge/C++-17-red.svg)](https://isocpp.org/)
+[![License](https://img.shields.io/badge/License-Proprietary-yellow.svg)]()
+
+QuadQT는 교통 및 주차 단속을 위한 실시간 영상 감시 시스템입니다. RTSP 스트리밍, MQTT 알림, SSL 보안 통신을 통합하여 안정적이고 보안성 높은 모니터링 솔루션을 제공합니다.
+
+
 ## 📥 다운로드
 
 <div align="center">
@@ -15,12 +24,6 @@
 
 [![Download QuadQT](https://img.shields.io/badge/📦_Download-QuadQT_v1.0.0-blue?style=for-the-badge&logo=download)](https://github.com/VEDA-QuadZone/QuadQT/releases/download/v1.0.0/QuadQT_v1.0.0.zip)
 
-[![Qt](https://img.shields.io/badge/Qt-6.9.1-green.svg)](https://www.qt.io/)
-[![OpenCV](https://img.shields.io/badge/OpenCV-4.5.5-blue.svg)](https://opencv.org/)
-[![C++](https://img.shields.io/badge/C++-17-red.svg)](https://isocpp.org/)
-[![License](https://img.shields.io/badge/License-Proprietary-yellow.svg)]()
-
-QuadQT는 교통 및 주차 단속을 위한 실시간 영상 감시 시스템입니다. RTSP 스트리밍, MQTT 알림, SSL 보안 통신을 통합하여 안정적이고 보안성 높은 모니터링 솔루션을 제공합니다.
 
 
 
