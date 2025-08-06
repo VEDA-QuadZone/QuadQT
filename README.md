@@ -327,3 +327,16 @@ qmake --help
 - 🚨 **실시간 알림**: 즉시 이벤트 통지
 - 📊 **데이터 조회**: 이벤트 기록 및 이미지 보기
 
+
+## 📷 매뉴얼
+<img width="955" height="497" alt="화면 캡처 2025-08-06 121147" src="https://github.com/user-attachments/assets/e0bd6fee-6014-436d-8b4f-5aa8a8b9504c" />
+
+<img width="1011" height="497" alt="화면 캡처 2025-08-06 121206" src="https://github.com/user-attachments/assets/eb33ad9a-cc4d-41b4-983c-f2fc6b16e972" />
+
+<img width="1012" height="511" alt="화면 캡처 2025-08-06 121219" src="https://github.com/user-attachments/assets/e605aeca-61de-4c2f-8c20-336457323f52" />
+
+<img width="1012" height="515" alt="화면 캡처 2025-08-06 121231" src="https://github.com/user-attachments/assets/9f15bdd4-37d8-456e-81f1-66ad68cb64dd" />
+
+<img width="993" height="512" alt="화면 캡처 2025-08-06 121242" src="https://github.com/user-attachments/assets/7cbd73bc-e371-46ab-89c6-acaefc49805c" />
+
+
