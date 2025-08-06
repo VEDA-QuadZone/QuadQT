@@ -1,4 +1,4 @@
-[QuadQT_v1.0.0](https://github.com/VEDA-QuadZone/QuadQT/releases/download/v1.0.0/QuadQT_v1.0.0.zip)
+Download : [QuadQT_v1.0.0](https://github.com/VEDA-QuadZone/QuadQT/releases/download/v1.0.0/QuadQT_v1.0.0.zip)
 
 
 # <img width="24" height="24" alt="image" src="https://github.com/user-attachments/assets/1062fe1a-9ade-41e9-b087-f2192e0e7652" /> QuadQT
