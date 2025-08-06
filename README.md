@@ -123,7 +123,7 @@ mingw32-make
 ### 🔧 DLL 설정 (필수)
 빌드 후 실행 시 OpenCV DLL 오류가 발생합니다. 
 
-  copy_files.bat 실행을 통해 자동 작업
+  **copy_files.bat 실행을 통해 자동 작업**
   
   < 실행이 안될경우>
   
