@@ -1,7 +1,9 @@
-[README.md](https://github.com/user-attachments/files/21572540/README.md)
+[QuadQT_v1.0.0](https://github.com/VEDA-QuadZone/QuadQT/releases/download/v1.0.0/QuadQT_v1.0.0.zip)
+
+
 # <img width="24" height="24" alt="image" src="https://github.com/user-attachments/assets/1062fe1a-9ade-41e9-b087-f2192e0e7652" /> QuadQT
 
-[QuadQT_v1.0.0](https://github.com/VEDA-QuadZone/QuadQT/releases/download/v1.0.0/QuadQT_v1.0.0.zip)
+
 
 > 실시간 영상 감시 및 모니터링을 위한 Qt 기반 데스크톱 애플리케이션
 
