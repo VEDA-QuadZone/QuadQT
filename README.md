@@ -1,4 +1,4 @@
-Download : [QuadQT_v1.0.0](https://github.com/VEDA-QuadZone/QuadQT/releases/download/v1.0.0/QuadQT_v1.0.0.zip)
+
 
 
 # <img width="24" height="24" alt="image" src="https://github.com/user-attachments/assets/1062fe1a-9ade-41e9-b087-f2192e0e7652" /> QuadQT
@@ -6,6 +6,14 @@ Download : [QuadQT_v1.0.0](https://github.com/VEDA-QuadZone/QuadQT/releases/down
 
 
 > 실시간 영상 감시 및 모니터링을 위한 Qt 기반 데스크톱 애플리케이션
+
+## 📥 다운로드
+
+<div align="center">
+
+### 🚀 최신 릴리즈 v1.0.0
+
+[![Download QuadQT](https://img.shields.io/badge/📦_Download-QuadQT_v1.0.0-blue?style=for-the-badge&logo=download)](https://github.com/VEDA-QuadZone/QuadQT/releases/download/v1.0.0/QuadQT_v1.0.0.zip)
 
 [![Qt](https://img.shields.io/badge/Qt-6.9.1-green.svg)](https://www.qt.io/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.5.5-blue.svg)](https://opencv.org/)
