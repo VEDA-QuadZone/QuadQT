@@ -1,4 +1,5 @@
-# QuadQT 🎥
+[README.md](https://github.com/user-attachments/files/21572540/README.md)
+# <img width="24" height="24" alt="image" src="https://github.com/user-attachments/assets/1062fe1a-9ade-41e9-b087-f2192e0e7652" /> QuadQT
 
 > 실시간 영상 감시 및 모니터링을 위한 Qt 기반 데스크톱 애플리케이션
 
@@ -8,6 +9,8 @@
 [![License](https://img.shields.io/badge/License-Proprietary-yellow.svg)]()
 
 QuadQT는 교통 및 주차 단속을 위한 실시간 영상 감시 시스템입니다. RTSP 스트리밍, MQTT 알림, SSL 보안 통신을 통합하여 안정적이고 보안성 높은 모니터링 솔루션을 제공합니다.
+
+
 
 ## ✨ 주요 기능
 
@@ -31,6 +34,8 @@ QuadQT는 교통 및 주차 단속을 위한 실시간 영상 감시 시스템�
 - **이미지 비교**: 정차 시작/경과 이미지 비교 기능
 - **CSV 내보내기**: 데이터 분석을 위한 내보내기
 
+
+
 ## 🛠 기술 스택
 
 ### 개발 환경
@@ -47,6 +52,8 @@ QuadQT는 교통 및 주차 단속을 위한 실시간 영상 감시 시스템�
   - QtMultimedia - 비디오 재생
 - **OpenCV 4.5.5** - 컴퓨터 비전 및 이미지 처리
 - **OpenSSL** - SSL/TLS 암호화 (Qt 내장)
+
+
 
 ## 🚀 빠른 시작
 
@@ -114,20 +121,42 @@ mingw32-make
 ```
 
 ### 🔧 DLL 설정 (필수)
-빌드 후 실행 시 OpenCV DLL 오류가 발생합니다. 다음 단계를 반드시 수행하세요:
+빌드 후 실행 시 OpenCV DLL 오류가 발생합니다. 
 
+ -> **copy_files.bat 실행을 통해 자동 작업**
+  
+  < 실행이 안될경우>
+  
 ```bash
 # 프로젝트의 dlls 폴더에 있는 16개의 OpenCV DLL 파일을
 # 빌드 출력 디렉토리로 복사
 copy dlls\*.dll Desktop_Qt_6_9_1_MinGW_64_bit-Debug\debug\
 ```
 
-**포함된 DLL 파일들** (총 16개, 약 200MB):
-- `libopencv_core455.dll` - OpenCV 핵심 기능
-- `libopencv_imgproc455.dll` - 이미지 처리
-- `libopencv_videoio455.dll` - 비디오 입출력
-- `opencv_videoio_ffmpeg455_64.dll` - FFmpeg 비디오 코덱
-- 기타 OpenCV 모듈들...
+**포함된 DLL 파일들** (총 16개, 약 81MB):
+
+#### 🔧 핵심 모듈
+- `libopencv_core455.dll` - OpenCV 핵심 기능 (행렬 연산, 메모리 관리)
+- `libopencv_imgproc455.dll` - 이미지 처리 (필터링, 변환, 기하학적 변환)
+- `libopencv_imgcodecs455.dll` - 이미지 코덱 (JPEG, PNG, BMP 등 읽기/쓰기)
+- `libopencv_videoio455.dll` - 비디오 입출력 (카메라, 비디오 파일 처리)
+- `libopencv_highgui455.dll` - GUI 기능 (윈도우 표시, 이벤트 처리)
+
+#### 🎬 비디오 및 스트리밍
+- `opencv_videoio_ffmpeg455_64.dll` - FFmpeg 비디오 코덱 (다양한 비디오 포맷 지원)
+- `libopencv_video455.dll` - 비디오 분석 (객체 추적, 배경 제거)
+
+#### 🤖 고급 기능
+- `libopencv_calib3d455.dll` - 카메라 캘리브레이션 및 3D 재구성
+- `libopencv_features2d455.dll` - 특징점 검출 및 매칭 (SIFT, ORB 등)
+- `libopencv_flann455.dll` - 고속 근사 최근접 이웃 라이브러리
+- `libopencv_objdetect455.dll` - 객체 검출 (얼굴, 보행자 검출)
+- `libopencv_photo455.dll` - 사진 처리 (노이즈 제거, HDR)
+- `libopencv_ml455.dll` - 머신러닝 알고리즘
+- `libopencv_dnn455.dll` - 딥러닝 추론 엔진
+- `libopencv_stitching455.dll` - 이미지 스티칭 (파노라마 생성)
+- `libopencv_gapi455.dll` - Graph API (성능 최적화된 이미지 처리)
+
 
 ## ⚙️ 설정
 
@@ -173,6 +202,8 @@ resources/certs/
 - **TCP**: 안정적인 데이터 전송 (SSL 암호화)
 - **SSL/TLS**: 모든 통신 암호화
 
+
+
 ## 🧪 테스트
 
 ### 🔒 SSL 서버 테스트
@@ -190,13 +221,13 @@ python test_ssl_server.py
 - 데이터 암호화 통신
 
 
-```
+
 
 ## 📁 프로젝트 구조
 
 ```
 QuadQT/
-├── 📂 src/                     # 소스 파일 (.cpp)
+├── 📂 src/                     #💻 소스 파일 (.cpp)
 │   ├── 📂 login/              # 🔐 로그인 시스템
 │   │   ├── loginpage.cpp      # 로그인 UI 처리
 │   │   ├── networkmanager.cpp # TCP/SSL 네트워크 통신
@@ -207,8 +238,14 @@ QuadQT/
 │       ├── mqttmanager.cpp    # MQTT 메시징
 │       ├── notificationpanel.cpp # 알림 패널
 │       ├── historyview.cpp    # 히스토리 뷰
-│       └── ...               # 기타 UI 컴포넌트
-├── 📂 include/                # 헤더 파일 (.h)
+│       ├── getimageview.cpp # 이미지 캡처 뷰
+│       ├── compareimageview.cpp # 이미지 비교 뷰
+│       ├── topbarwidget.cpp # 상단 바 위젯
+│       ├── procsettingbox.cpp # 처리 설정 박스
+│       ├── displaysettingbox.cpp # 디스플레이 설정 박스
+│       ├── tcphistoryhandler.cpp # TCP 히스토리 핸들러
+│       └── filenameutils.cpp # 파일명 유틸리티
+├── 📂 include/                # 📋 헤더 파일 (.h)
 │   ├── 📂 login/              # 로그인 시스템 헤더
 │   └── 📂 mainwindow/         # 메인 애플리케이션 헤더
 ├── 📂 resources/              # 🎨 정적 리소스
@@ -217,14 +254,15 @@ QuadQT/
 │   └── 📂 images/            # 아이콘 및 이미지
 ├── 📂 ui/                     # Qt Designer UI 파일
 ├── 📂 test/                   # 🧪 테스트 스크립트
-│   ├── test_ssl_server.py    # SSL 서버 테스트
-│   └── simple_mqtt_broker.py # MQTT 브로커 테스트
-├── 📂 dlls/                   # OpenCV DLL 파일들
+│   └── test_ssl_server.py    # SSL 서버 테스트
+├── 📂 dlls/                   # 📚 OpenCV DLL 파일들
 ├── 📄 QuadQT.pro             # qmake 프로젝트 파일
 ├── 📄 config.ini             # 애플리케이션 설정
 ├── 📄 resource.qrc           # Qt 리소스 파일
 └── 📄 README.md              # 프로젝트 문서
 ```
+
+
 
 ## 🔧 주요 명령어
 
@@ -252,13 +290,17 @@ assistant
 qmake --help
 ```
 
+
+
 ## 🌐 네트워크 프로토콜
 
 | 프로토콜 | 용도 | 포트 | 보안 |
 |---------|------|------|------|
-| **RTSP/RTSPS** | 실시간 비디오 스트리밍 | 554/8555 | TLS 암호화 |
-| **MQTT** | 경량 메시징 (알림) | 1883/8883 | SSL/TLS 지원 |
+| **RTSPS** | 실시간 비디오 스트리밍 | 8555 | TLS 암호화 |
+| **MQTT** | 경량 메시징 (알림) | 1883 | SSL/TLS 지원 |
 | **TCP** | 안정적인 데이터 전송 | 8080 | SSL/TLS 암호화 |
+
+
 
 ## 🎯 사용 사례
 
@@ -270,5 +312,5 @@ qmake --help
 ### 보안 감시
 - 📹 **24시간 모니터링**: 연속 영상 감시
 - 🚨 **실시간 알림**: 즉시 이벤트 통지
-- 📊 **데이터 분석**: 이벤트 통계 및 리포트
+- 📊 **데이터 조회**: 이벤트 기록 및 이미지 보기
 

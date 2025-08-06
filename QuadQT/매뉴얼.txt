@@ -24,8 +24,9 @@
 
 ### DLL 오류 해결
 - DLL 관련 오류 발생 시:
-  - 프로젝트의 dlls 폴더에 있는 모든 파일을
-  - Desktop_Qt_6_9_1_MinGW_64_bit-Debug\debug 폴더에 복사
+  copy_files.bat 실행
+ < 실행이 안될경우 프로젝트의 dlls 폴더에 있는 모든 파일을 Desktop_Qt_6_9_1_MinGW_64_bit-Debug\debug 폴더에 복사>
+
 
 ## 3. 설정 파일
 
