@@ -97,8 +97,6 @@ unix:!android: target.path = /opt/$${TARGET}/bin
 
 DISTFILES += \
     ca.cert.pem \
-    client.cert.pem \
-    client.key.pem \
     config.ini
 
 # ====== 빌드 후 설정 파일 자동 복사 (간단한 버전) ======

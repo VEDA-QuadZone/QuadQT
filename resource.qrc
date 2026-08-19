@@ -52,12 +52,8 @@
     </qresource>
     <qresource prefix="/certs">
         <file>resources/certs/ca.cert.pem</file>
-        <file>resources/certs/client.cert.pem</file>
-        <file>resources/certs/client.key.pem</file>
     </qresource>
     <qresource prefix="/root_certs">
         <file>ca.cert.pem</file>
-        <file>client.cert.pem</file>
-        <file>client.key.pem</file>
     </qresource>
 </RCC>

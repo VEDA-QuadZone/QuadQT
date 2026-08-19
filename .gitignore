@@ -81,3 +81,10 @@ CMakeLists.txt.user*
 /build*/
 /.kiro*/
 /.vscode*/
+
+# TLS client credentials (must be provisioned outside Git)
+**/client.key.pem
+**/client.cert.pem
+*.key
+*.p12
+*.pfx
